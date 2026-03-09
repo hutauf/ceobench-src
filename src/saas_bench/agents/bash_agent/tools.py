@@ -12,6 +12,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
+class NextDayTimeoutError(Exception):
+    """Raised when novamind-operation next-day times out.
+
+    This should cause the runner to save checkpoint and kill the run.
+    """
+    def __init__(self, message: str, partial_stdout: str = "", partial_stderr: str = ""):
+        super().__init__(message)
+        self.partial_stdout = partial_stdout
+        self.partial_stderr = partial_stderr
+
+
 # =========================================================================
 # Tool schemas (OpenAI function-calling format)
 # =========================================================================
@@ -185,7 +196,7 @@ class BashAgentToolExecutor:
     """Executes bash_agent tools within a working directory."""
 
     def __init__(self, workspace_path: Path, env: Optional[Dict[str, str]] = None,
-                 bash_timeout: int = 300):
+                 bash_timeout: int = 1200):
         """Initialize the tool executor.
 
         Args:
@@ -292,14 +303,53 @@ class BashAgentToolExecutor:
             return output
 
         except subprocess.TimeoutExpired:
+            # Capture any partial output before killing
+            partial_stdout = ""
+            partial_stderr = ""
+            try:
+                # Read whatever's in the pipe buffers
+                import selectors
+                sel = selectors.DefaultSelector()
+                sel.register(proc.stdout, selectors.EVENT_READ)
+                sel.register(proc.stderr, selectors.EVENT_READ)
+                while sel.select(timeout=0.1):
+                    for key, _ in sel.select(timeout=0):
+                        data = key.fileobj.read1(65536) if hasattr(key.fileobj, 'read1') else ''
+                        if key.fileobj == proc.stdout:
+                            partial_stdout += data if isinstance(data, str) else data.decode('utf-8', errors='replace')
+                        else:
+                            partial_stderr += data if isinstance(data, str) else data.decode('utf-8', errors='replace')
+                sel.close()
+            except Exception:
+                pass
+
             # Kill the entire process group (bash + all children)
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except (ProcessLookupError, PermissionError):
                 pass
             proc.kill()  # Fallback: kill the direct child
-            proc.wait(timeout=5)  # Reap the zombie
-            return f"Error: Command timed out after {self.bash_timeout} seconds"
+            try:
+                proc.wait(timeout=5)  # Reap the zombie
+            except Exception:
+                pass
+
+            # If command is novamind-operation next-day, raise to kill the run
+            if 'novamind-operation next-day' in command:
+                raise NextDayTimeoutError(
+                    f"next_day timed out after {self.bash_timeout}s",
+                    partial_stdout=partial_stdout,
+                    partial_stderr=partial_stderr,
+                )
+
+            # For all other commands: return partial output + timeout message
+            output_parts = []
+            if partial_stdout:
+                output_parts.append(partial_stdout)
+            if partial_stderr:
+                output_parts.append(f"[stderr]\n{partial_stderr}")
+            output_parts.append(f"Error: Command timed out after {self.bash_timeout} seconds")
+            return '\n'.join(output_parts)
 
     def _exec_read_file(self, args: Dict) -> str:
         """Read file contents."""

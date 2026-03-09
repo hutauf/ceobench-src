@@ -1687,8 +1687,9 @@ class Simulator:
                 rate = NETWORK_INFLUENCE_MATRIX.get(source_group_id, {}).get(group_id, 0.0)
                 if rate <= 0:
                     continue
-                # Direct rate: source_subs × rate = daily leads in target group
-                network_leads += source_subs * rate
+                # Log-scaled network effect: dampens exponential growth divergence
+                # log(1+subs) grows slowly — prevents runaway compounding
+                network_leads += math.log(1 + source_subs) * rate
 
             # === MARKET CAP SATURATION ===
             # Growth slows as subscribers approach market cap
@@ -3808,7 +3809,7 @@ class Simulator:
             if spend > 0:
                 key = f'q_group_bonus_{group_id}'
                 current = get_global_state(self.conn, key, 0.0)
-                group_improvement = 0.0005 * math.log(1 + spend / 500)
+                group_improvement = 0.005 * math.log(1 + spend / 1000)
                 set_global_state(self.conn, key, current + group_improvement)
 
     # =========================================================================
@@ -4369,16 +4370,13 @@ Requirements:
         self.conn.execute("DROP TABLE IF EXISTS _tmp_latest_turns")
         self.conn.execute("""
             CREATE TEMP TABLE _tmp_latest_turns AS
-            SELECT et.thread_id, et.message_id, et.customer_id, et.thread_type,
-                   et.sender, et.day, et.next_reply_day, et.closed, et._internal_status
-            FROM enterprise_turns et
-            INNER JOIN (
-                SELECT thread_id, MAX(message_id) AS max_mid
+            SELECT thread_id, message_id, customer_id, thread_type,
+                   sender, day, next_reply_day, closed, _internal_status
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY message_id DESC) AS rn
                 FROM enterprise_turns
                 WHERE closed = 0 AND _internal_status IS NULL
-                GROUP BY thread_id
-            ) latest ON et.thread_id = latest.thread_id AND et.message_id = latest.max_mid
-            WHERE et.closed = 0 AND et._internal_status IS NULL
+            ) WHERE rn = 1
         """)
         _ent_timings['latest_turns_cache'] = _time.monotonic() - _t0
 
@@ -5837,14 +5835,21 @@ Requirements:
 
     # ===== V2: VC Negotiation Processing =====
 
-    def _compute_vc_valuation(self, vc_profile) -> float:
-        """Compute VC's fair company valuation using multi-variable formula.
+    # V4 valuation constants
+    _VC_VAL_K = 18.0         # Base ARR multiplier
+    _VC_VAL_P = 1.8          # Power on composite (stretches dynamic range)
+    _VC_VAL_SCORE_FLOOR = 0.05  # Minimum score (prevents 0^e wiping everything)
+    _VC_VAL_FLOOR = 500_000  # Absolute minimum valuation
 
-        Each VC applies their unique weights to 10 scoring dimensions:
-        growth, retention, margin, scale, quality, market, efficiency,
-        momentum, runway, diversity.
+    def _compute_vc_valuation(self, vc_profile) -> float:
+        """Compute VC's fair company valuation using v4 geometric weighted mean formula.
+
+        Formula: valuation = K * ARR * composite^P * (1 + return_adj) * macro_mult
+        Where composite = geometric weighted mean of 9 bounded scores [0, 1].
+        Each VC has exponents (e_growth, e_retention, ...) controlling sensitivity.
         """
         w = vc_profile.valuation_weights
+        SF = self._VC_VAL_SCORE_FLOOR
 
         # Gather raw metrics from simulation state
         mrr = get_mrr(self.conn)
@@ -5865,7 +5870,6 @@ Requirements:
             mrr_growth_rate = 0.15 if mrr > 0 else 0  # Assume 15% if no history
 
         # Net revenue retention (subscribers retained revenue / starting revenue)
-        # Approximate: (current MRR) / (MRR 30 days ago) — includes expansion
         net_revenue_retention = (mrr / prev_mrr) if prev_mrr > 0 else 1.0
 
         # Gross margin
@@ -5888,13 +5892,6 @@ Requirements:
         product_quality = (self.config.base_product_quality + q_shared_bonus) * tier_multiplier
         product_quality = min(product_quality, 1.5)  # Cap at 1.5
 
-        # Total addressable customers (discovered groups, time-grown)
-        discovered = set(get_discovered_groups(self.conn))
-        total_tam = sum(
-            CUSTOMER_GROUPS[gid].base_market_cap * (1 + CUSTOMER_GROUPS[gid].annual_cap_growth_rate * self.current_day / 365.0)
-            for gid in discovered if gid in CUSTOMER_GROUPS
-        )
-
         # Total subscribers
         total_subs = self.conn.execute("""
             SELECT COUNT(*) FROM subscriptions WHERE status = 'subscribed' AND end_day IS NULL
@@ -5916,55 +5913,70 @@ Requirements:
         # Monthly burn rate
         monthly_burn = total_costs_30d
 
-        # Compute scores (each normalized around 1.0)
-        growth_score = max(0, min(2.0, mrr_growth_rate / 0.15))
-        retention_score = max(0.5, min(1.5, net_revenue_retention / 1.0))
-        margin_score = max(0, min(1.5, gross_margin / 0.7))
-        scale_score = max(0, min(1.5, math.log10(max(arr, 1000)) / 6.0))
-        quality_score = max(0, min(1.5, product_quality / 0.55))  # Benchmark: ~0.55 = Tier 4 with some investment
-        market_score = max(0.2, min(2.0, total_tam / 5000))
-        efficiency_score = max(0, min(2.0, arr / max(monthly_burn * 12, 1)))
-        momentum_score = max(0, min(2.0, (new_subs_30d / max(total_subs, 1)) / 0.10))
-        runway_score = max(0.3, min(1.5, (cash / max(monthly_burn, 1)) / 12.0))
-        diversity_score = max(0.2, min(1.5, active_groups / 5.0))
+        # --- V4 Score Functions: each bounded [SCORE_FLOOR, 1.0] ---
+        # Growth: 0% -> 0, 8% monthly -> 0.5, 15%+ -> 1.0
+        growth_score = max(SF, min(1.0, max(mrr_growth_rate / 0.15, 0.0)))
 
-        # Weighted composite score
-        composite = (
-            w.w_growth * growth_score +
-            w.w_retention * retention_score +
-            w.w_margin * margin_score +
-            w.w_scale * scale_score +
-            w.w_quality * quality_score +
-            w.w_market * market_score +
-            w.w_efficiency * efficiency_score +
-            w.w_momentum * momentum_score +
-            w.w_runway * runway_score +
-            w.w_diversity * diversity_score
-        )
+        # Retention: NRR 60% -> 0, 95% -> ~0.5, 130%+ -> 1.0
+        retention_score = max(SF, min(1.0, max((net_revenue_retention - 0.60) / 0.70, 0.0)))
 
-        # V2.1: Adjust for existing investment returns (momentum/loss aversion)
-        # Check if this VC has a shareholder record with existing investments
-        existing_shareholder = self.conn.execute("""
-            SELECT shareholder_id FROM shareholders
-            WHERE name = ? AND shareholder_type = 'vc' AND shares_held > 0
-            ORDER BY shareholder_id DESC LIMIT 1
-        """, (vc_profile.name,)).fetchone()
+        # Margin: -60% -> 0, 0% -> 0.5, 60%+ -> 1.0
+        margin_score = max(SF, min(1.0, max((gross_margin + 0.60) / 1.20, 0.0)))
 
-        return_adjustment = 0.0
-        if existing_shareholder:
-            total_shares_outstanding = get_total_shares(self.conn)
-            if total_shares_outstanding > 0:
-                current_pps = (mrr * 12 * w.base_multiple) / total_shares_outstanding
-                return_pct = get_vc_return_pct(self.conn, existing_shareholder['shareholder_id'], current_pps)
-                # Positive returns increase valuation, negative returns decrease it
-                return_adjustment = return_pct * self.config.vc_return_valuation_weight
+        # Scale: log10(ARR) / 9. $100K->0.44, $1M->0.67, $10M->0.78, $100M->0.89, $1B->1.0
+        scale_score = max(SF, min(1.0, max(math.log10(max(arr, 1e4)) / 9.0, 0.0)))
+
+        # Quality: 0.8 = 1.0 (capped)
+        quality_score = max(SF, min(1.0, product_quality / 0.80))
+
+        # Efficiency: ARR / (annual_burn * 2). Breakeven -> 0.5, 2x coverage -> 1.0
+        if monthly_burn > 0:
+            efficiency_score = max(SF, min(1.0, arr / (monthly_burn * 12 * 2.0)))
+        else:
+            efficiency_score = 1.0
+
+        # Momentum: new_sub_rate / 0.10. 10%+ monthly new sub rate -> 1.0
+        new_sub_rate = new_subs_30d / max(total_subs, 1)
+        momentum_score = max(SF, min(1.0, new_sub_rate / 0.10))
+
+        # Runway: cash / (burn * 18). 18+ months -> 1.0
+        if monthly_burn > 0:
+            runway_months = cash / monthly_burn
+        else:
+            runway_months = 18.0
+        runway_score = max(SF, min(1.0, max(runway_months / 18.0, 0.0)))
+
+        # Diversity: active groups / 5. 5+ groups -> 1.0
+        diversity_score = max(SF, min(1.0, active_groups / 5.0))
+
+        # --- Geometric weighted mean composite ---
+        scores = {
+            'growth': growth_score, 'retention': retention_score,
+            'margin': margin_score, 'scale': scale_score,
+            'quality': quality_score, 'efficiency': efficiency_score,
+            'momentum': momentum_score, 'runway': runway_score,
+            'diversity': diversity_score,
+        }
+        exponents = {
+            'growth': w.e_growth, 'retention': w.e_retention,
+            'margin': w.e_margin, 'scale': w.e_scale,
+            'quality': w.e_quality, 'efficiency': w.e_efficiency,
+            'momentum': w.e_momentum, 'runway': w.e_runway,
+            'diversity': w.e_diversity,
+        }
+        exp_sum = sum(exponents.values())
+        log_sum = sum(exponents[dim] * math.log(scores[dim]) for dim in scores)
+        composite = math.exp(log_sum / exp_sum) if exp_sum > 0 else 1.0
 
         # Macro sensitivity: each VC adjusts valuation based on PMI cycle
         pmi_deviation = (self._macro_pmi_current - 50.0) / 50.0
         macro_mult = 1.0 + vc_profile.macro_sensitivity * pmi_deviation
 
-        # Final valuation = base_multiple * ARR * composite_score * (1 + return_adjustment) * macro_mult
-        fair_valuation = max(w.base_multiple * arr * composite * (1.0 + return_adjustment) * macro_mult, 500_000)
+        # V4 formula: K * ARR * composite^P * macro_mult
+        fair_valuation = max(
+            self._VC_VAL_K * arr * (composite ** self._VC_VAL_P) * macro_mult,
+            self._VC_VAL_FLOOR
+        )
 
         return fair_valuation
 
@@ -6430,22 +6442,22 @@ Requirements:
             if not vc_profile:
                 continue
 
-            # Get top 3 valuation factors for this VC
+            # Get top 3 valuation factors for this VC (by exponent magnitude)
             w = vc_profile.valuation_weights
             factors = [
-                ('growth', w.w_growth), ('retention', w.w_retention),
-                ('margin', w.w_margin), ('scale', w.w_scale),
-                ('quality', w.w_quality), ('market', w.w_market),
-                ('efficiency', w.w_efficiency), ('momentum', w.w_momentum),
-                ('runway', w.w_runway), ('diversity', w.w_diversity),
+                ('growth', w.e_growth), ('retention', w.e_retention),
+                ('margin', w.e_margin), ('scale', w.e_scale),
+                ('quality', w.e_quality),
+                ('efficiency', w.e_efficiency), ('momentum', w.e_momentum),
+                ('runway', w.e_runway), ('diversity', w.e_diversity),
             ]
             factors.sort(key=lambda x: x[1], reverse=True)
             top_factors = [f[0] for f in factors[:3]]
 
-            # Compute return percentage
+            # Compute return percentage using v4 K constant
             total_shares = get_total_shares(self.conn)
             mrr = get_mrr(self.conn)
-            pps = (mrr * 12 * w.base_multiple) / total_shares if total_shares > 0 else 0
+            pps = (mrr * 12 * self._VC_VAL_K) / total_shares if total_shares > 0 else 0
             return_pct = get_vc_return_pct(self.conn, vc['shareholder_id'], pps)
 
             # Build context for advisory message

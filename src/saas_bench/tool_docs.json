@@ -274,7 +274,7 @@
     "impact": {
       "advertising": "Generates new leads. Each channel has a fixed leads-per-$1000 rate per customer group. Use set_ad_channel_spend for channel allocation, set_targeted_ad_spend for per-group targeting.",
       "operations": "CRITICAL: (1) REDUCES OUTAGE PROBABILITY - At $0: ~3% daily outage risk (~1/month). At $500: ~1.1% daily (~3/year). (2) Speeds up issue resolution: mean resolved/day = 1 + 0.01 \u00d7 spend. WARNING: Without ops spending, frequent outages damage reputation and cause churn!",
-      "development": "Dev spending improves product quality. Improvement = 0.001 \u00d7 ln(1 + spend/1000). Higher dev spending = faster quality gains to stay ahead of rising customer expectations."
+      "development": "Dev spending improves product quality (amplified by model tier). Global improvement = 0.001 × ln(1 + global_spend/1000) per day (applies to all groups). Targeted per-group improvement = 0.005 × ln(1 + targeted_spend/1000) per day (5× coefficient, applies to that group only, stacks with global). delivered_quality = (base_product_quality + q_shared_bonus + q_group_bonus) × tier_multiplier."
     },
     "example_call": {
       "tool": "set_daily_spend",
@@ -684,7 +684,7 @@
       "failure": "Invalid group IDs: {X}. Valid groups: S1-S3, E1-E3, ..."
     },
     "mechanics": {
-      "quality_bonus": "Per-group quality bonus ACCUMULATES daily: +0.0005 \u00d7 log(1 + spend/500) per day. At $500/day: +0.00035/day cumulative. After 30 days: +0.0105 total. Investment persists if spending stops.",
+      "quality_bonus": "Per-group quality bonus ACCUMULATES daily: +0.005 × log(1 + spend/1000) per day (5× more efficient than global dev spend). At $5000/day: +0.00896/day cumulative. After 30 days: +0.269 total. Investment persists if spending stops.",
       "scope": "Only affects subscribers in the targeted group (not global q_shared). Like building group-specific features \u2014 investment compounds over time.",
       "cost": "Extra dollars are deducted from cash daily as development cost"
     },
@@ -2478,7 +2478,7 @@
   "next_day": {
     "name": "next_day",
     "category": "Simulation Control",
-    "description": "Advance the simulation by one day and receive the next day's dashboard.",
+    "description": "Advance the simulation by one day and receive the next day's dashboard. NOTE: This call may take a long time (minutes) at large subscriber counts as the simulator processes billing, churn, usage, and reputation for every customer. This is normal — just wait for the response.",
     "inputSchema": {
       "type": "object",
       "properties": {}

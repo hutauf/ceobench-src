@@ -80,7 +80,7 @@ Each customer has a personal quality-price curve:
 - Per-group quality bonus: CUMULATIVE from targeted dev spend (persists after spending stops)
 
 ### Quality Dynamics
-- Development spending improves quality: improvement = 0.001 × ln(1 + dev_spend/1000)
+- Development spending improves quality: global improvement = 0.001 × ln(1 + global_spend/1000), targeted per-group improvement = 0.005 × ln(1 + targeted_spend/1000) (5× coefficient, stacks with global)
 - Customer expected quality drifts upward over time (global drift + per-group drift)
 - Competitor events occur randomly and raise customer quality expectations across all groups — these are permanent upward shifts that cannot be reversed, only offset via dev spending or R&D breakthroughs
 - R&D research tiers provide permanent quality boosts (10 independent tiers)
@@ -151,8 +151,8 @@ Daily costs: capacity tier + compute (usage × tier cost) + advertising + operat
 
 ### Development
 - Customer expected quality changes over time
-- Counteracts quality decay: improvement = 0.001 × ln(1 + spend/1000)
-- Per-group targeting via `set_targeted_dev_spend` (ACCUMULATES group-specific quality bonus daily; persists after spending stops)
+- Global quality improvement: 0.001 × ln(1 + spend/1000) per day (applies to all groups)
+- Per-group targeting via `set_targeted_dev_spend`: 0.005 × ln(1 + spend/1000) per day (5× coefficient, ACCUMULATES group-specific quality bonus; persists after spending stops)
 
 ## R&D Research Tiers
 
@@ -189,3 +189,5 @@ Daily costs: capacity tier + compute (usage × tier cost) + advertising + operat
 - What you're watching for in the coming days
 
 You can call any tool any number of times within a day. Advance to the next day when you are ready.
+
+**NOTE:** The `next_day` call may take a long time (several minutes) at large subscriber counts. The simulator processes billing, churn, usage, reputation, and other mechanics for every customer individually. This is normal and expected — just wait for the response. Do not assume the call has failed or timed out.

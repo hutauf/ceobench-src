@@ -512,7 +512,7 @@ class BenchmarkConfig:
     # Base product quality on Day 1 (before any dev spending or research).
     # Model tier multiplier is applied to this: delivered_quality = product_quality × tier_multiplier
     # where product_quality = base_product_quality + q_shared_bonus + q_group_bonus
-    base_product_quality: float = 0.50
+    base_product_quality: float = 0.20
 
     # Development improvement rates
     # Reality-matched: Software quality improves ~15-25% with sustained R&D investment
@@ -1423,22 +1423,25 @@ RESEARCH_TIERS_BY_ID: Dict[int, ResearchTier] = {rt.tier: rt for rt in RESEARCH_
 
 @dataclass
 class VCValuationWeights:
-    """Weights for multi-variable company valuation formula.
+    """Exponent-based weights for geometric weighted mean valuation formula (v4).
 
-    Each VC has unique weights reflecting their investment philosophy.
-    Weights are normalized to sum to 1.0.
+    Formula: valuation = K * ARR * composite^P * (1 + return_adj) * macro_mult
+    Where composite = geometric weighted mean of 9 bounded scores [0, 1].
+    Each exponent controls how sensitive this VC is to that dimension.
+    Only relative magnitudes matter (normalized by sum of exponents).
+
+    Higher exponent = more sensitive to that dimension.
+    Typical range: 0.05 (nearly ignores) to 0.95 (dominant factor).
     """
-    base_multiple: float = 10.0  # Base ARR multiple
-    w_growth: float = 0.20       # Weight on revenue growth rate
-    w_retention: float = 0.15    # Weight on net revenue retention
-    w_margin: float = 0.10       # Weight on gross margin
-    w_scale: float = 0.10        # Weight on ARR scale (log)
-    w_quality: float = 0.10      # Weight on product quality
-    w_market: float = 0.08       # Weight on market size/TAM
-    w_efficiency: float = 0.10   # Weight on capital efficiency
-    w_momentum: float = 0.07    # Weight on growth momentum
-    w_runway: float = 0.05       # Weight on cash runway
-    w_diversity: float = 0.05    # Weight on customer diversity
+    e_growth: float = 0.50       # Exponent on revenue growth rate
+    e_retention: float = 0.40    # Exponent on net revenue retention
+    e_margin: float = 0.25       # Exponent on gross margin
+    e_scale: float = 0.20        # Exponent on ARR scale (log)
+    e_quality: float = 0.35      # Exponent on product quality
+    e_efficiency: float = 0.25   # Exponent on capital efficiency
+    e_momentum: float = 0.25     # Exponent on growth momentum
+    e_runway: float = 0.15       # Exponent on cash runway
+    e_diversity: float = 0.15    # Exponent on customer diversity
 
 
 @dataclass
@@ -1499,50 +1502,56 @@ PREDEFINED_VCS: list = [
     # - Series A: 10-25% (institutional round)
     # - Growth/Series B+: 8-20% (larger checks, lower dilution)
     # - Late-stage/crossover: 5-15% (mega checks, minimal dilution)
+    #
+    # Valuation weights use exponent-based v4 system:
+    # Higher exponent = more sensitive to that dimension in geometric weighted mean.
+    # Only relative magnitudes matter (normalized by sum of exponents).
+    # --- Angels / Pre-Seed (vc_01 through vc_04) ---
     VCProfile(
         vc_id="vc_01", name="Horizon Ventures",
         equity_pct_min=0.03, equity_pct_max=0.10,
         daily_approach_prob=0.008,
         reply_delay_mean=2.0, reply_delay_std=0.5,
         description="Early-stage micro-VC focused on AI/ML startups",
-        valuation_weights=VCValuationWeights(base_multiple=8.0, w_growth=0.25, w_retention=0.10, w_margin=0.05, w_scale=0.05, w_quality=0.20, w_market=0.10, w_efficiency=0.05, w_momentum=0.10, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.12,  # Micro-VC: early-stage insulated from macro (ACA 2024, AngelList 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.80, e_retention=0.20, e_margin=0.05, e_scale=0.05, e_quality=0.70, e_efficiency=0.05, e_momentum=0.50, e_runway=0.10, e_diversity=0.15),
+        macro_sensitivity=0.12,
     ),
     VCProfile(
-        vc_id="vc_02", name="Catalyst Capital",
+        vc_id="vc_02", name="Keystone Capital",
+        equity_pct_min=0.02, equity_pct_max=0.08,
+        daily_approach_prob=0.009,
+        reply_delay_mean=1.5, reply_delay_std=0.5,
+        description="Angel syndicate backing early AI products",
+        valuation_weights=VCValuationWeights(e_growth=0.80, e_retention=0.15, e_margin=0.05, e_scale=0.05, e_quality=0.75, e_efficiency=0.05, e_momentum=0.55, e_runway=0.10, e_diversity=0.15),
+        macro_sensitivity=0.08,
+    ),
+    VCProfile(
+        vc_id="vc_03", name="Lumen Angel Fund",
+        equity_pct_min=0.02, equity_pct_max=0.07,
+        daily_approach_prob=0.010,
+        reply_delay_mean=1.0, reply_delay_std=0.5,
+        description="Solo angel investor focused on pre-revenue AI products",
+        valuation_weights=VCValuationWeights(e_growth=0.90, e_retention=0.10, e_margin=0.05, e_scale=0.05, e_quality=0.75, e_efficiency=0.05, e_momentum=0.60, e_runway=0.05, e_diversity=0.10),
+        macro_sensitivity=0.05,
+    ),
+    VCProfile(
+        vc_id="vc_04", name="Launchpad Accelerator",
+        equity_pct_min=0.02, equity_pct_max=0.07,
+        daily_approach_prob=0.012,
+        reply_delay_mean=1.0, reply_delay_std=0.3,
+        description="Accelerator program making fast pre-seed bets on AI founders",
+        valuation_weights=VCValuationWeights(e_growth=0.95, e_retention=0.10, e_margin=0.05, e_scale=0.05, e_quality=0.60, e_efficiency=0.05, e_momentum=0.70, e_runway=0.05, e_diversity=0.10),
+        macro_sensitivity=0.07,
+    ),
+    # --- Seed (vc_05 through vc_08) ---
+    VCProfile(
+        vc_id="vc_05", name="Catalyst Capital",
         equity_pct_min=0.05, equity_pct_max=0.15,
         daily_approach_prob=0.006,
         reply_delay_mean=3.0, reply_delay_std=1.0,
         description="Seed-stage fund investing in developer tools",
-        valuation_weights=VCValuationWeights(base_multiple=12.0, w_growth=0.22, w_retention=0.12, w_margin=0.08, w_scale=0.08, w_quality=0.12, w_market=0.10, w_efficiency=0.10, w_momentum=0.08, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.18,  # Seed fund: moderate insulation, some LP pressure (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_03", name="Apex Partners",
-        equity_pct_min=0.08, equity_pct_max=0.20,
-        daily_approach_prob=0.005,
-        reply_delay_mean=4.0, reply_delay_std=1.5,
-        description="Seed to Series A investor in B2B SaaS",
-        valuation_weights=VCValuationWeights(base_multiple=12.0, w_growth=0.22, w_retention=0.12, w_margin=0.08, w_scale=0.08, w_quality=0.12, w_market=0.10, w_efficiency=0.10, w_momentum=0.08, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.22,  # Seed-to-A: bridges early/institutional — moderate sensitivity (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_04", name="Meridian Fund",
-        equity_pct_min=0.10, equity_pct_max=0.25,
-        daily_approach_prob=0.004,
-        reply_delay_mean=5.0, reply_delay_std=2.0,
-        description="Series A fund targeting high-growth AI companies",
-        valuation_weights=VCValuationWeights(base_multiple=15.0, w_growth=0.18, w_retention=0.18, w_margin=0.12, w_scale=0.10, w_quality=0.08, w_market=0.08, w_efficiency=0.12, w_momentum=0.06, w_runway=0.04, w_diversity=0.04),
-        macro_sensitivity=0.35,  # Series A institutional: LP-driven, benchmark-conscious (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_05", name="Summit Equity",
-        equity_pct_min=0.08, equity_pct_max=0.20,
-        daily_approach_prob=0.003,
-        reply_delay_mean=7.0, reply_delay_std=2.0,
-        description="Growth-stage investor in enterprise AI platforms",
-        valuation_weights=VCValuationWeights(base_multiple=20.0, w_growth=0.15, w_retention=0.20, w_margin=0.15, w_scale=0.15, w_quality=0.05, w_market=0.05, w_efficiency=0.10, w_momentum=0.05, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.45,  # Growth-stage: high sensitivity, closer to public comps (PitchBook 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.65, e_retention=0.40, e_margin=0.10, e_scale=0.10, e_quality=0.50, e_efficiency=0.20, e_momentum=0.35, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.18,
     ),
     VCProfile(
         vc_id="vc_06", name="Forge Ventures",
@@ -1550,8 +1559,8 @@ PREDEFINED_VCS: list = [
         daily_approach_prob=0.007,
         reply_delay_mean=2.0, reply_delay_std=1.0,
         description="Pre-seed/seed fund focused on technical founders",
-        valuation_weights=VCValuationWeights(base_multiple=8.0, w_growth=0.25, w_retention=0.10, w_margin=0.05, w_scale=0.05, w_quality=0.20, w_market=0.10, w_efficiency=0.05, w_momentum=0.10, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.10,  # Pre-seed: most insulated, thesis-driven conviction (AngelList 2024, ACA 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.75, e_retention=0.25, e_margin=0.10, e_scale=0.10, e_quality=0.65, e_efficiency=0.10, e_momentum=0.45, e_runway=0.10, e_diversity=0.10),
+        macro_sensitivity=0.10,
     ),
     VCProfile(
         vc_id="vc_07", name="Beacon Capital",
@@ -1559,263 +1568,214 @@ PREDEFINED_VCS: list = [
         daily_approach_prob=0.004,
         reply_delay_mean=4.0, reply_delay_std=1.5,
         description="Seed fund specializing in API-first businesses",
-        valuation_weights=VCValuationWeights(base_multiple=12.0, w_growth=0.22, w_retention=0.12, w_margin=0.08, w_scale=0.08, w_quality=0.12, w_market=0.10, w_efficiency=0.10, w_momentum=0.08, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.20,  # Seed: moderate, infrastructure focus adds stability (PitchBook 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.65, e_retention=0.40, e_margin=0.10, e_scale=0.10, e_quality=0.50, e_efficiency=0.20, e_momentum=0.35, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.20,
     ),
     VCProfile(
-        vc_id="vc_08", name="Vanguard Growth",
-        equity_pct_min=0.10, equity_pct_max=0.22,
-        daily_approach_prob=0.002,
-        reply_delay_mean=7.0, reply_delay_std=3.0,
-        description="Series A-B fund for market-leading SaaS companies",
-        valuation_weights=VCValuationWeights(base_multiple=20.0, w_growth=0.15, w_retention=0.20, w_margin=0.15, w_scale=0.15, w_quality=0.05, w_market=0.05, w_efficiency=0.10, w_momentum=0.05, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.48,  # Series A-B growth: highly procyclical, benchmarked to public SaaS (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_09", name="Pinnacle Investments",
-        equity_pct_min=0.05, equity_pct_max=0.15,
-        daily_approach_prob=0.001,
-        reply_delay_mean=10.0, reply_delay_std=3.0,
-        description="Late-stage growth equity for category leaders",
-        valuation_weights=VCValuationWeights(base_multiple=25.0, w_growth=0.10, w_retention=0.20, w_margin=0.20, w_scale=0.20, w_quality=0.05, w_market=0.03, w_efficiency=0.10, w_momentum=0.02, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.55,  # Late-stage: "first to be impacted by market fluctuations" (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_10", name="Atlas Ventures",
-        equity_pct_min=0.05, equity_pct_max=0.15,
-        daily_approach_prob=0.006,
-        reply_delay_mean=3.0, reply_delay_std=1.0,
-        description="Multi-stage fund with focus on infrastructure software",
-        valuation_weights=VCValuationWeights(base_multiple=12.0, w_growth=0.22, w_retention=0.12, w_margin=0.08, w_scale=0.08, w_quality=0.12, w_market=0.10, w_efficiency=0.10, w_momentum=0.08, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.25,  # Multi-stage: blended across stages, infra focus adds resilience (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_11", name="Nexus Partners",
-        equity_pct_min=0.10, equity_pct_max=0.25,
-        daily_approach_prob=0.004,
-        reply_delay_mean=5.0, reply_delay_std=2.0,
-        description="Series A specialist in vertical SaaS",
-        valuation_weights=VCValuationWeights(base_multiple=15.0, w_growth=0.18, w_retention=0.18, w_margin=0.12, w_scale=0.10, w_quality=0.08, w_market=0.08, w_efficiency=0.12, w_momentum=0.06, w_runway=0.04, w_diversity=0.04),
-        macro_sensitivity=0.32,  # Series A vertical SaaS: institutional LP pressure, niche provides some buffer (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_12", name="Keystone Capital",
-        equity_pct_min=0.02, equity_pct_max=0.08,
-        daily_approach_prob=0.009,
-        reply_delay_mean=1.5, reply_delay_std=0.5,
-        description="Angel syndicate backing early AI products",
-        valuation_weights=VCValuationWeights(base_multiple=8.0, w_growth=0.25, w_retention=0.10, w_margin=0.05, w_scale=0.05, w_quality=0.20, w_market=0.10, w_efficiency=0.05, w_momentum=0.10, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.08,  # Angel syndicate: personal conviction, least exit-dependent (ACA 2024)
-    ),
-    VCProfile(
-        vc_id="vc_13", name="Crest Fund",
-        equity_pct_min=0.10, equity_pct_max=0.22,
-        daily_approach_prob=0.003,
-        reply_delay_mean=6.0, reply_delay_std=2.0,
-        description="Growth fund focused on AI infrastructure",
-        valuation_weights=VCValuationWeights(base_multiple=15.0, w_growth=0.18, w_retention=0.18, w_margin=0.12, w_scale=0.10, w_quality=0.08, w_market=0.08, w_efficiency=0.12, w_momentum=0.06, w_runway=0.04, w_diversity=0.04),
-        macro_sensitivity=0.40,  # Growth AI infra: institutional, but infra is stickier than app-layer (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_14", name="Iron Bridge Capital",
-        equity_pct_min=0.08, equity_pct_max=0.18,
-        daily_approach_prob=0.002,
-        reply_delay_mean=8.0, reply_delay_std=3.0,
-        description="Series B investor in enterprise platforms",
-        valuation_weights=VCValuationWeights(base_multiple=20.0, w_growth=0.15, w_retention=0.20, w_margin=0.15, w_scale=0.15, w_quality=0.05, w_market=0.05, w_efficiency=0.10, w_momentum=0.05, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.50,  # Series B enterprise: high sensitivity, closer to public comps (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_15", name="Frontier Partners",
+        vc_id="vc_08", name="Frontier Partners",
         equity_pct_min=0.06, equity_pct_max=0.18,
         daily_approach_prob=0.005,
         reply_delay_mean=4.0, reply_delay_std=1.5,
         description="Seed-stage generalist with AI thesis",
-        valuation_weights=VCValuationWeights(base_multiple=12.0, w_growth=0.22, w_retention=0.12, w_margin=0.08, w_scale=0.08, w_quality=0.12, w_market=0.10, w_efficiency=0.10, w_momentum=0.08, w_runway=0.05, w_diversity=0.05),
-        macro_sensitivity=0.18,  # Seed generalist: thesis-driven, moderate insulation (AngelList 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.60, e_retention=0.35, e_margin=0.15, e_scale=0.10, e_quality=0.45, e_efficiency=0.25, e_momentum=0.30, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.18,
     ),
-    # --- vc_16 through vc_30: Expanded VC pool ---
+    # --- Series A (vc_09 through vc_12) ---
     VCProfile(
-        vc_id="vc_16", name="Lumen Angel Fund",
-        equity_pct_min=0.02, equity_pct_max=0.07,
-        daily_approach_prob=0.010,
-        reply_delay_mean=1.0, reply_delay_std=0.5,
-        description="Solo angel investor focused on pre-revenue AI products",
-        valuation_weights=VCValuationWeights(
-            base_multiple=6.0, w_growth=0.30, w_retention=0.05, w_margin=0.02,
-            w_scale=0.03, w_quality=0.25, w_market=0.10, w_efficiency=0.03,
-            w_momentum=0.15, w_runway=0.02, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.05,  # Solo angel: personal capital, conviction-driven, minimal macro link (ACA 2024)
-    ),
-    VCProfile(
-        vc_id="vc_17", name="Evergreen Impact Capital",
-        equity_pct_min=0.05, equity_pct_max=0.15,
-        daily_approach_prob=0.005,
-        reply_delay_mean=5.0, reply_delay_std=2.0,
-        description="Impact-focused VC investing in AI for social good",
-        valuation_weights=VCValuationWeights(
-            base_multiple=8.0, w_growth=0.15, w_retention=0.15, w_margin=0.08,
-            w_scale=0.08, w_quality=0.15, w_market=0.15, w_efficiency=0.08,
-            w_momentum=0.06, w_runway=0.05, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.15,  # Impact VC: mission-driven, patient LPs, lower macro dependence (Kauffman Fellows 2020)
-    ),
-    VCProfile(
-        vc_id="vc_18", name="TitanCorp Ventures",
-        equity_pct_min=0.08, equity_pct_max=0.20,
-        daily_approach_prob=0.002,
-        reply_delay_mean=12.0, reply_delay_std=4.0,
-        description="Corporate VC arm of a major tech company seeking strategic AI investments",
-        valuation_weights=VCValuationWeights(
-            base_multiple=18.0, w_growth=0.15, w_retention=0.15, w_margin=0.10,
-            w_scale=0.15, w_quality=0.10, w_market=0.10, w_efficiency=0.08,
-            w_momentum=0.05, w_runway=0.07, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.10,  # CVC: strategic not financial, "more patient than IVC" (Tandfonline 2025)
-    ),
-    VCProfile(
-        vc_id="vc_19", name="Axion Deep Tech Fund",
-        equity_pct_min=0.06, equity_pct_max=0.18,
+        vc_id="vc_09", name="Meridian Fund",
+        equity_pct_min=0.10, equity_pct_max=0.25,
         daily_approach_prob=0.004,
-        reply_delay_mean=6.0, reply_delay_std=2.0,
-        description="Deep tech VC specializing in AI/ML infrastructure and research-driven companies",
-        valuation_weights=VCValuationWeights(
-            base_multiple=14.0, w_growth=0.15, w_retention=0.10, w_margin=0.05,
-            w_scale=0.10, w_quality=0.25, w_market=0.08, w_efficiency=0.07,
-            w_momentum=0.10, w_runway=0.05, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.22,  # Deep tech: longer horizon than app-layer, moderate insulation (PitchBook 2024)
+        reply_delay_mean=5.0, reply_delay_std=2.0,
+        description="Series A fund targeting high-growth AI companies",
+        valuation_weights=VCValuationWeights(e_growth=0.55, e_retention=0.55, e_margin=0.25, e_scale=0.15, e_quality=0.35, e_efficiency=0.40, e_momentum=0.25, e_runway=0.15, e_diversity=0.10),
+        macro_sensitivity=0.35,
     ),
     VCProfile(
-        vc_id="vc_20", name="Clearpath Revenue Partners",
-        equity_pct_min=0.05, equity_pct_max=0.15,
+        vc_id="vc_10", name="Apex Partners",
+        equity_pct_min=0.08, equity_pct_max=0.20,
         daily_approach_prob=0.005,
+        reply_delay_mean=4.0, reply_delay_std=1.5,
+        description="Seed to Series A investor in B2B SaaS",
+        valuation_weights=VCValuationWeights(e_growth=0.55, e_retention=0.50, e_margin=0.20, e_scale=0.15, e_quality=0.40, e_efficiency=0.40, e_momentum=0.30, e_runway=0.10, e_diversity=0.10),
+        macro_sensitivity=0.22,
+    ),
+    VCProfile(
+        vc_id="vc_11", name="Atlas Ventures",
+        equity_pct_min=0.05, equity_pct_max=0.15,
+        daily_approach_prob=0.006,
         reply_delay_mean=3.0, reply_delay_std=1.0,
-        description="Revenue-based financing fund for profitable AI SaaS companies",
-        valuation_weights=VCValuationWeights(
-            base_multiple=8.0, w_growth=0.10, w_retention=0.20, w_margin=0.25,
-            w_scale=0.10, w_quality=0.05, w_market=0.05, w_efficiency=0.15,
-            w_momentum=0.03, w_runway=0.05, w_diversity=0.02,
-        ),
-        macro_sensitivity=0.30,  # Revenue-based: directly tied to borrower revenue which cycles (Supervest 2025)
+        description="Multi-stage fund with focus on infrastructure software",
+        valuation_weights=VCValuationWeights(e_growth=0.55, e_retention=0.45, e_margin=0.20, e_scale=0.20, e_quality=0.40, e_efficiency=0.30, e_momentum=0.30, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.25,
     ),
     VCProfile(
-        vc_id="vc_21", name="Nordic Horizon Fund",
+        vc_id="vc_12", name="Nexus Partners",
+        equity_pct_min=0.10, equity_pct_max=0.25,
+        daily_approach_prob=0.004,
+        reply_delay_mean=5.0, reply_delay_std=2.0,
+        description="Series A specialist in vertical SaaS",
+        valuation_weights=VCValuationWeights(e_growth=0.45, e_retention=0.60, e_margin=0.30, e_scale=0.20, e_quality=0.30, e_efficiency=0.40, e_momentum=0.20, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.32,
+    ),
+    # --- Series B (vc_13 through vc_16) ---
+    VCProfile(
+        vc_id="vc_13", name="Summit Equity",
         equity_pct_min=0.08, equity_pct_max=0.20,
         daily_approach_prob=0.003,
+        reply_delay_mean=7.0, reply_delay_std=2.0,
+        description="Growth-stage investor in enterprise AI platforms",
+        valuation_weights=VCValuationWeights(e_growth=0.40, e_retention=0.65, e_margin=0.50, e_scale=0.40, e_quality=0.15, e_efficiency=0.45, e_momentum=0.15, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.45,
+    ),
+    VCProfile(
+        vc_id="vc_14", name="Vanguard Growth",
+        equity_pct_min=0.10, equity_pct_max=0.22,
+        daily_approach_prob=0.002,
+        reply_delay_mean=7.0, reply_delay_std=3.0,
+        description="Series A-B fund for market-leading SaaS companies",
+        valuation_weights=VCValuationWeights(e_growth=0.40, e_retention=0.65, e_margin=0.50, e_scale=0.40, e_quality=0.15, e_efficiency=0.45, e_momentum=0.15, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.48,
+    ),
+    VCProfile(
+        vc_id="vc_15", name="Crest Fund",
+        equity_pct_min=0.10, equity_pct_max=0.22,
+        daily_approach_prob=0.003,
+        reply_delay_mean=6.0, reply_delay_std=2.0,
+        description="Growth fund focused on AI infrastructure",
+        valuation_weights=VCValuationWeights(e_growth=0.50, e_retention=0.55, e_margin=0.30, e_scale=0.30, e_quality=0.30, e_efficiency=0.40, e_momentum=0.25, e_runway=0.10, e_diversity=0.10),
+        macro_sensitivity=0.40,
+    ),
+    VCProfile(
+        vc_id="vc_16", name="Iron Bridge Capital",
+        equity_pct_min=0.08, equity_pct_max=0.18,
+        daily_approach_prob=0.002,
         reply_delay_mean=8.0, reply_delay_std=3.0,
-        description="European growth fund investing in global AI platforms",
-        valuation_weights=VCValuationWeights(
-            base_multiple=12.0, w_growth=0.20, w_retention=0.15, w_margin=0.12,
-            w_scale=0.10, w_quality=0.08, w_market=0.12, w_efficiency=0.08,
-            w_momentum=0.05, w_runway=0.05, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.42,  # European growth: cross-border adds FX/macro risk on top of stage risk (PitchBook 2024)
+        description="Series B investor in enterprise platforms",
+        valuation_weights=VCValuationWeights(e_growth=0.35, e_retention=0.65, e_margin=0.55, e_scale=0.40, e_quality=0.15, e_efficiency=0.45, e_momentum=0.15, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.50,
+    ),
+    # --- Late-Stage (vc_17 through vc_19) ---
+    VCProfile(
+        vc_id="vc_17", name="Pinnacle Investments",
+        equity_pct_min=0.05, equity_pct_max=0.15,
+        daily_approach_prob=0.001,
+        reply_delay_mean=10.0, reply_delay_std=3.0,
+        description="Late-stage growth equity for category leaders",
+        valuation_weights=VCValuationWeights(e_growth=0.25, e_retention=0.70, e_margin=0.70, e_scale=0.55, e_quality=0.10, e_efficiency=0.50, e_momentum=0.10, e_runway=0.20, e_diversity=0.15),
+        macro_sensitivity=0.55,
     ),
     VCProfile(
-        vc_id="vc_22", name="MedTech AI Ventures",
-        equity_pct_min=0.08, equity_pct_max=0.20,
-        daily_approach_prob=0.003,
-        reply_delay_mean=7.0, reply_delay_std=2.5,
-        description="Sector-focused fund investing in AI applications for healthcare",
-        valuation_weights=VCValuationWeights(
-            base_multiple=16.0, w_growth=0.15, w_retention=0.18, w_margin=0.10,
-            w_scale=0.08, w_quality=0.15, w_market=0.10, w_efficiency=0.08,
-            w_momentum=0.06, w_runway=0.05, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.15,  # Healthcare AI: defensive sector, non-discretionary demand buffers macro (PitchBook 2024)
-    ),
-    VCProfile(
-        vc_id="vc_23", name="Compact Capital",
-        equity_pct_min=0.03, equity_pct_max=0.10,
-        daily_approach_prob=0.007,
-        reply_delay_mean=2.0, reply_delay_std=0.5,
-        description="Micro-PE firm investing in capital-efficient AI businesses",
-        valuation_weights=VCValuationWeights(
-            base_multiple=5.0, w_growth=0.08, w_retention=0.20, w_margin=0.30,
-            w_scale=0.05, w_quality=0.05, w_market=0.02, w_efficiency=0.20,
-            w_momentum=0.03, w_runway=0.05, w_diversity=0.02,
-        ),
-        macro_sensitivity=0.28,  # Micro-PE: profit-focused, margins buffer downturns but revenue still cycles (Supervest 2025)
-    ),
-    VCProfile(
-        vc_id="vc_24", name="Citadel Crossover Fund",
+        vc_id="vc_18", name="Citadel Crossover",
         equity_pct_min=0.05, equity_pct_max=0.12,
         daily_approach_prob=0.001,
         reply_delay_mean=14.0, reply_delay_std=4.0,
         description="Crossover fund investing in pre-IPO AI companies with proven unit economics",
-        valuation_weights=VCValuationWeights(
-            base_multiple=30.0, w_growth=0.10, w_retention=0.20, w_margin=0.25,
-            w_scale=0.20, w_quality=0.03, w_market=0.02, w_efficiency=0.10,
-            w_momentum=0.02, w_runway=0.05, w_diversity=0.03,
-        ),
-        macro_sensitivity=0.65,  # Crossover: public-market proxy, "first to retreat in downturns" (PitchBook 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.25, e_retention=0.70, e_margin=0.70, e_scale=0.55, e_quality=0.10, e_efficiency=0.50, e_momentum=0.10, e_runway=0.20, e_diversity=0.15),
+        macro_sensitivity=0.65,
     ),
     VCProfile(
-        vc_id="vc_25", name="Ivy Endowment Ventures",
-        equity_pct_min=0.05, equity_pct_max=0.15,
-        daily_approach_prob=0.001,
-        reply_delay_mean=15.0, reply_delay_std=5.0,
-        description="University endowment fund with long-term AI thesis",
-        valuation_weights=VCValuationWeights(
-            base_multiple=22.0, w_growth=0.12, w_retention=0.18, w_margin=0.15,
-            w_scale=0.15, w_quality=0.10, w_market=0.05, w_efficiency=0.10,
-            w_momentum=0.05, w_runway=0.05, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.08,  # Endowment: countercyclical, "increase risky allocations after crisis" (Cambridge/Tandfonline)
-    ),
-    VCProfile(
-        vc_id="vc_26", name="Launchpad Accelerator Fund",
-        equity_pct_min=0.02, equity_pct_max=0.07,
-        daily_approach_prob=0.012,
-        reply_delay_mean=1.0, reply_delay_std=0.3,
-        description="Accelerator program making fast pre-seed bets on AI founders",
-        valuation_weights=VCValuationWeights(
-            base_multiple=5.0, w_growth=0.30, w_retention=0.05, w_margin=0.02,
-            w_scale=0.02, w_quality=0.20, w_market=0.15, w_efficiency=0.02,
-            w_momentum=0.18, w_runway=0.01, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.07,  # Accelerator: fixed valuation caps, cohort-driven, macro-insulated (AngelList 2024)
-    ),
-    VCProfile(
-        vc_id="vc_27", name="Sterling Family Office",
-        equity_pct_min=0.05, equity_pct_max=0.15,
-        daily_approach_prob=0.002,
-        reply_delay_mean=10.0, reply_delay_std=3.0,
-        description="Single-family office with patient capital and AI sector interest",
-        valuation_weights=VCValuationWeights(
-            base_multiple=10.0, w_growth=0.15, w_retention=0.15, w_margin=0.15,
-            w_scale=0.10, w_quality=0.10, w_market=0.05, w_efficiency=0.10,
-            w_momentum=0.05, w_runway=0.10, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.12,  # Family office: "patient capital, less reactive to market pressures" (Kauffman Fellows 2020)
-    ),
-    VCProfile(
-        vc_id="vc_28", name="Sovereign Innovation Fund",
-        equity_pct_min=0.06, equity_pct_max=0.18,
-        daily_approach_prob=0.002,
-        reply_delay_mean=20.0, reply_delay_std=5.0,
-        description="Government-backed innovation fund supporting strategic AI capabilities",
-        valuation_weights=VCValuationWeights(
-            base_multiple=10.0, w_growth=0.12, w_retention=0.12, w_margin=0.08,
-            w_scale=0.10, w_quality=0.15, w_market=0.15, w_efficiency=0.08,
-            w_momentum=0.05, w_runway=0.10, w_diversity=0.05,
-        ),
-        macro_sensitivity=-0.05,  # SWF: countercyclical, "increase acquisitions in crisis-hit" (ScienceDirect 2016, IMF WP/16/038)
-    ),
-    VCProfile(
-        vc_id="vc_29", name="CloudScale Growth",
+        vc_id="vc_19", name="CloudScale Growth",
         equity_pct_min=0.08, equity_pct_max=0.20,
         daily_approach_prob=0.003,
         reply_delay_mean=5.0, reply_delay_std=2.0,
         description="SaaS-focused growth fund with deep operational expertise",
-        valuation_weights=VCValuationWeights(
-            base_multiple=18.0, w_growth=0.18, w_retention=0.22, w_margin=0.12,
-            w_scale=0.12, w_quality=0.05, w_market=0.05, w_efficiency=0.12,
-            w_momentum=0.06, w_runway=0.04, w_diversity=0.04,
-        ),
-        macro_sensitivity=0.45,  # SaaS growth: benchmarked to public SaaS multiples, highly procyclical (PitchBook 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.45, e_retention=0.70, e_margin=0.40, e_scale=0.35, e_quality=0.15, e_efficiency=0.45, e_momentum=0.20, e_runway=0.10, e_diversity=0.10),
+        macro_sensitivity=0.45,
+    ),
+    # --- PE (vc_20 through vc_21) ---
+    VCProfile(
+        vc_id="vc_20", name="Clearpath Revenue",
+        equity_pct_min=0.05, equity_pct_max=0.15,
+        daily_approach_prob=0.005,
+        reply_delay_mean=3.0, reply_delay_std=1.0,
+        description="Revenue-based financing fund for profitable AI SaaS companies",
+        valuation_weights=VCValuationWeights(e_growth=0.20, e_retention=0.55, e_margin=0.80, e_scale=0.20, e_quality=0.10, e_efficiency=0.75, e_momentum=0.10, e_runway=0.25, e_diversity=0.10),
+        macro_sensitivity=0.30,
+    ),
+    VCProfile(
+        vc_id="vc_21", name="Compact Capital",
+        equity_pct_min=0.03, equity_pct_max=0.10,
+        daily_approach_prob=0.007,
+        reply_delay_mean=2.0, reply_delay_std=0.5,
+        description="Micro-PE firm investing in capital-efficient AI businesses",
+        valuation_weights=VCValuationWeights(e_growth=0.15, e_retention=0.55, e_margin=0.90, e_scale=0.10, e_quality=0.10, e_efficiency=0.80, e_momentum=0.10, e_runway=0.25, e_diversity=0.10),
+        macro_sensitivity=0.28,
+    ),
+    # --- CVC (vc_22 through vc_23) ---
+    VCProfile(
+        vc_id="vc_22", name="TitanCorp Ventures",
+        equity_pct_min=0.08, equity_pct_max=0.20,
+        daily_approach_prob=0.002,
+        reply_delay_mean=12.0, reply_delay_std=4.0,
+        description="Corporate VC arm of a major tech company seeking strategic AI investments",
+        valuation_weights=VCValuationWeights(e_growth=0.40, e_retention=0.45, e_margin=0.30, e_scale=0.35, e_quality=0.40, e_efficiency=0.25, e_momentum=0.20, e_runway=0.20, e_diversity=0.20),
+        macro_sensitivity=0.10,
+    ),
+    VCProfile(
+        vc_id="vc_23", name="MedTech AI Ventures",
+        equity_pct_min=0.08, equity_pct_max=0.20,
+        daily_approach_prob=0.003,
+        reply_delay_mean=7.0, reply_delay_std=2.5,
+        description="Sector-focused fund investing in AI applications for healthcare",
+        valuation_weights=VCValuationWeights(e_growth=0.40, e_retention=0.50, e_margin=0.30, e_scale=0.20, e_quality=0.55, e_efficiency=0.30, e_momentum=0.25, e_runway=0.15, e_diversity=0.15),
+        macro_sensitivity=0.15,
+    ),
+    # --- Deep Tech (vc_24 through vc_25) ---
+    VCProfile(
+        vc_id="vc_24", name="Axion Deep Tech",
+        equity_pct_min=0.06, equity_pct_max=0.18,
+        daily_approach_prob=0.004,
+        reply_delay_mean=6.0, reply_delay_std=2.0,
+        description="Deep tech VC specializing in AI/ML infrastructure and research-driven companies",
+        valuation_weights=VCValuationWeights(e_growth=0.45, e_retention=0.30, e_margin=0.15, e_scale=0.20, e_quality=0.80, e_efficiency=0.20, e_momentum=0.35, e_runway=0.20, e_diversity=0.15),
+        macro_sensitivity=0.22,
+    ),
+    VCProfile(
+        vc_id="vc_25", name="Evergreen Impact",
+        equity_pct_min=0.05, equity_pct_max=0.15,
+        daily_approach_prob=0.005,
+        reply_delay_mean=5.0, reply_delay_std=2.0,
+        description="Impact-focused VC investing in AI for social good",
+        valuation_weights=VCValuationWeights(e_growth=0.40, e_retention=0.45, e_margin=0.20, e_scale=0.20, e_quality=0.50, e_efficiency=0.30, e_momentum=0.25, e_runway=0.15, e_diversity=0.35),
+        macro_sensitivity=0.15,
+    ),
+    # --- Family Office / Endowment / SWF (vc_26 through vc_28) ---
+    VCProfile(
+        vc_id="vc_26", name="Sterling Family Office",
+        equity_pct_min=0.05, equity_pct_max=0.15,
+        daily_approach_prob=0.002,
+        reply_delay_mean=10.0, reply_delay_std=3.0,
+        description="Single-family office with patient capital and AI sector interest",
+        valuation_weights=VCValuationWeights(e_growth=0.30, e_retention=0.45, e_margin=0.40, e_scale=0.25, e_quality=0.35, e_efficiency=0.35, e_momentum=0.10, e_runway=0.35, e_diversity=0.15),
+        macro_sensitivity=0.12,
+    ),
+    VCProfile(
+        vc_id="vc_27", name="Ivy Endowment",
+        equity_pct_min=0.05, equity_pct_max=0.15,
+        daily_approach_prob=0.001,
+        reply_delay_mean=15.0, reply_delay_std=5.0,
+        description="University endowment fund with long-term AI thesis",
+        valuation_weights=VCValuationWeights(e_growth=0.30, e_retention=0.50, e_margin=0.40, e_scale=0.35, e_quality=0.30, e_efficiency=0.35, e_momentum=0.10, e_runway=0.20, e_diversity=0.20),
+        macro_sensitivity=0.08,
+    ),
+    VCProfile(
+        vc_id="vc_28", name="Sovereign Innovation",
+        equity_pct_min=0.06, equity_pct_max=0.18,
+        daily_approach_prob=0.002,
+        reply_delay_mean=20.0, reply_delay_std=5.0,
+        description="Government-backed innovation fund supporting strategic AI capabilities",
+        valuation_weights=VCValuationWeights(e_growth=0.30, e_retention=0.40, e_margin=0.25, e_scale=0.30, e_quality=0.45, e_efficiency=0.25, e_momentum=0.15, e_runway=0.30, e_diversity=0.35),
+        macro_sensitivity=-0.05,
+    ),
+    # --- European / Emerging Markets (vc_29 through vc_30) ---
+    VCProfile(
+        vc_id="vc_29", name="Nordic Horizon",
+        equity_pct_min=0.08, equity_pct_max=0.20,
+        daily_approach_prob=0.003,
+        reply_delay_mean=8.0, reply_delay_std=3.0,
+        description="European growth fund investing in global AI platforms",
+        valuation_weights=VCValuationWeights(e_growth=0.55, e_retention=0.45, e_margin=0.25, e_scale=0.20, e_quality=0.25, e_efficiency=0.30, e_momentum=0.25, e_runway=0.15, e_diversity=0.25),
+        macro_sensitivity=0.42,
     ),
     VCProfile(
         vc_id="vc_30", name="Pangea Ventures",
@@ -1823,12 +1783,8 @@ PREDEFINED_VCS: list = [
         daily_approach_prob=0.004,
         reply_delay_mean=6.0, reply_delay_std=2.0,
         description="Emerging markets VC investing in AI companies with global expansion potential",
-        valuation_weights=VCValuationWeights(
-            base_multiple=10.0, w_growth=0.22, w_retention=0.10, w_margin=0.08,
-            w_scale=0.08, w_quality=0.10, w_market=0.18, w_efficiency=0.06,
-            w_momentum=0.08, w_runway=0.05, w_diversity=0.05,
-        ),
-        macro_sensitivity=0.35,  # Emerging markets: growth-oriented, cross-border adds macro exposure (PitchBook 2024)
+        valuation_weights=VCValuationWeights(e_growth=0.60, e_retention=0.30, e_margin=0.20, e_scale=0.20, e_quality=0.30, e_efficiency=0.20, e_momentum=0.35, e_runway=0.15, e_diversity=0.35),
+        macro_sensitivity=0.35,
     ),
 ]
 

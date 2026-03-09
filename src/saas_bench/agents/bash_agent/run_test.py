@@ -191,7 +191,7 @@ class BashAgentRunner:
         elif provider == "xai":
             self.base_url = "https://api.x.ai/v1"
         elif provider == "modal":
-            self.base_url = "https://corporate--glm5-serving-server.us-east.modal.direct/v1"
+            self.base_url = "https://princeton-tony--glm5-serving-server.us-east.modal.direct/v1"
         else:
             self.base_url = None
 
@@ -214,8 +214,7 @@ class BashAgentRunner:
             client_kwargs = {"api_key": self.api_key}
             if self.base_url:
                 client_kwargs["base_url"] = self.base_url
-            # Infinite timeout — large prompts can take minutes to prefill on overloaded endpoints.
-            client_kwargs["timeout"] = httpx.Timeout(None)
+            client_kwargs["timeout"] = httpx.Timeout(600.0)  # 10min max per LLM call; retry on timeout
             self.client = OpenAI(**client_kwargs)
 
         # Initialize RNG
@@ -456,7 +455,8 @@ class BashAgentRunner:
     def setup(self):
         """Initialize the simulation environment."""
         from .agent import BashAgent
-        from .tools import get_bash_agent_tool_descriptions, BashAgentToolExecutor
+        from .tools import get_bash_agent_tool_descriptions, BashAgentToolExecutor, NextDayTimeoutError
+        self._NextDayTimeoutError = NextDayTimeoutError
 
         scenario_pack = SCENARIO_PACKS.get(self.scenario, ScenarioPack(
             name='Default', description='Balanced scenario'
@@ -567,7 +567,11 @@ class BashAgentRunner:
             json.dump(config, f, indent=2)
 
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
-        """Execute a bash_agent tool."""
+        """Execute a bash_agent tool.
+
+        Raises NextDayTimeoutError if novamind-operation next-day times out,
+        which triggers run checkpoint + kill in the run loop.
+        """
         result = self.tool_executor.execute(tool_name, arguments)
 
         # Check if bash output contains a day advancement
@@ -586,12 +590,25 @@ class BashAgentRunner:
             if checkpoint:
                 start_day = checkpoint['day'] + 1
                 self._restore_from_checkpoint(checkpoint)
+
+                # Check for bankruptcy before resuming
+                cash = self.conn.execute("SELECT SUM(amount) FROM ledger").fetchone()[0] or 0
+                if cash < 0:
+                    print(f"\n{'='*60}")
+                    print(f"CANNOT RESUME — COMPANY IS BANKRUPT")
+                    print(f"Run ID: {self.run_id}")
+                    print(f"Checkpoint: Day {checkpoint['day']}")
+                    print(f"Cash balance: ${cash:,.2f}")
+                    print(f"{'='*60}\n")
+                    raise SystemExit(f"Run {self.run_id} is bankrupt (cash=${cash:,.2f}). Cannot resume.")
+
                 if verbose:
                     print(f"\n{'='*60}")
                     print(f"RESUMING Bash Agent Run from Day {start_day}")
                     print(f"Run ID: {self.run_id}")
                     print(f"Model: {self.model}")
                     print(f"Checkpoint: Day {checkpoint['day']}")
+                    print(f"Cash balance: ${cash:,.2f}")
                     print(f"Workspace: {self.workspace_dir}")
                     print(f"{'='*60}\n")
             else:
@@ -681,7 +698,17 @@ class BashAgentRunner:
                         print(f"    [Turn {turns_today}] {tool_name}({tool_args_preview[:100]})")
 
                 _t0 = _time.monotonic()
-                result = self._execute_tool(action.tool, action.arguments or {})
+                try:
+                    result = self._execute_tool(action.tool, action.arguments or {})
+                except self._NextDayTimeoutError as e:
+                    _tool_elapsed = _time.monotonic() - _t0
+                    print(f"\n⚠️  next_day timed out on day {day} ({e})")
+                    print(f"Auto-quitting. Saving checkpoint at day {day - 1}...")
+                    self._save_checkpoint(day - 1)
+                    self.event_logger.save_incremental()
+                    game_ended = True
+                    game_outcome = 'timeout'
+                    break
                 _tool_elapsed = _time.monotonic() - _t0
                 _day_tool_total += _tool_elapsed
                 observation = result if isinstance(result, str) else json.dumps(result)

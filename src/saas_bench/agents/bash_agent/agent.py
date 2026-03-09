@@ -270,7 +270,16 @@ class BashAgent(BaseAgent):
         """Call OpenAI-compatible API and parse the response."""
         import time as _time
         import traceback
+        import signal
         import openai
+
+        LLM_WALL_CLOCK_TIMEOUT = 600  # 10min hard wall-clock limit per LLM call
+
+        class LLMTimeoutError(Exception):
+            pass
+
+        def _llm_timeout_handler(signum, frame):
+            raise LLMTimeoutError(f"LLM call exceeded {LLM_WALL_CLOCK_TIMEOUT}s wall-clock timeout")
 
         while True:
             messages = []
@@ -308,7 +317,14 @@ class BashAgent(BaseAgent):
                 if self.reasoning_effort:
                     api_kwargs['reasoning_effort'] = self.reasoning_effort
 
-                response = self.client.chat.completions.create(**api_kwargs)
+                # Set hard wall-clock timeout via signal.alarm
+                old_handler = signal.signal(signal.SIGALRM, _llm_timeout_handler)
+                signal.alarm(LLM_WALL_CLOCK_TIMEOUT)
+                try:
+                    response = self.client.chat.completions.create(**api_kwargs)
+                finally:
+                    signal.alarm(0)  # Cancel alarm
+                    signal.signal(signal.SIGALRM, old_handler)  # Restore handler
                 self.total_turns += 1
                 self._consecutive_errors = 0
 
@@ -379,7 +395,7 @@ class BashAgent(BaseAgent):
                 status = getattr(e, 'status_code', 0) or 0
                 is_retryable = isinstance(e, openai.APIStatusError) and (status >= 500 or status == 429)
                 if not is_retryable:
-                    is_retryable = isinstance(e, (openai.APIConnectionError, openai.APITimeoutError))
+                    is_retryable = isinstance(e, (openai.APIConnectionError, openai.APITimeoutError, LLMTimeoutError))
                 if not is_retryable:
                     is_retryable = any(code in str(e) for code in ('429', '500', '502', '503', '504', '529'))
                 print(f"OpenAI LLM call error (retryable={is_retryable}, status={status}): {e}")

@@ -665,16 +665,11 @@ def get_threads_needing_reply(conn: sqlite3.Connection, current_day: int) -> Lis
     except Exception:
         # Fallback: direct query (backward compat if temp table not created)
         rows = conn.execute("""
-            SELECT et.thread_id FROM enterprise_turns et
-            INNER JOIN (
-                SELECT thread_id, MAX(message_id) AS max_mid
+            SELECT thread_id FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY message_id DESC) AS rn
                 FROM enterprise_turns
                 WHERE closed = 0 AND _internal_status IS NULL
-                GROUP BY thread_id
-            ) latest ON et.thread_id = latest.thread_id AND et.message_id = latest.max_mid
-            WHERE et.next_reply_day = ?
-              AND et.closed = 0
-              AND et._internal_status IS NULL
+            ) WHERE rn = 1 AND next_reply_day = ?
         """, (current_day,)).fetchall()
 
     return [row['thread_id'] for row in rows]
@@ -700,20 +695,16 @@ def get_threads_awaiting_agent_response(conn: sqlite3.Connection, current_day: i
     except Exception:
         # Fallback: direct query (backward compat if temp table not created)
         rows = conn.execute("""
-            SELECT et.thread_id, et.customer_id, et.thread_type,
-                   et.day as last_message_day,
-                   (? - et.day) as days_waiting
-            FROM enterprise_turns et
-            INNER JOIN (
-                SELECT thread_id, MAX(message_id) AS max_mid
+            SELECT thread_id, customer_id, thread_type,
+                   day as last_message_day,
+                   (? - day) as days_waiting
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY message_id DESC) AS rn
                 FROM enterprise_turns
                 WHERE closed = 0 AND _internal_status IS NULL
-                GROUP BY thread_id
-            ) latest ON et.thread_id = latest.thread_id AND et.message_id = latest.max_mid
-            WHERE et.closed = 0
-              AND et._internal_status IS NULL
-              AND et.sender IN ('customer', 'system')
-              AND (? - et.day) >= ?
+            ) WHERE rn = 1
+              AND sender IN ('customer', 'system')
+              AND (? - day) >= ?
         """, (current_day, current_day, timeout_days)).fetchall()
 
     return [

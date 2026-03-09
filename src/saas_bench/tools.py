@@ -201,13 +201,13 @@ TOOL_DOCS = {
         "impact": {
             "advertising": "Generates new leads. Each channel has a fixed leads-per-$1000 rate per customer group. Use set_ad_channel_spend for channel allocation, set_targeted_ad_spend for per-group targeting.",
             "operations": "CRITICAL: (1) REDUCES OUTAGE PROBABILITY - At $0: ~3% daily outage risk (~1/month). At $500: ~1.1% daily (~3/year). (2) Speeds up issue resolution: mean resolved/day = 1 + 0.01 × spend. WARNING: Without ops spending, frequent outages damage reputation and cause churn!",
-            "development": "Dev spending improves product quality (which is then amplified by model tier). Improvement = 0.001 × ln(1 + spend/1000). delivered_quality = product_quality × tier_multiplier. Higher dev spending = faster quality gains that get amplified by your chosen model tier."
+            "development": "Dev spending improves product quality (amplified by model tier). Global improvement = 0.001 × ln(1 + global_spend/1000) per day (applies to all groups). Targeted per-group improvement = 0.005 × ln(1 + targeted_spend/1000) per day (5× coefficient, applies to that group only, stacks with global). delivered_quality = (base_product_quality + q_shared_bonus + q_group_bonus) × tier_multiplier."
         },
         "example_call": {
             "tool": "set_daily_spend",
             "arguments": {"advertising": 800, "operations": 1200, "development": 600}
         },
-        "internal_notes": "Ops: outage_prob = 0.03 * exp(-0.002 * ops_spend). Issue resolution: mean_resolved/day = 1 + 0.01 * spend. Dev: quality_improvement = 0.001 * ln(1 + spend/1000). Advertising: each channel has fixed leads_per_1000_dollars per group.",
+        "internal_notes": "Ops: outage_prob = 0.03 * exp(-0.002 * ops_spend). Issue resolution: mean_resolved/day = 1 + 0.01 * spend. Dev (global): quality_improvement = 0.001 * ln(1 + spend/1000). Dev (targeted per-group): group_improvement = 0.005 * ln(1 + spend/1000). Advertising: each channel has fixed leads_per_1000_dollars per group.",
         "sample_io": {
             "success": [
                 {"label": "Set all three budgets", "input": {"advertising": 800, "operations": 1200, "development": 600}, "output": "Daily spend updated: advertising=$800, operations=$1200, development=$600"},
@@ -414,7 +414,7 @@ TOOL_DOCS = {
             "_access": "result['targeted_spend']['E1'] → E1's extra dev spend"
         },
         "mechanics": {
-            "quality_bonus": "Per-group quality bonus ACCUMULATES daily: +0.0005 \u00d7 log(1 + spend/500) per day. At $500/day: +0.00035/day cumulative. After 30 days: +0.0105 total. Investment persists if spending stops.",
+            "quality_bonus": "Per-group quality bonus ACCUMULATES daily: +0.005 × log(1 + spend/1000) per day (5× more efficient than global dev spend). At $5000/day: +0.00896/day cumulative. After 30 days: +0.269 total. Investment persists if spending stops.",
             "scope": "Only affects subscribers in the targeted group (not global q_shared). Like building group-specific features — investment compounds over time.",
             "cost": "Extra dollars are deducted from cash daily as development cost"
         },
@@ -2688,7 +2688,7 @@ class AgentTools:
         if summary_parts:
             result_msg += '\n'.join(summary_parts)
             result_msg += f"\n\nEffect: Each targeted group ACCUMULATES a quality bonus of "
-            result_msg += f"0.0005 × log(1 + spend/500) per day. This compounds over time and persists if spending stops."
+            result_msg += f"0.005 × log(1 + spend/1000) per day (5× more efficient than global dev spend). This compounds over time and persists if spending stops."
         else:
             result_msg += "  (no targeted dev spend — all dev spend is global)"
 
