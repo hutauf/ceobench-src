@@ -102,3 +102,4 @@ audit_pages.py
 cleanup_wiki_layout.py
 rename_to_bossbench.py
 upload_diagrams_to_notion.py
+core.*
