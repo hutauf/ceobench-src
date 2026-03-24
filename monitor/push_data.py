@@ -44,12 +44,12 @@ def _open_run_db(run_dir: Path) -> sqlite3.Connection | None:
 
 # Run registry
 RUN_REGISTRY = {
-    "5464038b": {"label": "GLM-5 v3.2 run 1", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "5f35a596": {"label": "GLM-5 v3.2 run 2", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "83e43a30": {"label": "GLM-5 v3.2 run 3", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "9f984e69": {"label": "GLM-5 v3.2 run 4", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "eea79b7a": {"label": "GLM-5 v3.2 run 5", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "b2a6fd1f": {"label": "Sonnet 4.6 Bedrock run 1", "model": "claude-sonnet-4-6", "seed": 42, "days": 1095},
+    "1f9b61d5": {"label": "GLM-5 v3.2j run 1", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
+    "53ae94df": {"label": "GLM-5 v3.2j run 2", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
+    "a5993752": {"label": "GLM-5 v3.2j run 3", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
+    "dac431d7": {"label": "GLM-5 v3.2j run 4", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
+    "e406cb6f": {"label": "GLM-5 v3.2j run 5", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
+    "9534be67": {"label": "Sonnet 4.6 Bedrock run 1", "model": "claude-sonnet-4-6", "seed": 42, "days": 1095},
 }
 
 
@@ -152,19 +152,32 @@ def get_quality_series_from_db(run_dir: Path, max_points: int = 200) -> list:
 
 
 def get_qmin_series_from_db(run_dir: Path, max_points: int = 200) -> list:
-    """Q_min per group over time from _hidden_group_params_history."""
+    """Effective q_min per group over time from _hidden_group_params_history.
+
+    effective_q_min = base_q_min_mean + global_q_bias_total + drift_q_bias_total
+    """
+    from saas_bench.config import CUSTOMER_GROUPS
+    # Build base q_min_mean lookup from static config
+    base_qmin = {g.group_id: g.q_min_mean for g in CUSTOMER_GROUPS}
+
     conn = _open_run_db(run_dir)
     if not conn:
         return []
     try:
         rows = conn.execute(
-            "SELECT day, group_id, current_q_min_mean FROM _hidden_group_params_history ORDER BY day, group_id"
+            "SELECT day, group_id, drift_q_bias_total, global_q_bias_total "
+            "FROM _hidden_group_params_history ORDER BY day, group_id"
         ).fetchall()
         conn.close()
         if not rows:
             return []
-        series = [{"day": r[0], "group_id": r[1], "q_min": round(r[2], 4)} for r in rows]
-        unique_days = sorted(set(r[0] for r in rows))
+        series = []
+        for r in rows:
+            day, group_id, drift_q_bias, global_q_bias = r
+            base = base_qmin.get(group_id, 0.5)
+            effective_qmin = base + global_q_bias + drift_q_bias
+            series.append({"day": day, "group_id": group_id, "q_min": round(effective_qmin, 4)})
+        unique_days = sorted(set(s["day"] for s in series))
         if len(unique_days) > max_points:
             step = len(unique_days) // max_points
             keep_days = set(d for i, d in enumerate(unique_days) if i % step == 0 or i == len(unique_days) - 1)
@@ -243,8 +256,17 @@ def get_customer_social_posts_from_db(run_dir: Path, limit: int = 50) -> list:
     if not conn:
         return []
     try:
+        # Check if source_group_id column exists (added in v3.2k)
+        cols = {c[1] for c in conn.execute("PRAGMA table_info(social_media_posts)").fetchall()}
+        has_source_gid = 'source_group_id' in cols
+        if has_source_gid:
+            group_expr = "COALESCE(p.source_group_id, c.group_id)"
+        else:
+            group_expr = "c.group_id"
         rows = conn.execute(
-            """SELECT p.post_id, p.day, p.customer_id, c.group_id, p.sentiment, p.content,
+            f"""SELECT p.post_id, p.day, p.customer_id,
+                      {group_expr} AS group_id,
+                      p.sentiment, p.content,
                       p.likes, p.shares, p.reply_to_agent_post_id
                FROM social_media_posts p
                LEFT JOIN customers c ON p.customer_id = c.customer_id
@@ -271,9 +293,11 @@ def get_agent_social_posts_from_db(run_dir: Path, limit: int = 50) -> list:
     if not conn:
         return []
     try:
-        # Check if reasoning_by_group column exists
+        # Check column availability
         col_names = [c[1] for c in conn.execute("PRAGMA table_info(agent_social_media_posts)").fetchall()]
         has_reasoning = 'reasoning_by_group' in col_names
+        smp_cols = {c[1] for c in conn.execute("PRAGMA table_info(social_media_posts)").fetchall()}
+        reply_group_expr = "COALESCE(s.source_group_id, c.group_id)" if 'source_group_id' in smp_cols else "c.group_id"
         if has_reasoning:
             posts = conn.execute(
                 """SELECT agent_post_id, day, content, reply_to_post_id,
@@ -307,7 +331,9 @@ def get_agent_social_posts_from_db(run_dir: Path, limit: int = 50) -> list:
                     pass
             # Get customer replies to this agent post
             replies = conn.execute(
-                """SELECT s.post_id, s.day, s.customer_id, c.group_id, s.sentiment, s.content
+                f"""SELECT s.post_id, s.day, s.customer_id,
+                          {reply_group_expr} AS group_id,
+                          s.sentiment, s.content
                    FROM social_media_posts s
                    LEFT JOIN customers c ON s.customer_id = c.customer_id
                    WHERE s.reply_to_agent_post_id = ?

@@ -66,8 +66,8 @@ from .database import (
     # V2.1: Issues table functions
     create_issue, resolve_issue, increment_issue_days,
     # V2.1: Group parameters (preference drift)
-    init_group_parameters, get_group_parameters, update_group_parameters,
-    get_all_group_parameters,
+    init_group_parameters, get_group_parameters, update_group_drift,
+    get_all_group_parameters, get_global_drift, update_global_drift,
 )
 
 
@@ -204,6 +204,15 @@ class Simulator:
 
     def _cache_step_day_globals(self, config: dict):
         """Cache global values that don't change within a single step_day. (L3)"""
+        # Cache drift accumulators for consistent reads within step_day.
+        # Used by _generate_customer_from_group() and customer param reads.
+        global_q_bias = get_global_drift(self.conn)
+        all_gp = get_all_group_parameters(self.conn)
+        self._drift_cache = {
+            'global_q_bias': global_q_bias,
+            'groups': {gid: dict(row) for gid, row in all_gp.items()},
+        }
+
         self._cached_q_shared_bonus = get_global_state(self.conn, 'q_shared_bonus', 0.0)
         multiplier_row = self.conn.execute(
             "SELECT value FROM global_state WHERE key = 'compute_cost_multiplier'"
@@ -239,6 +248,22 @@ class Simulator:
             else:
                 self._cached_q_shared_per_plan[plan] = (base_pq + self._cached_q_shared_bonus) * 1.0
                 self._cached_tier_multiplier_per_plan[plan] = 1.0
+
+    def _apply_drift_offsets(self, group_id: str, q_min: float, q_max: float, c_max: float):
+        """Apply accumulated global + group drift offsets to customer parameters.
+
+        Returns (q_min, q_max, c_max) with drift applied. Used at read time so that
+        both new and existing customers reflect current market conditions.
+        """
+        drift = getattr(self, '_drift_cache', None)
+        if drift:
+            gd = drift['groups'].get(group_id, {})
+            q_offset = drift['global_q_bias'] + gd.get('drift_q_bias_total', 0.0)
+            c_offset = gd.get('drift_c_max_total', 0.0)
+            q_min += q_offset
+            q_max += q_offset
+            c_max = max(15.0, c_max + c_offset)
+        return q_min, q_max, c_max
 
     def _get_rep_event_scale(self, group_id: str) -> float:
         """Per-capita scaling for event-based reputation damage.
@@ -352,42 +377,48 @@ class Simulator:
     def _apply_preference_drift(self, days: int = 1):
         """Apply preference drift — global, group-level, and individual subscriber-level.
 
-        Called every 30 days with days=30. Drift rates are compounded:
-        effective_rate = (1 + daily_rate)^days - 1
-        This is mathematically equivalent to applying daily drift every day.
+        Called every 30 days with days=30.
 
-        Three drift systems run sequentially:
+        Three drift systems:
 
-        0. GLOBAL DRIFT (global_q_bias_drift): Shifts q_min AND q_max for ALL groups
-           and ALL active subscribers uniformly by the same additive amount.
-           Models baseline competitive pressure.
+        0. GLOBAL DRIFT (global_q_bias_drift): Increments global_drift_state accumulator.
+           Applied at read time to ALL customers (new and existing) via _drift_cache.
 
-        1. GROUP DRIFT (GROUP_PREFERENCE_DRIFT): Shifts group means.
-           Affects both new signups and existing subscribers.
-           Models market-wide trends (e.g., growing freelancer budgets, tightening CFO spend).
+        1. GROUP DRIFT (GROUP_PREFERENCE_DRIFT): Increments per-group accumulators.
+           Only additive: c_max_drift ($/day) and q_bias_drift (/day).
+           Applied at read time to ALL customers (new and existing) via _drift_cache.
 
-        2. INDIVIDUAL DRIFT (INDIVIDUAL_PREFERENCE_DRIFT): Shifts only active subscribers.
-           New customers are unaffected — they sample from the original group distribution.
-           Models post-subscription behavioral changes (e.g., budget fatigue, rising expectations).
-
-        c_max_drift and steepness_left_drift are multiplicative: new = old × (1 + rate).
-        q_bias_drift is additive: q_min += bias, q_max += bias (both shift together, no caps/floors).
-
-        Driftable parameters:
-        - c_max_drift: budget capacity (multiplicative)
-        - q_bias_drift: additive shift to BOTH q_min and q_max (participation curve bias)
-        - steepness_left_drift: quality threshold steepness (multiplicative)
-        - seat_count_drift: enterprise seat counts (group drift amplified by macro seat_count multiplier)
+        2. INDIVIDUAL DRIFT (INDIVIDUAL_PREFERENCE_DRIFT): Updates customer_state directly.
+           Only affects existing subscribers' personal params.
+           Multiplicative for c_max, steepness_left, seat_count. Additive for q_bias.
         """
         # Helper: compound daily rate over `days` periods
-        # (1 + daily_rate)^days - 1 gives the equivalent single-step rate
         def compound(daily_rate: float) -> float:
             if days == 1:
                 return daily_rate
             return (1.0 + daily_rate) ** days - 1.0
 
+        # --- GLOBAL q_bias drift: increment accumulator only ---
+        global_q_bias = self.config.global_q_bias_drift * days
+        if global_q_bias != 0.0:
+            update_global_drift(self.conn, global_q_bias)
+
+        # --- Per-group drift: increment accumulators only ---
+        # GROUP_PREFERENCE_DRIFT now only contains c_max_drift and q_bias_drift (both additive)
+        for group_id, drift_rates in GROUP_PREFERENCE_DRIFT.items():
+            if not drift_rates:
+                continue
+
+            q_bias_delta = drift_rates.get('q_bias_drift', 0.0) * days
+            c_max_delta = drift_rates.get('c_max_drift', 0.0) * days
+
+            if q_bias_delta != 0.0 or c_max_delta != 0.0:
+                update_group_drift(self.conn, group_id, q_bias_delta, c_max_delta, self.current_day)
+
+        # --- Individual subscriber drift: update customer_state directly ---
+        # Only affects existing subscribers' personal parameters.
+
         # L6: Create temp table of active subscriber (customer_id, group_id) pairs.
-        # This avoids re-scanning the subscriptions JOIN for every drift UPDATE (~97 queries).
         self.conn.execute("DROP TABLE IF EXISTS _tmp_active_subs")
         self.conn.execute("""
             CREATE TEMP TABLE _tmp_active_subs AS
@@ -398,121 +429,11 @@ class Simulator:
         """)
         self.conn.execute("CREATE INDEX IF NOT EXISTS _tmp_idx_active_group ON _tmp_active_subs(group_id)")
 
-        # --- GLOBAL q_bias drift (applies to ALL groups uniformly) ---
-        # Additive: shifts both q_min and q_max by the same amount (no caps/floors)
-        global_q_bias = self.config.global_q_bias_drift * days
-        if global_q_bias != 0.0:
-            # Update all group parameter means (both q_min and q_max shift together)
-            self.conn.execute("""
-                UPDATE group_parameters
-                SET current_q_min_mean = current_q_min_mean + ?,
-                    current_q_max_mean = current_q_max_mean + ?
-            """, (global_q_bias, global_q_bias))
-            # Update all active subscribers' q_min and q_max
-            self.conn.execute("""
-                UPDATE customer_state SET
-                    current_q_min = CASE WHEN current_q_min IS NOT NULL THEN current_q_min + ? ELSE NULL END,
-                    current_q_max = CASE WHEN current_q_max IS NOT NULL THEN current_q_max + ? ELSE NULL END
-                WHERE customer_id IN (SELECT customer_id FROM _tmp_active_subs)
-            """, (global_q_bias, global_q_bias))
-
-        # --- Per-group drift (existing logic) ---
-        all_params = get_all_group_parameters(self.conn)
-
-        for group_id, drift_rates in GROUP_PREFERENCE_DRIFT.items():
-            if not drift_rates or group_id not in all_params:
-                continue
-
-            gp = all_params[group_id]
-            new_c_max = gp['current_c_max_mean']
-            new_q_min = gp['current_q_min_mean']
-            new_q_max = gp['current_q_max_mean']
-            new_sl_factor = gp['current_steepness_left_factor']
-
-            if 'c_max_drift' in drift_rates:
-                new_c_max *= (1.0 + compound(drift_rates['c_max_drift']))
-                new_c_max = max(10.0, min(new_c_max, 2000.0))  # Clamp to reasonable range
-
-            # q_bias_drift: additive shift to both q_min and q_max (no caps/floors)
-            if 'q_bias_drift' in drift_rates:
-                bias = drift_rates['q_bias_drift'] * days
-                new_q_min += bias
-                new_q_max += bias
-
-            if 'steepness_left_drift' in drift_rates:
-                new_sl_factor *= (1.0 + compound(drift_rates['steepness_left_drift']))
-                new_sl_factor = max(0.5, min(new_sl_factor, 3.0))  # Clamp range
-
-            update_group_parameters(
-                self.conn, group_id,
-                new_c_max, new_q_min, new_q_max, new_sl_factor,
-                self.current_day
-            )
-
-            # Apply drift to existing subscribers in this group (L6: use temp table)
-            # c_max drift: scale each customer's current_c_max proportionally
-            if 'c_max_drift' in drift_rates:
-                rate = compound(drift_rates['c_max_drift'])
-                self.conn.execute("""
-                    UPDATE customer_state SET current_c_max = CASE
-                        WHEN current_c_max IS NOT NULL THEN MAX(10.0, MIN(current_c_max * (1.0 + ?), 2000.0))
-                        ELSE NULL
-                    END
-                    WHERE customer_id IN (
-                        SELECT customer_id FROM _tmp_active_subs WHERE group_id = ?
-                    )
-                """, (rate, group_id))
-
-            # steepness_left drift: scale each customer's current_steepness_left
-            if 'steepness_left_drift' in drift_rates:
-                rate = compound(drift_rates['steepness_left_drift'])
-                self.conn.execute("""
-                    UPDATE customer_state SET current_steepness_left = CASE
-                        WHEN current_steepness_left IS NOT NULL THEN MAX(0.2, MIN(current_steepness_left * (1.0 + ?), 5.0))
-                        ELSE NULL
-                    END
-                    WHERE customer_id IN (
-                        SELECT customer_id FROM _tmp_active_subs WHERE group_id = ?
-                    )
-                """, (rate, group_id))
-
-            # q_bias group drift: additive shift to both q_min and q_max (no caps/floors)
-            if 'q_bias_drift' in drift_rates:
-                bias = drift_rates['q_bias_drift'] * days
-                self.conn.execute("""
-                    UPDATE customer_state SET
-                        current_q_min = CASE WHEN current_q_min IS NOT NULL THEN current_q_min + ? ELSE NULL END,
-                        current_q_max = CASE WHEN current_q_max IS NOT NULL THEN current_q_max + ? ELSE NULL END
-                    WHERE customer_id IN (
-                        SELECT customer_id FROM _tmp_active_subs WHERE group_id = ?
-                    )
-                """, (bias, bias, group_id))
-
-            # seat_count group drift: scale enterprise subscribers' seat counts
-            # Macro seat_count multiplier amplifies/dampens the drift rate
-            if 'seat_count_drift' in drift_rates:
-                base_rate = compound(drift_rates['seat_count_drift'])
-                # Apply macro multiplier to drift rate (e.g., expansion amplifies hiring)
-                macro_seat_mult = self.get_macro_multiplier(group_id, 'seat_count')
-                # macro_seat_mult > 1 in expansion → amplifies positive drift, dampens negative
-                # macro_seat_mult < 1 in contraction → dampens positive drift, amplifies negative
-                effective_rate = base_rate * macro_seat_mult
-                self.conn.execute("""
-                    UPDATE customers SET seat_count = MAX(1.0, seat_count * (1.0 + ?))
-                    WHERE seat_count IS NOT NULL AND customer_id IN (
-                        SELECT customer_id FROM _tmp_active_subs WHERE group_id = ?
-                    )
-                """, (effective_rate, group_id))
-
-        # --- V2.2: Individual subscriber drift ---
-        # Unlike group drift above, this ONLY affects existing subscribers' personal params.
-        # New customers sample from the original (group-drifted) distribution — unaffected.
         for group_id, indiv_rates in INDIVIDUAL_PREFERENCE_DRIFT.items():
             if not indiv_rates:
                 continue
 
-            # L6: Use temp table instead of repeated JOIN subquery
-            # c_max individual drift: update customer_state.current_c_max
+            # c_max individual drift: multiplicative update to customer_state.current_c_max
             if 'c_max_drift' in indiv_rates:
                 rate = compound(indiv_rates['c_max_drift'])
                 self.conn.execute("""
@@ -537,7 +458,7 @@ class Simulator:
                     )
                 """, (bias, bias, group_id))
 
-            # steepness_left individual drift: update customer_state.current_steepness_left
+            # steepness_left individual drift: multiplicative update
             if 'steepness_left_drift' in indiv_rates:
                 rate = compound(indiv_rates['steepness_left_drift'])
                 self.conn.execute("""
@@ -550,16 +471,17 @@ class Simulator:
                     )
                 """, (rate, group_id))
 
-            # seat_count individual drift: scale enterprise subscribers' seat counts
-            # Individual drift stacks with group drift applied above
+            # seat_count individual drift: multiplicative, with macro amplification
             if 'seat_count_drift' in indiv_rates:
-                rate = compound(indiv_rates['seat_count_drift'])
+                base_rate = compound(indiv_rates['seat_count_drift'])
+                macro_seat_mult = self.get_macro_multiplier(group_id, 'seat_count')
+                effective_rate = base_rate * macro_seat_mult
                 self.conn.execute("""
                     UPDATE customers SET seat_count = MAX(1.0, seat_count * (1.0 + ?))
                     WHERE seat_count IS NOT NULL AND customer_id IN (
                         SELECT customer_id FROM _tmp_active_subs WHERE group_id = ?
                     )
-                """, (rate, group_id))
+                """, (effective_rate, group_id))
 
         # L6: Cleanup temp table
         self.conn.execute("DROP TABLE IF EXISTS _tmp_active_subs")
@@ -695,6 +617,130 @@ class Simulator:
 
         self.conn.commit()
 
+    # === RNG State Persistence (for deterministic resume) ===
+
+    def save_rng_states(self):
+        """Save all RNG states to the database for deterministic resume.
+
+        Called at the end of each step_day so that resume produces the exact
+        same RNG sequence as a continuous run.
+        """
+        import json as _json
+        from numpy.random import PCG64
+
+        # Ensure table exists
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS _rng_states (
+                name TEXT PRIMARY KEY,
+                state_json TEXT NOT NULL
+            )
+        """)
+
+        def _serialize_state(rng_obj):
+            """Serialize a numpy Generator's bit_generator state to JSON-safe dict."""
+            state = rng_obj.bit_generator.state
+            # Convert numpy arrays to lists for JSON serialization
+            s = state.copy()
+            s['state'] = {k: (v.tolist() if hasattr(v, 'tolist') else v)
+                          for k, v in state['state'].items()}
+            return s
+
+        states = {
+            'rng': _serialize_state(self.rng),
+            '_macro_rng': _serialize_state(self._macro_rng),
+            '_competitor_rng': _serialize_state(self._competitor_rng),
+            '_quality_rng': _serialize_state(self._quality_rng),
+        }
+
+        # Save per-group RNGs
+        if hasattr(self, '_group_rngs'):
+            group_states = {}
+            for gid, grng in self._group_rngs.items():
+                group_states[gid] = _serialize_state(grng)
+            states['_group_rngs'] = group_states
+
+        # Save simulator state variables that affect RNG-dependent behavior
+        states['_sim_state'] = {
+            '_macro_pmi_current': self._macro_pmi_current,
+            '_macro_cycle_phase_offset': self._macro_cycle_phase_offset,
+            '_macro_last_update_day': self._macro_last_update_day,
+            '_macro_last_social_post_day': self._macro_last_social_post_day,
+            '_macro_next_social_post_day': self._macro_next_social_post_day,
+            '_macro_multipliers': {k: dict(v) for k, v in self._macro_multipliers.items()} if self._macro_multipliers else {},
+            '_macro_pmi_daily_history': list(self._macro_pmi_daily_history),
+            '_macro_pending_publications': list(self._macro_pending_publications),
+        }
+
+        self.conn.execute(
+            "INSERT OR REPLACE INTO _rng_states (name, state_json) VALUES (?, ?)",
+            ('all', _json.dumps(states))
+        )
+        self.conn.commit()
+
+    def restore_rng_states(self) -> bool:
+        """Restore all RNG states from the database.
+
+        Returns True if states were restored, False if no saved states found.
+        Called on resume to ensure deterministic continuation.
+        """
+        import json as _json
+        from numpy.random import Generator, PCG64
+
+        try:
+            row = self.conn.execute(
+                "SELECT state_json FROM _rng_states WHERE name = 'all'"
+            ).fetchone()
+        except Exception:
+            return False  # Table doesn't exist
+
+        if not row:
+            return False
+
+        states = _json.loads(row['state_json'])
+
+        def _restore_state(rng_obj, saved):
+            """Restore a numpy Generator's bit_generator state from saved dict."""
+            import numpy as np
+            # Reconstruct the state dict with proper numpy types
+            restored = saved.copy()
+            restored['state'] = {}
+            for k, v in saved['state'].items():
+                if isinstance(v, list):
+                    restored['state'][k] = np.array(v, dtype=np.uint64 if k == 'state' else type(v[0]) if v else np.uint64)
+                elif isinstance(v, int):
+                    restored['state'][k] = v
+                else:
+                    restored['state'][k] = v
+            rng_obj.bit_generator.state = restored
+
+        _restore_state(self.rng, states['rng'])
+        _restore_state(self._macro_rng, states['_macro_rng'])
+        _restore_state(self._competitor_rng, states['_competitor_rng'])
+        _restore_state(self._quality_rng, states['_quality_rng'])
+
+        # Restore per-group RNGs
+        if '_group_rngs' in states:
+            if not hasattr(self, '_group_rngs'):
+                self._group_rngs = {}
+            for gid, gstate in states['_group_rngs'].items():
+                if gid not in self._group_rngs:
+                    self._group_rngs[gid] = Generator(PCG64(0))  # Placeholder, state will be overwritten
+                _restore_state(self._group_rngs[gid], gstate)
+
+        # Restore simulator state variables
+        if '_sim_state' in states:
+            ss = states['_sim_state']
+            self._macro_pmi_current = ss.get('_macro_pmi_current', self._macro_pmi_current)
+            self._macro_cycle_phase_offset = ss.get('_macro_cycle_phase_offset', self._macro_cycle_phase_offset)
+            self._macro_last_update_day = ss.get('_macro_last_update_day', self._macro_last_update_day)
+            self._macro_last_social_post_day = ss.get('_macro_last_social_post_day', self._macro_last_social_post_day)
+            self._macro_next_social_post_day = ss.get('_macro_next_social_post_day', self._macro_next_social_post_day)
+            self._macro_multipliers = ss.get('_macro_multipliers', {})
+            self._macro_pmi_daily_history = ss.get('_macro_pmi_daily_history', [])
+            self._macro_pending_publications = ss.get('_macro_pending_publications', [])
+
+        return True
+
     def get_current_config(self) -> dict:
         """Get current configuration."""
         return get_config(self.conn, self.current_day)
@@ -754,18 +800,28 @@ class Simulator:
         )
 
         # c_max: hard budget constraint (maximum price customer will pay)
-        # Uses static group mean — no macro multiplier or drift at creation time
+        # Sample from static group distribution, then apply accumulated group drift
         c_max = max(15.0,
             grng.normal(group.c_max_mean, group.c_max_std * 1.2)
         )
 
-        # q_min: quality floor — uses static group mean (no drift/competitor effects at creation)
+        # q_min: quality floor — sample from static, then apply global + group drift
         q_min = max(1e-4, grng.normal(group.q_min_mean, group.q_min_std))
 
-        # q_max: quality ceiling — q_min + independently sampled q_range
-        # q_range = how much additional quality the customer can perceive above their floor
-        # V4: Reparameterized so q_max >= q_min by construction (q_range clamped to >= 0.01)
+        # q_range: independently sampled (unaffected by drift — drift shifts q_min and q_max equally)
         q_range = max(1e-4, grng.normal(group.q_range_mean, group.q_range_std))
+
+        # Apply accumulated drift offsets to new customer parameters.
+        # _drift_cache is set at start of each step_day via _cache_drift_state().
+        # This ensures new customers reflect current market conditions (global + group drift).
+        drift = getattr(self, '_drift_cache', None)
+        if drift:
+            group_drift = drift['groups'].get(group_id, {})
+            q_bias_offset = drift['global_q_bias'] + group_drift.get('drift_q_bias_total', 0.0)
+            c_max_offset = group_drift.get('drift_c_max_total', 0.0)
+            q_min += q_bias_offset
+            c_max = max(15.0, c_max + c_max_offset)
+
         q_max = q_min + q_range
 
         # usage_demand: how much they want to use the service
@@ -1472,12 +1528,13 @@ class Simulator:
             current_plan = sub['plan']
             current_price = sub['listed_price']
 
-            # Get asymmetric sigmoid curve parameters (use drifted values)
+            # Get asymmetric sigmoid curve parameters (use drifted values + drift offsets)
             steepness_left = sub['current_steepness_left'] or sub['steepness_left']
             steepness_right = sub['current_steepness_right'] or sub['steepness_right']
             c_max = sub['current_c_max'] or sub['c_max']
             q_max = sub['q_max'] if sub['q_max'] is not None else 0.75
             q_min = sub['q_min'] if sub['q_min'] is not None else 0.25
+            q_min, q_max, c_max = self._apply_drift_offsets(sub['group_id'], q_min, q_max, c_max)
 
             # L3: Use inline version — no per-customer DB queries
             best_plan = self._select_best_plan_inline(steepness_left, steepness_right, c_max, sub, config, overload, outage, q_max, q_min)
@@ -2447,6 +2504,7 @@ class Simulator:
             c_max = sub['effective_c_max'] or sub['current_c_max'] or sub['c_max']
             q_max = sub['q_max'] if sub['q_max'] is not None else 0.75
             q_min = sub['q_min'] if sub['q_min'] is not None else 0.25
+            q_min, q_max, c_max = self._apply_drift_offsets(sub['group_id'], q_min, q_max, c_max)
 
             # Use effective_price directly from subscription (stored at billing time)
             effective_price = sub['effective_price'] or 0.0
@@ -2765,12 +2823,13 @@ class Simulator:
             plan = sub['plan']
             price = sub['listed_price']
 
-            # Get asymmetric sigmoid curve params (use drifted values)
+            # Get asymmetric sigmoid curve params (use drifted values + drift offsets)
             steepness_left = sub['current_steepness_left'] or sub['steepness_left']
             steepness_right = sub['current_steepness_right'] or sub['steepness_right']
             c_max = sub['current_c_max'] or sub['c_max']
             q_max = sub['q_max'] if sub['q_max'] is not None else 0.75
             q_min = sub['q_min'] if sub['q_min'] is not None else 0.25
+            q_min, q_max, c_max = self._apply_drift_offsets(sub['group_id'], q_min, q_max, c_max)
 
             # L3: Compute current perceived quality using inline method (no DB queries)
             current_quality = self._compute_comprehensive_quality_inline(
@@ -3865,6 +3924,7 @@ class Simulator:
         import json
         import math
         import numpy as np
+        import traceback as _tb
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from .database import (
             get_discovered_groups, get_recent_agent_posts_for_judge,
@@ -3873,7 +3933,14 @@ class Simulator:
         from .personas import GROUP_CHARACTERISTICS
         from .customer_llm import judge_agent_social_post, generate_customer_reply_to_agent
 
+        _debug_log = "/tmp/social_reply_debug.log"
+
+        with open(_debug_log, "a") as _df:
+            _df.write(f"[ENTER] _process_agent_social_posts day={self.current_day}, has_cs={bool(self.customer_simulator)}\n")
+
         if not self.customer_simulator:
+            with open(_debug_log, "a") as _df:
+                _df.write(f"  SKIP: no customer_simulator\n")
             return
 
         # Get all unscored agent posts (effect_by_group == '{}')
@@ -3884,6 +3951,9 @@ class Simulator:
             FROM agent_social_media_posts
             WHERE effect_by_group = '{}'
         """).fetchall()
+
+        with open(_debug_log, "a") as _df:
+            _df.write(f"  unscored_posts={len(rows)}\n")
 
         if not rows:
             return
@@ -4003,14 +4073,18 @@ class Simulator:
                       json.dumps(views_by_group), post_id))
 
             # Send inbox notification about post performance
-            truncated = content[:80] + ('...' if len(content) > 80 else '')
-            avg_effect = sum(effect_by_group.values()) / len(effect_by_group) if effect_by_group else 0.0
-            sentiment_word = 'positively' if avg_effect > 0.1 else ('negatively' if avg_effect < -0.1 else 'neutrally')
-            top_groups = sorted(effect_by_group.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
-            top_str = ', '.join(f'{g}: {e:+.1f}' for g, e in top_groups)
-            notif_msg = (f'Your social media post received {total_views:,} views: "{truncated}" '
-                         f'— Received {sentiment_word} overall. Top reactions: {top_str}')
-            add_notification(self.conn, self.current_day, 'social_media', notif_msg)
+            try:
+                truncated = content[:80] + ('...' if len(content) > 80 else '')
+                avg_effect = sum(effect_by_group.values()) / len(effect_by_group) if effect_by_group else 0.0
+                sentiment_word = 'positively' if avg_effect > 0.1 else ('negatively' if avg_effect < -0.1 else 'neutrally')
+                top_groups = sorted(effect_by_group.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
+                top_str = ', '.join(f'{g}: {e:+.1f}' for g, e in top_groups)
+                notif_msg = (f'Your social media post received {total_views:,} views: "{truncated}" '
+                             f'— Received {sentiment_word} overall. Top reactions: {top_str}')
+                add_notification(self.conn, self.current_day, 'social_media', notif_msg)
+            except Exception as _ne:
+                with open("/tmp/social_reply_debug.log", "a") as _df:
+                    _df.write(f"  NOTIF_ERR: {_ne}\n{_tb.format_exc()}\n")
 
             # Generate customer replies for viral reactions
             reply_futures = {}
@@ -4019,6 +4093,9 @@ class Simulator:
                 if abs(effect_by_group.get(gid, 0.0)) >= viral_threshold
             ]
             comment_post_ids = []  # Collect post_ids of customer comments on this agent post
+
+            with open(_debug_log, "a") as _df:
+                _df.write(f"[{self.current_day}] Post {post_id}: viral_groups={viral_groups}, effects={effect_by_group}\n")
 
             if viral_groups:
                 with ThreadPoolExecutor(max_workers=min(len(viral_groups), 6)) as executor:
@@ -4061,16 +4138,21 @@ class Simulator:
                                 virality_score=abs(eff),
                                 reputation_impact=eff * 0.01,
                                 influence_score=0.5,
-                                reply_to_agent_post_id=post_id
+                                reply_to_agent_post_id=post_id,
+                                source_group_id=gid
                             )
                             comment_post_ids.append(comment_pid)
+
+                            with open(_debug_log, "a") as _df:
+                                _df.write(f"  OK: {gid} -> post_id={comment_pid}, cust={customer_id}\n")
 
                             self.customer_simulator._log_cost(
                                 self.current_day, 'agent_social_reply',
                                 in_tok, out_tok, model=social_model
                             )
-                        except Exception:
-                            pass  # Skip failed replies
+                        except Exception as _e:
+                            with open(_debug_log, "a") as _df:
+                                _df.write(f"  FAIL: {gid}: {_e}\n{_tb.format_exc()}\n")
 
             # Store comment post IDs on the agent post
             if comment_post_ids:
@@ -4191,8 +4273,10 @@ class Simulator:
             group_cfg = CUSTOMER_GROUPS.get(group_id)
             if group_cfg:
                 drifted = get_group_parameters(self.conn, group_id)
-                snap_c_max = drifted['current_c_max_mean'] if drifted else group_cfg.c_max_mean
-                snap_q_min = drifted['current_q_min_mean'] if drifted else group_cfg.q_min_mean
+                global_q = get_global_drift(self.conn)
+                # Compute effective c_max and q_min from base + accumulated drift
+                snap_c_max = group_cfg.c_max_mean + (drifted['drift_c_max_total'] if drifted else 0.0)
+                snap_q_min = group_cfg.q_min_mean + global_q + (drifted['drift_q_bias_total'] if drifted else 0.0)
                 snap_market_cap = group_cfg.base_market_cap * (1 + group_cfg.annual_cap_growth_rate * self.current_day / 365.0)
                 self.conn.execute("""
                     INSERT OR REPLACE INTO group_insight_snapshots
@@ -4623,13 +4707,20 @@ Requirements:
 
         days_since_last = self.current_day - last_event_day
 
+        # Half frequency in first year (day < 365): double intervals
+        mean_interval = self.config.competitor_event_mean_interval
+        min_interval = self.config.competitor_event_min_interval
+        if self.current_day < 365:
+            mean_interval *= 2
+            min_interval *= 2
+
         # Only trigger if minimum interval has passed
-        if days_since_last < self.config.competitor_event_min_interval:
+        if days_since_last < min_interval:
             return
 
         # Daily probability: 1/mean_interval (Poisson process)
         # Use _competitor_rng (independent of macro social posts) for determinism across runs
-        daily_prob = 1.0 / self.config.competitor_event_mean_interval
+        daily_prob = 1.0 / mean_interval
         if self._competitor_rng.random() >= daily_prob:
             return
 
@@ -4672,26 +4763,10 @@ Requirements:
             VALUES (?, ?, ?, ?, 1)
         """, (self.current_day, boost, post_end_day, desc))
 
-        # Apply boost to ALL users' q_min and q_max equally (additive, no caps/floors)
-        # Shifts the entire participation curve upward — users demand more quality
-
-        # Group parameters (both q_min and q_max shift by same amount)
-        self.conn.execute("""
-            UPDATE group_parameters
-            SET current_q_min_mean = current_q_min_mean + ?,
-                current_q_max_mean = current_q_max_mean + ?
-        """, (boost, boost))
-
-        # Individual subscribers — boost both q_min and q_max equally
-        self.conn.execute("""
-            UPDATE customer_state SET
-                current_q_min = CASE WHEN current_q_min IS NOT NULL THEN current_q_min + ? ELSE NULL END,
-                current_q_max = CASE WHEN current_q_max IS NOT NULL THEN current_q_max + ? ELSE NULL END
-            WHERE customer_id IN (
-                SELECT s.customer_id FROM subscriptions s
-                WHERE s.status = 'subscribed' AND s.end_day IS NULL
-            )
-        """, (boost, boost))
+        # Apply boost to global drift accumulator (additive, no caps/floors)
+        # This shifts the entire participation curve upward for ALL customers (new and existing)
+        # via the _drift_cache mechanism — no need to bulk-update customer_state
+        update_global_drift(self.conn, boost)
 
         # No notification for competitor events (agent can observe via social media / quality metrics)
 
@@ -5544,12 +5619,13 @@ Requirements:
             q_shared = self._cached_q_shared_per_plan.get(ent['plan'], 0.5)
             quality = q_shared + rel_bonus
 
-            # Get asymmetric sigmoid params (use drifted values if available for enterprise)
+            # Get asymmetric sigmoid params (use drifted values + drift offsets)
             steepness_left = ent['current_steepness_left'] or ent['initial_steepness_left']
             steepness_right = ent['current_steepness_right'] or ent['initial_steepness_right']
             c_max = ent['current_c_max'] or ent['initial_c_max']
             q_max = ent['q_max'] if ent['q_max'] is not None else 0.75
             q_min = ent['q_min'] if ent['q_min'] is not None else 0.25
+            q_min, q_max, c_max = self._apply_drift_offsets(ent['group_id'], q_min, q_max, c_max)
 
             # Check participation constraint using asymmetric sigmoid curve
             price = ent['listed_price']
@@ -5894,6 +5970,11 @@ Requirements:
 
             # Snapshot drifted c_max at billing time for satisfaction calculations
             billing_c_max = sub['current_c_max'] or sub['c_max']
+            # Apply group + global drift offset to c_max
+            drift = getattr(self, '_drift_cache', None)
+            if drift:
+                gd = drift['groups'].get(group_id, {})
+                billing_c_max = max(15.0, billing_c_max + gd.get('drift_c_max_total', 0.0))
 
             # Compute promotion for this billing period
             existing_promo = self._get_effective_promotion(customer_id, group_id, current_plan)
@@ -6074,8 +6155,9 @@ Requirements:
         """
         day = self.current_day
 
-        # --- Group parameters + reputation + awareness ---
+        # --- Group drift accumulators + reputation + awareness ---
         all_params = get_all_group_parameters(self.conn)
+        global_q_bias = get_global_drift(self.conn)
         all_reps = self.conn.execute(
             "SELECT group_id, reputation FROM group_reputation"
         ).fetchall()
@@ -6089,16 +6171,16 @@ Requirements:
         for group_id, gp in all_params.items():
             param_rows.append((
                 day, group_id,
-                gp['current_c_max_mean'], gp['current_q_min_mean'],
-                gp['current_q_max_mean'], gp['current_steepness_left_factor'],
+                gp['drift_q_bias_total'], gp['drift_c_max_total'],
+                global_q_bias,
                 rep_map.get(group_id, 0.5), aware_map.get(group_id, 0.0),
             ))
         if param_rows:
             self.conn.executemany("""
                 INSERT OR REPLACE INTO _hidden_group_params_history
-                (day, group_id, current_c_max_mean, current_q_min_mean,
-                 current_q_max_mean, current_steepness_left_factor, reputation, awareness)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (day, group_id, drift_q_bias_total, drift_c_max_total,
+                 global_q_bias_total, reputation, awareness)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, param_rows)
 
         # --- Quality components per group × plan ---
@@ -6338,6 +6420,9 @@ Requirements:
 
         # === Hidden snapshots for post-run analysis (invisible to agent) ===
         self._record_hidden_snapshots(config)
+
+        # Save RNG states for deterministic resume
+        self.save_rng_states()
 
         self.conn.commit()
 

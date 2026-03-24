@@ -385,7 +385,948 @@ GROUP_CHARACTERISTICS = {
             'Enterprise features roadmap alignment',
             'Strategic quality improvements together'
         ])
-    }
+    },
+
+    # =========================================================================
+    # Discoverable Individual Groups (D_S01 - D_S10)
+    # =========================================================================
+
+    'D_S01': {
+        'group_id': 'D_S01',
+        'description': 'Niche creators in digital art, crafts, photography, and illustration. '
+                      'Passion-driven individuals who use AI to enhance creative workflows. '
+                      'Active on Dribbble, Behance, Instagram, and creative subreddits. '
+                      'Discover tools through portfolio showcases and community recommendations.',
+        'typical_use_cases': json.dumps([
+            'AI-assisted image editing and generation',
+            'Automating repetitive design tasks',
+            'Creating product mockups and thumbnails',
+            'Writing creative briefs and descriptions',
+            'Brainstorming visual concepts'
+        ]),
+        'common_complaints': json.dumps([
+            'Output doesnt match my creative vision',
+            'Style consistency is lacking',
+            'Too generic for niche creative work',
+            'Need better image/visual capabilities',
+            'Pricing too high for hobbyist income'
+        ]),
+        'common_praises': json.dumps([
+            'Speeds up my creative process enormously',
+            'Great for brainstorming and ideation',
+            'Helps me take on more commissions',
+            'Perfect companion tool for my workflow',
+            'Love the creative flexibility'
+        ]),
+        'social_media_tone': 'Visual, expressive, community-oriented. Shares before/after results. '
+                            'Active on Dribbble, Behance, Instagram, creative Discord servers. '
+                            'Uses hashtags related to creative niches. Informal and enthusiastic.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Hard to justify on freelance income',
+            'Would love a creator discount',
+            'Need it for commissions but margins are tight',
+            'Free tools are catching up fast',
+            'Worth it if it helps me land more clients'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Creative tools need to understand aesthetics',
+            'Consistency across a project matters',
+            'I need it to match my artistic style',
+            'Good enough for drafts but not final work',
+            'Quality varies a lot by creative domain'
+        ])
+    },
+    'D_S02': {
+        'group_id': 'D_S02',
+        'description': 'Academic researchers at universities and labs using AI for research workflows. '
+                      'Grant-funded with multi-year budgets. Methodical, evidence-based approach. '
+                      'Discover tools through academic papers, conference talks, and peer recommendations. '
+                      'Active on Google Scholar, arXiv, and academic Twitter.',
+        'typical_use_cases': json.dumps([
+            'Literature review and paper summarization',
+            'Data analysis and visualization scripting',
+            'Grant proposal and paper drafting',
+            'Experiment design assistance',
+            'Code generation for research pipelines'
+        ]),
+        'common_complaints': json.dumps([
+            'Citations are sometimes fabricated',
+            'Not reliable enough for academic rigor',
+            'Cant access paywalled papers',
+            'Need better LaTeX and formula support',
+            'Reproducibility of outputs is inconsistent'
+        ]),
+        'common_praises': json.dumps([
+            'Huge time saver for literature reviews',
+            'Great for first drafts of papers',
+            'Helps me code faster in Python/R',
+            'Excellent for brainstorming research directions',
+            'Makes grant writing less painful'
+        ]),
+        'social_media_tone': 'Formal, citation-heavy, peer-review style. Shares use cases with methodology details. '
+                            'Active on academic Twitter, Mastodon, and research forums. '
+                            'Cautious about endorsements, prefers evidence-based reviews.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'My grant covers tool subscriptions',
+            'Need institutional licensing options',
+            'Price is fine if quality is consistent',
+            'Student pricing would help my lab',
+            'Budget is predetermined for the year'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Accuracy is non-negotiable for research',
+            'I need to trust the outputs completely',
+            'Hallucinated references are a dealbreaker',
+            'Domain expertise in my field matters',
+            'Consistency across runs is critical'
+        ])
+    },
+    'D_S03': {
+        'group_id': 'D_S03',
+        'description': 'Non-profit workers at charities, NGOs, and social enterprises. '
+                      'Mission-driven and resourceful, operating on tight donation-funded budgets. '
+                      'Need tools that help maximize impact with limited resources. '
+                      'Discover tools through non-profit tech communities and peer networks.',
+        'typical_use_cases': json.dumps([
+            'Grant writing and reporting',
+            'Donor communication and newsletters',
+            'Program impact analysis',
+            'Volunteer coordination content',
+            'Social media for awareness campaigns'
+        ]),
+        'common_complaints': json.dumps([
+            'Too expensive for non-profit budgets',
+            'No non-profit discount available',
+            'Doesnt understand our mission-driven context',
+            'Need more templates for grant applications',
+            'Support is slow for smaller orgs'
+        ]),
+        'common_praises': json.dumps([
+            'Helps us do more with less staff',
+            'Grant writing quality improved significantly',
+            'Saves hours on reporting',
+            'Our donor communications are much better now',
+            'Essential tool for resource-strapped teams'
+        ]),
+        'social_media_tone': 'Empathetic, stakeholder-aware, community-focused. Shares impact stories. '
+                            'Active on LinkedIn non-profit groups, NTEN community, and cause-specific forums. '
+                            'Diplomatic tone, focuses on social good outcomes.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Our budget comes from donations',
+            'Do you offer non-profit pricing?',
+            'Every dollar saved goes to our mission',
+            'Need to justify this to our board',
+            'Would love a free tier for small NGOs'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Needs to understand non-profit language',
+            'Grant applications require specific formatting',
+            'Tone needs to resonate with donors',
+            'Good enough for internal docs',
+            'Quality matters for funder-facing materials'
+        ])
+    },
+    'D_S04': {
+        'group_id': 'D_S04',
+        'description': 'Small agency teams in design, marketing, and PR. Client-driven with tight deadlines '
+                      'and multiple concurrent projects. Need tools that scale with project volume. '
+                      'Discover tools through industry blogs, agency networks, and client demands. '
+                      'Active on LinkedIn, agency Slack communities, and marketing forums.',
+        'typical_use_cases': json.dumps([
+            'Client proposal and pitch deck creation',
+            'Multi-client content production',
+            'Social media campaign management',
+            'Brand voice adaptation across clients',
+            'Quick-turnaround copy and design briefs'
+        ]),
+        'common_complaints': json.dumps([
+            'Need team collaboration features',
+            'Hard to maintain different brand voices',
+            'Per-seat pricing kills small agencies',
+            'Output not polished enough for clients',
+            'Need faster turnaround for rush jobs'
+        ]),
+        'common_praises': json.dumps([
+            'Multiplied our agency output by 3x',
+            'Clients love the faster delivery',
+            'Great for first drafts across projects',
+            'Helps junior team members level up',
+            'ROI is clear for client work'
+        ]),
+        'social_media_tone': 'Client-facing, polished, presentation-ready. Shares case studies and results. '
+                            'Active on LinkedIn, agency communities, and marketing Twitter. '
+                            'Professional tone with focus on business outcomes and client wins.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Need team pricing for 3-5 seats',
+            'Can we get agency partner rates?',
+            'Per-seat cost needs to scale down',
+            'Client margins are already thin',
+            'Worth it if it replaces one hire'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Client-facing work needs to be polished',
+            'Brand voice consistency is critical',
+            'Need reliable quality under deadlines',
+            'Good enough for drafts, needs human polish',
+            'Quality varies by content type'
+        ])
+    },
+    'D_S05': {
+        'group_id': 'D_S05',
+        'description': 'Indie game developers working on games, VR, and interactive media. '
+                      'Passionate, community-engaged builders who iterate rapidly. '
+                      'Active on itch.io, game dev Discord servers, and IndieDB. '
+                      'Discover tools through dev logs, game jams, and community showcases.',
+        'typical_use_cases': json.dumps([
+            'Game dialogue and narrative writing',
+            'Code debugging and optimization',
+            'Game design document drafting',
+            'NPC behavior scripting assistance',
+            'Marketing copy for game launches'
+        ]),
+        'common_complaints': json.dumps([
+            'Doesnt understand game engine specifics',
+            'Generated dialogue feels generic',
+            'Need better code completion for game dev',
+            'Pricing is steep for solo devs',
+            'Cant help with visual assets directly'
+        ]),
+        'common_praises': json.dumps([
+            'Incredible for writing game lore',
+            'Debugging help saves me hours',
+            'Great brainstorming partner for game design',
+            'Helps me ship games faster as a solo dev',
+            'Amazing for prototyping game mechanics'
+        ]),
+        'social_media_tone': 'Casual, dev-log style, community-oriented. Shares progress updates and demos. '
+                            'Active on game dev Twitter, Discord, itch.io, and Reddit r/gamedev. '
+                            'Meme-friendly, enthusiastic about new tools, provides tutorials.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Solo dev budget is basically ramen money',
+            'Will gladly pay if it helps me ship',
+            'Game jam pricing would be amazing',
+            'Worth it for the time saved on dialogue',
+            'Need hobby-friendly pricing tier'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Game-specific knowledge matters a lot',
+            'Unity/Unreal API knowledge is crucial',
+            'Dialogue needs to feel natural in-game',
+            'Code suggestions need to compile first time',
+            'Quality is great for narrative tasks'
+        ])
+    },
+    'D_S06': {
+        'group_id': 'D_S06',
+        'description': 'Freelance writers in copywriting, journalism, and content creation. '
+                      'Deadline-driven professionals who juggle multiple clients. '
+                      'Discover tools through writing communities, Medium, and word-of-mouth. '
+                      'Active on Substack, Medium, writing subreddits, and journalist Slack groups.',
+        'typical_use_cases': json.dumps([
+            'Article drafting and editing',
+            'SEO-optimized content creation',
+            'Client blog post production',
+            'Research synthesis and fact-checking',
+            'Email newsletter writing'
+        ]),
+        'common_complaints': json.dumps([
+            'Output reads too robotic sometimes',
+            'Struggles with my specific voice/style',
+            'Fact-checking is unreliable',
+            'Need better long-form content support',
+            'Pricing is high for per-word income'
+        ]),
+        'common_praises': json.dumps([
+            'First draft speed is incredible',
+            'Great for overcoming writers block',
+            'Research summaries save hours',
+            'Helps me take on more clients',
+            'Quality keeps improving with each update'
+        ]),
+        'social_media_tone': 'Articulate, concise, grammar-conscious. Shares writing tips and tool reviews. '
+                            'Active on Medium, Substack, writing Twitter, and freelance communities. '
+                            'Narrative-driven posts, often compares AI writing tools.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Per-word rates barely cover tool costs',
+            'Need unlimited output for the price',
+            'Free tier of competitors is decent',
+            'Worth it for high-paying client work',
+            'Freelance income is unpredictable'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Voice matching is everything for writers',
+            'Editors can tell AI-generated text instantly',
+            'Long-form coherence needs improvement',
+            'Great for research, iffy for final copy',
+            'Quality ceiling keeps rising which is good'
+        ])
+    },
+    'D_S07': {
+        'group_id': 'D_S07',
+        'description': 'Data analysts in BI, market research, and analytics roles. '
+                      'Numbers-first professionals who live in spreadsheets and dashboards. '
+                      'Discover tools through Kaggle, data science blogs, and analytics communities. '
+                      'Active on Kaggle, data Twitter, and BI tool forums.',
+        'typical_use_cases': json.dumps([
+            'SQL query generation and optimization',
+            'Data cleaning and transformation scripts',
+            'Dashboard creation and charting',
+            'Statistical analysis explanations',
+            'Report writing from data findings'
+        ]),
+        'common_complaints': json.dumps([
+            'SQL suggestions sometimes have errors',
+            'Doesnt understand our data schema',
+            'Need better integration with BI tools',
+            'Statistical reasoning can be flawed',
+            'Chart/visualization suggestions are limited'
+        ]),
+        'common_praises': json.dumps([
+            'SQL generation is a massive time saver',
+            'Great for explaining complex queries',
+            'Helps me write better reports from data',
+            'Python/pandas code generation is solid',
+            'Perfect for ad-hoc analysis requests'
+        ]),
+        'social_media_tone': 'Numbers-first, chart-heavy, insight-oriented. Shares data tips and tool benchmarks. '
+                            'Active on Kaggle, data Twitter, LinkedIn analytics groups. '
+                            'Structured, evidence-based posts with specific examples.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'ROI is easy to calculate for analytics',
+            'Saves me hours of SQL debugging daily',
+            'Price is fine for professional use',
+            'Company covers my tool subscriptions',
+            'Would pay more for data-specific features'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'SQL accuracy is critical — wrong queries waste hours',
+            'Statistical claims need to be correct',
+            'Data schema understanding would be huge',
+            'Python code quality is consistently good',
+            'Visualization suggestions need more options'
+        ])
+    },
+    'D_S08': {
+        'group_id': 'D_S08',
+        'description': 'Social media managers handling brand accounts and content scheduling. '
+                      'Always-on professionals who track trends and engagement metrics. '
+                      'Discover tools through social media itself, marketing podcasts, and peer tips. '
+                      'Active across all social platforms, especially Twitter, LinkedIn, and TikTok.',
+        'typical_use_cases': json.dumps([
+            'Social media post drafting at scale',
+            'Hashtag and trend research',
+            'Engagement response templates',
+            'Content calendar planning',
+            'Analytics summary writing'
+        ]),
+        'common_complaints': json.dumps([
+            'Posts sound too corporate and generic',
+            'Doesnt keep up with current trends',
+            'Need platform-specific formatting',
+            'Hashtag suggestions are outdated',
+            'Character count awareness is poor'
+        ]),
+        'common_praises': json.dumps([
+            'Content production speed is amazing',
+            'Great for repurposing across platforms',
+            'Engagement reply drafts save me hours',
+            'Helps maintain consistent posting schedule',
+            'Caption generation is surprisingly good'
+        ]),
+        'social_media_tone': 'Casual, emoji-fluent, hashtag-savvy, real-time oriented. '
+                            'Native across platforms — speaks the language of each. '
+                            'Trend-aware posts, quick reactions to viral moments. '
+                            'Active on social media marketing communities and podcasts.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Managing multiple brands needs team pricing',
+            'Content volume justifies the cost easily',
+            'Competitors offer social-specific tools cheaper',
+            'Need it for the content grind',
+            'Would pay more for trend integration'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Platform-native voice is everything',
+            'Generic content kills engagement',
+            'Need to sound human not like a bot',
+            'Trend awareness is a must-have',
+            'Quality of captions is surprisingly good'
+        ])
+    },
+    'D_S09': {
+        'group_id': 'D_S09',
+        'description': 'UX designers focused on product design, user research, and interaction design. '
+                      'User-centered thinkers who prototype and iterate based on research. '
+                      'Discover tools through design community (Figma forums, Dribbble, UX blogs). '
+                      'Active on Figma community, Dribbble, UX Twitter, and Nielsen Norman Group forums.',
+        'typical_use_cases': json.dumps([
+            'User persona and journey map creation',
+            'Microcopy and UI text writing',
+            'Usability test script drafting',
+            'Design documentation and specs',
+            'Accessibility audit assistance'
+        ]),
+        'common_complaints': json.dumps([
+            'UX copy suggestions are too generic',
+            'Doesnt understand design system constraints',
+            'Need better integration with Figma',
+            'Accessibility suggestions are surface-level',
+            'User research synthesis needs improvement'
+        ]),
+        'common_praises': json.dumps([
+            'Persona creation is incredibly fast now',
+            'Microcopy suggestions are quite good',
+            'Helps document design decisions efficiently',
+            'Great for user interview script prep',
+            'Saves time on repetitive UX writing'
+        ]),
+        'social_media_tone': 'Visual, wireframe-oriented, user-story-driven. Shares design process insights. '
+                            'Active on Figma community, Dribbble, UX Twitter, and design Slack groups. '
+                            'Feedback-seeking, design-critique style, thoughtful and methodical.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Design tool budgets are already stretched',
+            'Worth it for the UX writing alone',
+            'Need it integrated into my design workflow',
+            'Company should cover this as a design tool',
+            'Price is fair for professional use'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'UX writing needs to be precise and concise',
+            'Accessibility compliance is non-negotiable',
+            'Design context understanding could improve',
+            'Persona quality is consistently excellent',
+            'Journey map outputs need more nuance'
+        ])
+    },
+    'D_S10': {
+        'group_id': 'D_S10',
+        'description': 'Music producers and audio engineers working on production, mixing, and sound design. '
+                      'Creative professionals with session-based workflows and tight project deadlines. '
+                      'Discover tools through music production forums, YouTube tutorials, and gear communities. '
+                      'Active on Splice, music production subreddits, and audio engineering forums.',
+        'typical_use_cases': json.dumps([
+            'Lyric writing and songwriting assistance',
+            'Session notes and project documentation',
+            'Marketing and promotion copy for releases',
+            'Music theory and arrangement suggestions',
+            'Client communication and contracts'
+        ]),
+        'common_complaints': json.dumps([
+            'Doesnt understand music production terminology',
+            'Lyrics feel cliché and formulaic',
+            'Cant help with actual audio processing',
+            'No integration with DAWs',
+            'Pricing doesnt fit irregular income'
+        ]),
+        'common_praises': json.dumps([
+            'Lyric brainstorming is incredibly helpful',
+            'Saves time on press releases and bios',
+            'Great for session organization',
+            'Helps me communicate ideas to collaborators',
+            'Perfect for overcoming creative blocks'
+        ]),
+        'social_media_tone': 'Informal, vibe-driven, collaborative. Shares creative process and gear setups. '
+                            'Active on music production Reddit, Splice community, and audio Twitter. '
+                            'Reference-track style communication, feedback-oriented.',
+        'enterprise_negotiation_style': None,
+        'price_discussion_phrases': json.dumps([
+            'Producer income is feast or famine',
+            'Need it mostly during active sessions',
+            'Per-project pricing would be ideal',
+            'Worth it when working on paid projects',
+            'Hobby pricing tier would help a lot'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Lyrics need to feel authentic not AI',
+            'Music terminology understanding matters',
+            'Creative suggestions should inspire not replace',
+            'Quality is great for business side of music',
+            'Technical accuracy for audio terms needs work'
+        ])
+    },
+
+    # =========================================================================
+    # Discoverable Enterprise Groups (D_E01 - D_E10)
+    # =========================================================================
+
+    'D_E01': {
+        'group_id': 'D_E01',
+        'description': 'Government agencies — federal, state, and municipal. Process-driven with mandatory '
+                      'compliance requirements and multi-committee procurement. Budget cycles tied to fiscal years. '
+                      'Discover vendors through RFPs, GSA schedules, and government IT conferences.',
+        'typical_use_cases': json.dumps([
+            'Policy document drafting and analysis',
+            'Citizen communication and correspondence',
+            'Regulatory compliance documentation',
+            'Internal report generation',
+            'Data analysis for public programs'
+        ]),
+        'common_complaints': json.dumps([
+            'FedRAMP certification needed but missing',
+            'Data sovereignty requirements not met',
+            'Procurement process not government-friendly',
+            'Need on-premises deployment option',
+            'Audit trail and logging insufficient'
+        ]),
+        'common_praises': json.dumps([
+            'Huge productivity gains for report writing',
+            'Citizen response quality improved',
+            'Helps understaffed departments do more',
+            'Document review speed increased 5x',
+            'Great for standardizing communications'
+        ]),
+        'social_media_tone': 'Formal, process-driven, compliance-focused. Shares government modernization stories. '
+                            'Active on GovTech forums, LinkedIn government groups, and FedScoop. '
+                            'Risk-averse tone, emphasizes security and compliance in endorsements.',
+        'enterprise_negotiation_style': 'RFP-based, multi-committee approval required. '
+                                       'Budget-cycle bound (fiscal year). Vendor diversity requirements. '
+                                       'Compliance certifications are table stakes.',
+        'price_discussion_phrases': json.dumps([
+            'Our budget is locked for this fiscal year',
+            'Need GSA schedule pricing',
+            'Government rates should be lower',
+            'Volume discount for department-wide rollout?',
+            'Must justify spend to oversight committee'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Data cannot leave government boundaries',
+            'FedRAMP authorization is mandatory',
+            'Audit logs must be comprehensive',
+            'Quality needs to meet federal standards',
+            'Security review will take 6-12 months'
+        ])
+    },
+    'D_E02': {
+        'group_id': 'D_E02',
+        'description': 'Educational institutions — universities, K-12 districts, and online learning platforms. '
+                      'Shared governance with committee-driven decisions. Student-centered mission. '
+                      'Discover vendors through EdTech conferences, EDUCAUSE, and academic consortiums.',
+        'typical_use_cases': json.dumps([
+            'Curriculum development and course material',
+            'Student communication and advising',
+            'Research paper review assistance',
+            'Administrative document generation',
+            'Accessibility compliance for content'
+        ]),
+        'common_complaints': json.dumps([
+            'Academic integrity concerns with students',
+            'FERPA compliance needs more attention',
+            'Pricing per-student is too expensive',
+            'Need better plagiarism detection integration',
+            'Faculty adoption is slow without training'
+        ]),
+        'common_praises': json.dumps([
+            'Administrative efficiency improved dramatically',
+            'Faculty report prep time cut in half',
+            'Great for creating accessible content',
+            'Student advising is more personalized now',
+            'Research assistance is invaluable'
+        ]),
+        'social_media_tone': 'Academic, student-centered, inclusive. Shares educational technology outcomes. '
+                            'Active on EDUCAUSE forums, EdTech Twitter, and higher-ed LinkedIn. '
+                            'Thoughtful tone, balances innovation with academic integrity concerns.',
+        'enterprise_negotiation_style': 'Committee-driven, faculty senate involvement. '
+                                       'Pilot-first approach. Budget-cycle dependent (academic year). '
+                                       'Consensus required across departments.',
+        'price_discussion_phrases': json.dumps([
+            'Need campus-wide site licensing',
+            'Per-student pricing is unsustainable',
+            'Education discount is expected',
+            'Grant funding could cover this',
+            'Need to show value to the provost'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Must not enable academic dishonesty',
+            'FERPA compliance is non-negotiable',
+            'Accessibility standards must be met',
+            'Quality for academic writing is important',
+            'Need to support diverse learning needs'
+        ])
+    },
+    'D_E03': {
+        'group_id': 'D_E03',
+        'description': 'Healthcare networks — hospital systems, clinic networks, and telehealth providers. '
+                      'Patient-first, evidence-based decision making with HIPAA as a hard constraint. '
+                      'Discover vendors through HIMSS, KLAS ratings, and clinical champion referrals.',
+        'typical_use_cases': json.dumps([
+            'Clinical documentation and note-taking',
+            'Patient communication and education materials',
+            'Medical research synthesis',
+            'Administrative workflow automation',
+            'Compliance and audit documentation'
+        ]),
+        'common_complaints': json.dumps([
+            'HIPAA compliance is not fully addressed',
+            'Medical accuracy can be unreliable',
+            'Need BAA agreement support',
+            'Integration with EHR systems lacking',
+            'Clinical terminology sometimes wrong'
+        ]),
+        'common_praises': json.dumps([
+            'Clinical documentation time cut by 40%',
+            'Patient education materials are excellent',
+            'Administrative burden significantly reduced',
+            'Research literature reviews are much faster',
+            'Staff satisfaction improved with less paperwork'
+        ]),
+        'social_media_tone': 'Clinical, patient-first, evidence-based. Shares health IT outcomes and studies. '
+                            'Active on HIMSS forums, health IT Twitter, and clinical informatics groups. '
+                            'Cautious endorsements, always emphasizes patient safety considerations.',
+        'enterprise_negotiation_style': 'Clinical validation required. HIPAA-gated procurement. '
+                                       'Physician champion needed for adoption. Pilot mandatory. '
+                                       'Risk-averse, patient safety is paramount.',
+        'price_discussion_phrases': json.dumps([
+            'Need BAA before we can proceed',
+            'Healthcare pricing should reflect our mission',
+            'Cost per clinician needs to show ROI',
+            'Budget approval requires clinical evidence',
+            'Volume discount for health system rollout?'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Medical accuracy is life-or-death',
+            'HIPAA compliance is absolutely non-negotiable',
+            'Clinical terminology must be precise',
+            'Patient safety review required',
+            'Need peer-reviewed evidence of accuracy'
+        ])
+    },
+    'D_E04': {
+        'group_id': 'D_E04',
+        'description': 'Regional banks and credit unions. Trust-focused, regulatory-compliant institutions '
+                      'with conservative technology adoption. Community-rooted with relationship banking values. '
+                      'Discover vendors through banking technology conferences and regulatory body recommendations.',
+        'typical_use_cases': json.dumps([
+            'Customer communication and correspondence',
+            'Loan document analysis and generation',
+            'Compliance report writing',
+            'Internal policy documentation',
+            'Fraud detection report assistance'
+        ]),
+        'common_complaints': json.dumps([
+            'Regulatory compliance features insufficient',
+            'Data security concerns for banking data',
+            'Audit trail not comprehensive enough',
+            'Need on-premises or private cloud option',
+            'Integration with banking systems is poor'
+        ]),
+        'common_praises': json.dumps([
+            'Compliance documentation is much faster',
+            'Customer communications are more consistent',
+            'Loan processing time reduced significantly',
+            'Internal reports are higher quality',
+            'Analyst productivity noticeably improved'
+        ]),
+        'social_media_tone': 'Trust-focused, regulatory-compliant, community-rooted. Shares digital transformation wins. '
+                            'Active on banking technology forums, ABA conferences, and fintech LinkedIn. '
+                            'Conservative tone, emphasizes security and compliance credentials.',
+        'enterprise_negotiation_style': 'Board-approval required. Risk committee review mandatory. '
+                                       'Vendor security assessment thorough. Budget-cycle tied. '
+                                       'Regulatory compliance is table stakes.',
+        'price_discussion_phrases': json.dumps([
+            'Board needs to approve this expenditure',
+            'Need compliance certification first',
+            'Community bank budgets are limited',
+            'ROI must be clear for the board',
+            'Security audit will be extensive'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Financial accuracy must be 100%',
+            'Regulatory language needs to be precise',
+            'Data security is our top concern',
+            'Audit trail must satisfy examiners',
+            'Customer-facing quality reflects our brand'
+        ])
+    },
+    'D_E05': {
+        'group_id': 'D_E05',
+        'description': 'Insurance brokers and carriers — property/casualty, life, and reinsurance. '
+                      'Risk-quantified, actuarial-minded organizations with claims efficiency as a priority. '
+                      'Discover vendors through insurance technology conferences and actuarial networks.',
+        'typical_use_cases': json.dumps([
+            'Claims processing and documentation',
+            'Underwriting report generation',
+            'Policy language drafting and review',
+            'Customer communication templates',
+            'Regulatory filing preparation'
+        ]),
+        'common_complaints': json.dumps([
+            'Insurance-specific terminology needs work',
+            'Claims automation accuracy insufficient',
+            'Regulatory compliance features lacking',
+            'Policy language generation too generic',
+            'Integration with claims systems needed'
+        ]),
+        'common_praises': json.dumps([
+            'Claims documentation speed doubled',
+            'Underwriting analysis support is excellent',
+            'Customer communication quality improved',
+            'Regulatory report prep time halved',
+            'Policyholder correspondence is more consistent'
+        ]),
+        'social_media_tone': 'Risk-quantified, actuarial-minded, client-retention focused. Shares insurtech innovations. '
+                            'Active on insurance technology forums, ITC conferences, and actuarial LinkedIn. '
+                            'Data-driven posts, ROI-focused endorsements.',
+        'enterprise_negotiation_style': 'Actuarial analysis of ROI required. Vendor panel review. '
+                                       'Compliance checked before deployment. Phased rollout preferred. '
+                                       'Risk assessment is a natural part of evaluation.',
+        'price_discussion_phrases': json.dumps([
+            'Need to model ROI actuarially',
+            'Claims efficiency savings should offset cost',
+            'Per-adjuster pricing makes sense',
+            'Volume discount for carrier-wide rollout?',
+            'Phased implementation to prove value first'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Claims accuracy directly impacts loss ratios',
+            'Policy language precision is critical',
+            'Regulatory compliance must be guaranteed',
+            'Underwriting quality affects our risk profile',
+            'Customer communication quality drives retention'
+        ])
+    },
+    'D_E06': {
+        'group_id': 'D_E06',
+        'description': 'Construction firms — commercial, infrastructure, and civil engineering. '
+                      'Safety-first, deadline-critical organizations with field-oriented operations. '
+                      'Project-based budgeting. Discover vendors through construction tech expos and trade shows.',
+        'typical_use_cases': json.dumps([
+            'Project documentation and RFI responses',
+            'Safety compliance report generation',
+            'Bid preparation and cost estimation',
+            'Subcontractor communication',
+            'Change order documentation'
+        ]),
+        'common_complaints': json.dumps([
+            'Doesnt understand construction terminology',
+            'Need offline/field access capability',
+            'Safety documentation templates too generic',
+            'Cost estimation assistance is unreliable',
+            'Integration with project management tools lacking'
+        ]),
+        'common_praises': json.dumps([
+            'RFI response time cut from days to hours',
+            'Safety documentation is more thorough',
+            'Bid preparation is significantly faster',
+            'Project documentation quality improved',
+            'Field teams actually use it for reports'
+        ]),
+        'social_media_tone': 'Safety-first, deadline-critical, field-oriented. Shares construction tech adoption stories. '
+                            'Active on construction tech forums, ENR, and LinkedIn construction groups. '
+                            'Practical tone, focuses on productivity gains and safety improvements.',
+        'enterprise_negotiation_style': 'Project-justified budget. Quick decisions for competitive bids. '
+                                       'Field-tested before company-wide adoption. Cost-benefit focused. '
+                                       'Safety compliance is a non-negotiable requirement.',
+        'price_discussion_phrases': json.dumps([
+            'Need project-based licensing',
+            'Construction margins are razor thin',
+            'Cost must be justifiable per project',
+            'Field worker adoption determines value',
+            'Need to see ROI on actual projects first'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Safety documentation must be flawless',
+            'Construction terminology accuracy is critical',
+            'Bid accuracy directly affects winning work',
+            'Field-usable quality matters most',
+            'Cost estimation needs domain expertise'
+        ])
+    },
+    'D_E07': {
+        'group_id': 'D_E07',
+        'description': 'Telecom operators — mobile networks, broadband providers, and tower companies. '
+                      'Network-reliability focused with scale-oriented operations and competitive pressure. '
+                      'Discover vendors through TM Forum, MWC, and telecom industry analysts.',
+        'typical_use_cases': json.dumps([
+            'Customer support automation',
+            'Network operations documentation',
+            'Regulatory filing and compliance',
+            'Marketing and promotional content',
+            'Technical documentation for field ops'
+        ]),
+        'common_complaints': json.dumps([
+            'Telecom-specific knowledge is limited',
+            'Need better integration with OSS/BSS',
+            'Customer support accuracy needs improvement',
+            'Regulatory filing templates too generic',
+            'Scale testing for millions of customers needed'
+        ]),
+        'common_praises': json.dumps([
+            'Customer support response quality improved',
+            'Technical documentation is more consistent',
+            'Marketing content production accelerated',
+            'Regulatory compliance docs are faster',
+            'Internal knowledge base much better organized'
+        ]),
+        'social_media_tone': 'Network-reliability focused, customer-churn aware, technology-forward. '
+                            'Active on TM Forum, Light Reading, and telecom LinkedIn groups. '
+                            'Scale-oriented posts, emphasizes subscriber experience improvements.',
+        'enterprise_negotiation_style': 'Technology evaluation with vendor bakeoff. PoC required. '
+                                       'Executive sponsor needed. Integration-focused assessment. '
+                                       'Scale testing mandatory before deployment.',
+        'price_discussion_phrases': json.dumps([
+            'Need pricing that scales to millions of uses',
+            'Per-interaction cost must be very low',
+            'Volume commitment for better rates',
+            'ROI measured in churn reduction',
+            'Enterprise agreement for multi-year term'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Customer-facing quality affects churn directly',
+            'Telecom terminology must be accurate',
+            'Scale performance is non-negotiable',
+            'Support accuracy measured in CSAT scores',
+            'Network-specific knowledge is a differentiator'
+        ])
+    },
+    'D_E08': {
+        'group_id': 'D_E08',
+        'description': 'Energy companies — oil & gas, renewables, and utilities. Safety-critical operations '
+                      'with heavy regulatory requirements and long asset lifecycles. '
+                      'Discover vendors through energy industry conferences, Wood Mackenzie, and utility groups.',
+        'typical_use_cases': json.dumps([
+            'Safety and environmental compliance reporting',
+            'Asset management documentation',
+            'Regulatory filing preparation',
+            'Sustainability report drafting',
+            'Field operations procedure writing'
+        ]),
+        'common_complaints': json.dumps([
+            'Energy sector terminology not well understood',
+            'Safety-critical documentation needs guarantees',
+            'Regulatory compliance is industry-specific',
+            'Need integration with SCADA/OT systems',
+            'Environmental reporting needs domain expertise'
+        ]),
+        'common_praises': json.dumps([
+            'Compliance reporting speed increased 3x',
+            'Sustainability reports are more comprehensive',
+            'Field procedure documentation improved',
+            'Regulatory filing prep time cut significantly',
+            'Engineering documentation is more consistent'
+        ]),
+        'social_media_tone': 'Safety-critical, regulatory-heavy, sustainability-driven. Shares energy transition stories. '
+                            'Active on energy industry forums, LinkedIn energy groups, and SPE communities. '
+                            'Formal tone, emphasizes safety and environmental responsibility.',
+        'enterprise_negotiation_style': 'Asset-lifecycle justified spending. Regulatory approval needed. '
+                                       'Capex-justified for long-term deployments. Safety-reviewed. '
+                                       'Board-level approval for company-wide rollouts.',
+        'price_discussion_phrases': json.dumps([
+            'Energy sector budgets are capex-oriented',
+            'Need to justify over 10+ year asset lifecycle',
+            'Safety ROI is worth the investment',
+            'Regulatory compliance savings offset cost',
+            'Enterprise pricing for multi-site deployment'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Safety documentation errors can be fatal',
+            'Regulatory language must be precisely correct',
+            'Environmental reporting needs accuracy guarantees',
+            'Asset management data integrity is critical',
+            'Field safety procedures must be unambiguous'
+        ])
+    },
+    'D_E09': {
+        'group_id': 'D_E09',
+        'description': 'Real estate groups — commercial real estate, property management, and REITs. '
+                      'Deal-driven organizations focused on asset value and tenant retention. '
+                      'Discover vendors through real estate tech expos, CREtech, and broker networks.',
+        'typical_use_cases': json.dumps([
+            'Property listing and marketing content',
+            'Tenant communication and lease management',
+            'Investment analysis report writing',
+            'Market research summaries',
+            'Due diligence documentation'
+        ]),
+        'common_complaints': json.dumps([
+            'Real estate terminology sometimes wrong',
+            'Market data integration is lacking',
+            'Lease language generation too generic',
+            'Property descriptions feel formulaic',
+            'Need MLS and CRM integration'
+        ]),
+        'common_praises': json.dumps([
+            'Property marketing content is great',
+            'Investment memos drafted in minutes',
+            'Tenant communications more professional',
+            'Market analysis summaries save hours',
+            'Due diligence documentation is faster'
+        ]),
+        'social_media_tone': 'Deal-driven, asset-value focused, market-timing aware. Shares property tech innovations. '
+                            'Active on CREtech forums, commercial real estate LinkedIn, and broker communities. '
+                            'Market-comparison style posts, relationship-oriented endorsements.',
+        'enterprise_negotiation_style': 'IRR-justified spending. Deal-by-deal evaluation common. '
+                                       'Investment committee approval needed. Market-compared pricing. '
+                                       'Tenant impact considered in technology decisions.',
+        'price_discussion_phrases': json.dumps([
+            'Need to show ROI per property/deal',
+            'Real estate margins vary by cycle',
+            'Per-property or per-deal pricing preferred',
+            'Investment committee needs IRR justification',
+            'Market downturn means tighter budgets'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Property descriptions need market accuracy',
+            'Lease language must be legally sound',
+            'Investment analysis needs financial precision',
+            'Tenant-facing quality reflects our brand',
+            'Market research accuracy affects deal decisions'
+        ])
+    },
+    'D_E10': {
+        'group_id': 'D_E10',
+        'description': 'Shipping lines and logistics companies — container shipping, freight, and port operations. '
+                      'Operations-focused with schedule-critical workflows and global supply chain dependencies. '
+                      'Discover vendors through maritime conferences, Drewry, and logistics technology forums.',
+        'typical_use_cases': json.dumps([
+            'Shipping documentation and bills of lading',
+            'Customer communication across time zones',
+            'Route optimization analysis reports',
+            'Customs compliance documentation',
+            'Fleet management reporting'
+        ]),
+        'common_complaints': json.dumps([
+            'Maritime terminology not well understood',
+            'Multi-language support is inconsistent',
+            'Customs documentation needs country-specific knowledge',
+            'Integration with TMS/WMS systems lacking',
+            'Real-time operations needs faster response'
+        ]),
+        'common_praises': json.dumps([
+            'Documentation processing speed doubled',
+            'Customer communications across languages improved',
+            'Customs filing prep time reduced significantly',
+            'Fleet reporting is more standardized',
+            'Operational efficiency gains are measurable'
+        ]),
+        'social_media_tone': 'Operations-focused, schedule-critical, global-minded. Shares logistics tech innovations. '
+                            'Active on maritime forums, JOC.com, and supply chain LinkedIn groups. '
+                            'Efficiency-driven posts, emphasizes reliability and global scale.',
+        'enterprise_negotiation_style': 'Operations-justified procurement. Fleet-wide evaluation. '
+                                       'Vendor consolidation preferred. Route-tested before global rollout. '
+                                       'Cost measured per TEU (twenty-foot equivalent unit).',
+        'price_discussion_phrases': json.dumps([
+            'Cost per TEU must be measurable',
+            'Fleet-wide pricing for all vessels/offices',
+            'Shipping margins are volume-dependent',
+            'Need multi-currency and multi-language',
+            'Operations savings must offset subscription'
+        ]),
+        'quality_discussion_phrases': json.dumps([
+            'Maritime documentation accuracy is legally binding',
+            'Customs errors cause shipment delays',
+            'Multi-language quality must be consistent',
+            'Schedule-critical operations need reliability',
+            'Fleet-wide consistency is essential'
+        ])
+    },
 }
 
 

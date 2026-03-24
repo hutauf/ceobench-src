@@ -212,9 +212,11 @@ def cmd_start_server(args, base: Path):
     simulator.initialize(resume=True)  # resume=True: skip DB writes, just set up _group_rngs
     current_day = meta.get("current_day", 0)
 
-    # Fast-forward RNG to match current day
+    # Restore RNG states from database for deterministic resume
     if current_day > 0:
         simulator.current_day = current_day
+        if not simulator.restore_rng_states():
+            print(f"WARNING: No saved RNG states found — RNG will NOT match continuous run", file=sys.stderr)
 
     workspace = _session_workspace(base, session_id)
     tools = AgentTools(conn, current_day, workspace, rng=rng, config=config, seed=seed)

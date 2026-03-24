@@ -1024,8 +1024,6 @@ def judge_agent_social_post(
     # Build the judge prompt
     prompt = f"""You're scrolling through social media and you come across this post from the CEO of a B2B SaaS company called NovaMind — an AI/ML API platform for developers.
 
-The company has about {subscriber_count:,} customers and ${mrr:,.0f}/mo revenue.
-
 You are: {group_description}
 Your social media style: {group_social_tone}
 """
@@ -1044,7 +1042,7 @@ A customer posted:
 The CEO replied:
 "{post_content}"
 
-Does this reply make you think "these people actually know what they're talking about, I should check out their product"?"""
+How much does this post make you want to check out their product?"""
     else:
         prompt += f"""
 They just posted:
@@ -1055,9 +1053,10 @@ How much does this post make you want to check out their product?"""
     prompt += """
 
 Rate from -1.0 to 1.0:
--1.0 = would avoid this product but would read or comment or repost
-0.0 = don't care, scroll past
-1.0 = immediately want to check out their product and want to read or comment or repost
+- Positive score if you would perceive the company more positively after reading the post and want to check their product more. Negative score if you would perceive the company more negatively and have a more negative impression on their product.
+- Larger absolute value = more likely to read, repost, or comment on the post.
+- |score| = 0: don't care, scroll past
+- |score| = 1: I will read, repost, and comment on the post
 
 Respond in EXACTLY this format:
 SCORE: <number between -1.0 and 1.0>

@@ -4277,10 +4277,11 @@ os.chdir('{self.workspace_path}')
 
             # Snapshot current market state for this newly discovered group
             # so get_group_insights has data from discovery time
-            from .database import get_group_parameters as _get_gp_disc
+            from .database import get_group_parameters as _get_gp_disc, get_global_drift as _get_gd_disc
             drifted_disc = _get_gp_disc(self.conn, discovered_gid)
-            snap_c_max = drifted_disc['current_c_max_mean'] if drifted_disc else group_cfg.c_max_mean
-            snap_q_min = drifted_disc['current_q_min_mean'] if drifted_disc else group_cfg.q_min_mean
+            global_q = _get_gd_disc(self.conn)
+            snap_c_max = group_cfg.c_max_mean + (drifted_disc['drift_c_max_total'] if drifted_disc else 0.0)
+            snap_q_min = group_cfg.q_min_mean + global_q + (drifted_disc['drift_q_bias_total'] if drifted_disc else 0.0)
             snap_market_cap = group_cfg.base_market_cap * (1 + group_cfg.annual_cap_growth_rate * self.current_day / 365.0)
             self.conn.execute("""
                 INSERT OR REPLACE INTO group_insight_snapshots
@@ -4563,10 +4564,11 @@ os.chdir('{self.workspace_path}')
             snapshot_day = snapshot['snapshot_day']
         else:
             # No snapshot yet — use current data (backwards compat for initial groups)
-            from .database import get_group_parameters as _get_gp
+            from .database import get_group_parameters as _get_gp, get_global_drift as _get_gd
             drifted = _get_gp(self.conn, group_id)
-            effective_c_max = drifted['current_c_max_mean'] if drifted else group_cfg.c_max_mean
-            effective_q_min = drifted['current_q_min_mean'] if drifted else group_cfg.q_min_mean
+            global_q = _get_gd(self.conn)
+            effective_c_max = group_cfg.c_max_mean + (drifted['drift_c_max_total'] if drifted else 0.0)
+            effective_q_min = group_cfg.q_min_mean + global_q + (drifted['drift_q_bias_total'] if drifted else 0.0)
             grown_market_cap = group_cfg.base_market_cap * (1 + group_cfg.annual_cap_growth_rate * self.current_day / 365.0)
             snapshot_day = self.current_day
 

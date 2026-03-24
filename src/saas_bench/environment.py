@@ -156,10 +156,9 @@ def build_daily_dashboard(
                    COUNT(smp.post_id) AS comment_count
             FROM agent_social_media_posts asp
             LEFT JOIN social_media_posts smp ON smp.reply_to_agent_post_id = asp.agent_post_id
-                AND smp.day = ?
             WHERE asp.day = ?
             GROUP BY asp.agent_post_id
-        """, (day - 1, day - 1)).fetchall()
+        """, (day - 1,)).fetchall()
         if agent_posts:
             lines.append("")
             lines.append("--- Your Social Media Posts (Yesterday) ---")

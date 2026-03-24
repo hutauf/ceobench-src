@@ -1475,19 +1475,19 @@ CUSTOMER_GROUP_S1 = CustomerGroupConfig(
     group_name='Price-Sensitive Individuals',
     is_enterprise=False,
     q_min_mean=0.10,  # Price-sensitive users (students, freelancers) have highest tolerance for low quality when free
-    q_min_std=0.2,   # [OpenView freemium: 95-98% stay on free tier; SERVQUAL widest zone of tolerance] (2x noise)
+    q_min_std=0.05,   # [OpenView freemium: 95-98% stay on free tier; SERVQUAL widest zone of tolerance] (0.5x noise)
     # Q_max: Low — freelancers/students use AI for basic tasks (grammar, simple queries, summaries).
     # Can't leverage advanced reasoning, complex code generation, or domain-specific analysis.
     # Pew Research 2024: 55% of AI users only use basic features (search, writing assistance).
     # McKinsey 2025: Entry-level knowledge workers extract ~40% of AI tool capability.
     q_range_mean=0.45,
-    q_range_std=0.4,   # (2x noise)
+    q_range_std=0.1,   # (0.5x noise)
     c_max_mean=50.0,  # $50/mo max - typical freelancer tool budget
-    c_max_std=108.0,   # Increased variance: wider budget spread within group (2x noise)
+    c_max_std=27.0,   # Reduced variance (0.5x noise)
     slope_mean=0.010,  # High price sensitivity - budget-constrained users
-    slope_std=0.016,   # Increased variance (2x noise)
+    slope_std=0.004,   # Reduced variance (0.5x noise)
     usage_demand_mean=80.0,
-    usage_demand_std=200.0,  # Increased variance (2x noise)
+    usage_demand_std=50.0,  # Reduced variance (0.5x noise)
     # Margin analysis (tier 3): 80 × 30 × $0.006 = $14.40/mo COGS → at $50 price = 71% gross margin
     # But S1 users need decent product quality, so actual margin depends on dev investment
     # At tier 4: 80 × 30 × $0.012 = $28.80/mo COGS → at $50 = 42% gross margin
@@ -1512,14 +1512,14 @@ CUSTOMER_GROUP_S1 = CustomerGroupConfig(
     # Source: DemandSage 2025 — 70% of freelancers prefer month-to-month subscriptions
     # Source: UserTesting 2024 — price-sensitive users 2-3x more likely to avoid annual plans
     lockin_penalty_mean=0.008,  # 0.8% per month — strong lock-in aversion
-    lockin_penalty_std=0.012,  # (2x noise)
+    lockin_penalty_std=0.003,  # (0.5x noise)
     # Ads sensitivity: Low-budget freelancers are sensitive to ads degrading UX, low ad revenue per user
     # Source: HubSpot 2024 — price-sensitive users show moderate negative reaction to in-app ads
     # Source: IAB 2024 — freelancer/student users generate ~$0.08/day ad revenue (low engagement)
     ads_quality_sensitivity_mean=0.12,  # Moderate quality penalty from ads
-    ads_quality_sensitivity_std=0.16,  # (2x noise)
+    ads_quality_sensitivity_std=0.04,  # (0.5x noise)
     ads_return_sensitivity_mean=0.08,   # Low ad revenue — light engagement
-    ads_return_sensitivity_std=0.12,   # (2x noise)
+    ads_return_sensitivity_std=0.03,   # (0.5x noise)
 )
 
 # S2: Quality-focused professionals (lawyers, consultants, healthcare)
@@ -1531,18 +1531,18 @@ CUSTOMER_GROUP_S2 = CustomerGroupConfig(
     group_name='Quality-Focused Individuals',
     is_enterprise=False,
     q_min_mean=0.30,  # Professionals have reputation at stake; 61% cite accuracy issues [Writer.com 2024]
-    q_min_std=0.32,   # [Stack Overflow 2025: 46% distrust AI output; need baseline reliability] (2x noise)
+    q_min_std=0.08,   # [Stack Overflow 2025: 46% distrust AI output; need baseline reliability] (0.5x noise)
     # Q_max: High — lawyers/consultants use complex reasoning, document analysis, strategy work.
     # BCG 2024: 68% of professionals leverage advanced AI features for complex tasks.
     # Thomson Reuters 2025: Legal AI tools require near-human accuracy for adoption.
     q_range_mean=0.55,
-    q_range_std=0.32,   # (2x noise)
+    q_range_std=0.08,   # (0.5x noise)
     c_max_mean=140.0,  # $140/mo max - professionals invest in productivity
-    c_max_std=240.0,   # Increased variance (2x noise)
+    c_max_std=60.0,   # Reduced variance (0.5x noise)
     slope_mean=0.003,  # Low price sensitivity - value quality over cost
-    slope_std=0.006,   # Increased variance (2x noise)
+    slope_std=0.0015,   # Reduced variance (0.5x noise)
     usage_demand_mean=180.0,  # Heavy professional use, ~180K tokens/day
-    usage_demand_std=360.0,  # Increased variance (2x noise)
+    usage_demand_std=90.0,  # Reduced variance (0.5x noise)
     # Margin analysis (tier 4): 180 × 30 × $0.012 = $64.80/mo COGS → at $140 = 54% gross margin
     # At tier 5: 180 × 30 × $0.030 = $162/mo → at $140 = NEGATIVE — pros pay premium but tier 5 is risky
     # Source: KeyBanc 2024 Professional AI tools $60-150/month: https://www.key.com/kco/images/2024-SaaS-Survey-KeyBanc.pdf
@@ -1565,14 +1565,14 @@ CUSTOMER_GROUP_S2 = CustomerGroupConfig(
     # Source: KeyBanc 2024 — 60% of professional AI tool users prefer annual with exit clause
     # Source: BCG 2024 — professionals accept annual plans if quality is proven
     lockin_penalty_mean=0.005,  # 0.5% per month — moderate aversion
-    lockin_penalty_std=0.008,  # (2x noise)
+    lockin_penalty_std=0.002,  # (0.5x noise)
     # Ads sensitivity: Professionals are more engaged, ads more disruptive to workflows
     # Source: BCG 2024 — 68% of professionals cite ads as "significant distraction" in work tools
     # Source: IAB 2024 — professional users generate ~$0.15/day ad revenue (active engagement)
     ads_quality_sensitivity_mean=0.15,  # High quality penalty — ads disrupt professional workflows
-    ads_quality_sensitivity_std=0.2,  # (2x noise)
+    ads_quality_sensitivity_std=0.05,  # (0.5x noise)
     ads_return_sensitivity_mean=0.15,   # Moderate ad revenue — active usage
-    ads_return_sensitivity_std=0.2,   # (2x noise)
+    ads_return_sensitivity_std=0.05,   # (0.5x noise)
 )
 
 # S3: Power users and developers
@@ -1584,18 +1584,18 @@ CUSTOMER_GROUP_S3 = CustomerGroupConfig(
     group_name='Power Users',
     is_enterprise=False,
     q_min_mean=0.25,  # Tech users can work around limitations (high capability) but aware of quality issues
-    q_min_std=0.28,   # [Stack Overflow 2025: only 3% "highly trust" AI; 44% learn from AI despite low trust] (2x noise)
+    q_min_std=0.07,   # [Stack Overflow 2025: only 3% "highly trust" AI; 44% learn from AI despite low trust] (0.5x noise)
     # Q_max: High — devs/data scientists push every feature, use advanced code gen, agentic workflows.
     # GitHub 2025: Copilot power users utilize 80%+ of available features.
     # Stack Overflow 2025: Senior devs extract significantly more value from AI coding tools.
     q_range_mean=0.55,
-    q_range_std=0.4,   # (2x noise)
+    q_range_std=0.1,   # (0.5x noise)
     c_max_mean=180.0,  # $180/mo max - heavy investment in productivity
-    c_max_std=300.0,   # Increased variance (2x noise)
+    c_max_std=75.0,   # Reduced variance (0.5x noise)
     slope_mean=0.004,  # Balanced - value both quality and price
-    slope_std=0.008,   # Increased variance (2x noise)
+    slope_std=0.002,   # Reduced variance (0.5x noise)
     usage_demand_mean=450.0,  # Power users/devs, ~450K tokens/day (code queries 10-25K tokens each)
-    usage_demand_std=1000.0,  # Increased variance (2x noise)
+    usage_demand_std=250.0,  # Reduced variance (0.5x noise)
     # Margin analysis (tier 3): 450 × 30 × $0.006 = $81/mo COGS → at $180 = 55% gross margin
     # At tier 4: 450 × 30 × $0.012 = $162/mo → at $180 = 10% gross margin
     # Power users are the hardest to serve profitably — matches ChatGPT Pro unprofitability
@@ -1619,14 +1619,14 @@ CUSTOMER_GROUP_S3 = CustomerGroupConfig(
     # Source: StackOverflow 2024 Survey — 65% of devs prefer monthly/cancelable subscriptions
     # Source: GitHub Copilot pricing at $10-19/mo monthly (no forced annual) reflects dev preference
     lockin_penalty_mean=0.006,  # 0.6% per month — devs dislike lock-in
-    lockin_penalty_std=0.008,  # (2x noise)
+    lockin_penalty_std=0.002,  # (0.5x noise)
     # Ads sensitivity: Power users/devs are accustomed to tools, moderate ads tolerance
     # Source: StackOverflow 2024 — developers accept tasteful ads (e.g. GitHub sponsors)
     # Source: IAB 2024 — power users generate ~$0.12/day ad revenue (high but focused usage)
     ads_quality_sensitivity_mean=0.10,  # Moderate quality penalty — accustomed to some ads
-    ads_quality_sensitivity_std=0.12,  # (2x noise)
+    ads_quality_sensitivity_std=0.03,  # (0.5x noise)
     ads_return_sensitivity_mean=0.12,   # Moderate ad revenue — decent engagement depth
-    ads_return_sensitivity_std=0.16,   # (2x noise)
+    ads_return_sensitivity_std=0.04,   # (0.5x noise)
 )
 
 # Enterprise customer groups
@@ -1657,18 +1657,18 @@ CUSTOMER_GROUP_E1 = CustomerGroupConfig(
     group_name='Cost-Cutting Enterprises',
     is_enterprise=True,
     q_min_mean=0.20,  # SMBs accept lower quality if price is right; need basic biz functionality
-    q_min_std=0.24,   # [Monetizely: SMBs "extremely price-sensitive, switch if cheaper alt good enough"] (2x noise)
+    q_min_std=0.06,   # [Monetizely: SMBs "extremely price-sensitive, switch if cheaper alt good enough"] (0.5x noise)
     # Q_max: Medium — manufacturing/logistics use AI for routine tasks (reports, emails, data entry).
     # Deloitte 2025: ~60% of enterprise AI use cases are basic automation, not advanced reasoning.
     # Gartner 2025: Cost-cutting enterprises optimize for "good enough" quality, not best-in-class.
     q_range_mean=0.45,
-    q_range_std=0.4,   # (2x noise)
+    q_range_std=0.1,   # (0.5x noise)
     c_max_mean=55.0,  # Per seat - $55/seat/mo (typical mid-market pricing)
-    c_max_std=92.0,   # Increased variance (2x noise)
+    c_max_std=23.0,   # Reduced variance (0.5x noise)
     slope_mean=0.008,  # High price sensitivity - ROI-focused
-    slope_std=0.012,   # Increased variance (2x noise)
+    slope_std=0.003,   # Reduced variance (0.5x noise)
     usage_demand_mean=60.0,  # Per seat, moderate enterprise usage ~60K tokens/seat/day
-    usage_demand_std=152.0,  # Increased variance (2x noise)
+    usage_demand_std=38.0,  # Reduced variance (0.5x noise)
     # Margin analysis (tier 3, per seat): 60 × 30 × $0.006 = $10.80/seat/mo COGS → at $55/seat = 80% gross
     # At tier 4: 60 × 30 × $0.012 = $21.60/seat → at $55/seat = 61% gross
     # Cost-cutters accept lower quality tiers, keeping margins healthy
@@ -1693,24 +1693,24 @@ CUSTOMER_GROUP_E1 = CustomerGroupConfig(
     seat_count_min=50,
     seat_count_max=500,
     negotiation_rate_mean=0.4,
-    negotiation_rate_std=0.4,  # (2x noise)
+    negotiation_rate_std=0.1,  # (0.5x noise)
     reply_delay_mean=5.0,
-    reply_delay_std=8.0,      # (2x noise)
+    reply_delay_std=2.0,      # (0.5x noise)
     max_negotiation_turns_mean=6.0,
-    max_negotiation_turns_std=8.0,  # (2x noise)
+    max_negotiation_turns_std=2.0,  # (0.5x noise)
     # Lock-in penalty: MODERATE — cost-cutting enterprises use contracts as cost-control tool.
     # Budget-conscious orgs accept annual commitments for volume discounts.
     # Source: Zuora 2025 — 85% of enterprise SaaS contracts are annual or multi-year
     # Source: Paddle 2025 — contract commitments reduce churn 40-60% (enterprises accept this tradeoff)
     lockin_penalty_mean=0.005,  # 0.5% per month — moderate, accept lock-in for lower prices
-    lockin_penalty_std=0.008,  # (2x noise)
+    lockin_penalty_std=0.002,  # (0.5x noise)
     # Ads sensitivity: Enterprise tolerates some ads if non-intrusive; high engagement = high ad revenue
     # Source: HubSpot 2024 — enterprise users 2-3x more negative to intrusive ads, but tolerate subtle ones
     # Source: IAB 2024 — enterprise accounts generate ~$0.20/seat/day ad impressions (high traffic)
     ads_quality_sensitivity_mean=0.08,  # Low quality penalty — tolerates subtle in-app ads
-    ads_quality_sensitivity_std=0.12,  # (2x noise)
+    ads_quality_sensitivity_std=0.03,  # (0.5x noise)
     ads_return_sensitivity_mean=0.20,   # High ad revenue — many seats, high engagement
-    ads_return_sensitivity_std=0.24,   # (2x noise)
+    ads_return_sensitivity_std=0.06,   # (0.5x noise)
 )
 
 # E2: Quality-first enterprises (law firms, biotech, financial services)
@@ -1719,18 +1719,18 @@ CUSTOMER_GROUP_E2 = CustomerGroupConfig(
     group_name='Quality-First Enterprises',
     is_enterprise=True,
     q_min_mean=0.40,  # Mid-large enterprises equate low quality with risk; require SOC 2/ISO 27001 baseline
-    q_min_std=0.32,   # [Monetizely: enterprises "equate price with quality"; World Quality Report 2025] (2x noise)
+    q_min_std=0.08,   # [Monetizely: enterprises "equate price with quality"; World Quality Report 2025] (0.5x noise)
     # Q_max: Very high — law firms/biotech/finance need near-human accuracy for complex analysis.
     # Thomson Reuters 2025: Legal AI requires >95% accuracy for adoption at premium firms.
     # McKinsey 2025: Financial services AI use cases demand highest quality tiers.
     q_range_mean=0.5,
-    q_range_std=0.24,   # (2x noise)
+    q_range_std=0.06,   # (0.5x noise)
     c_max_mean=120.0,  # Per seat - $120/seat/mo (premium tier)
-    c_max_std=180.0,   # Increased variance (2x noise)
+    c_max_std=45.0,   # Reduced variance (0.5x noise)
     slope_mean=0.002,  # Low price sensitivity - quality over cost
-    slope_std=0.006,   # Increased variance (2x noise)
+    slope_std=0.0015,   # Reduced variance (0.5x noise)
     usage_demand_mean=150.0,  # Per seat, heavy professional use ~150K tokens/seat/day
-    usage_demand_std=300.0,  # Increased variance (2x noise)
+    usage_demand_std=75.0,  # Reduced variance (0.5x noise)
     # Margin analysis (tier 4, per seat): 150 × 30 × $0.012 = $54/seat/mo COGS → at $120/seat = 55% gross
     # At tier 5: 150 × 30 × $0.030 = $135/seat → at $120/seat = NEGATIVE
     # Quality-first enterprises need premium models — margins compress fast at tier 5
@@ -1752,24 +1752,24 @@ CUSTOMER_GROUP_E2 = CustomerGroupConfig(
     seat_count_min=100,
     seat_count_max=1000,
     negotiation_rate_mean=0.25,
-    negotiation_rate_std=0.32,  # (2x noise)
+    negotiation_rate_std=0.08,  # (0.5x noise)
     reply_delay_mean=10.0,
-    reply_delay_std=16.0,       # (2x noise)
+    reply_delay_std=4.0,       # (0.5x noise)
     max_negotiation_turns_mean=10.0,
-    max_negotiation_turns_std=12.0,  # (2x noise)
+    max_negotiation_turns_std=3.0,  # (0.5x noise)
     # Lock-in penalty: LOW — quality-first enterprises accept long contracts for guaranteed quality.
     # Law firms, biotech, financial services routinely sign multi-year enterprise agreements.
     # Source: Gartner 2024 — regulated industries prefer 2-3 year contracts for vendor stability
     # Source: KeyBanc 2024 — quality-focused enterprises accept 24-36 month terms
     lockin_penalty_mean=0.003,  # 0.3% per month — low aversion, accustomed to long contracts
-    lockin_penalty_std=0.004,  # (2x noise)
+    lockin_penalty_std=0.001,  # (0.5x noise)
     # Ads sensitivity: Large enterprises hate ads (brand/compliance concerns); very high traffic = high returns
     # Source: HubSpot 2024 — regulated enterprises (law/biotech/finance) 3x more likely to cancel over ads
     # Source: IAB 2024 — quality-first enterprise seats generate ~$0.25/seat/day (premium engagement)
     ads_quality_sensitivity_mean=0.25,  # High quality penalty — brand/compliance concerns
-    ads_quality_sensitivity_std=0.24,  # (2x noise)
+    ads_quality_sensitivity_std=0.06,  # (0.5x noise)
     ads_return_sensitivity_mean=0.25,   # High ad revenue — very high engagement per seat
-    ads_return_sensitivity_std=0.28,   # (2x noise)
+    ads_return_sensitivity_std=0.07,   # (0.5x noise)
 )
 
 # E3: Strategic partners (large enterprises, Fortune 500)
@@ -1778,18 +1778,18 @@ CUSTOMER_GROUP_E3 = CustomerGroupConfig(
     group_name='Strategic Partners',
     is_enterprise=True,
     q_min_mean=0.45,  # Large enterprises require compliance, security attestation; narrowest SERVQUAL tolerance
-    q_min_std=0.4,   # [Chaotic Flow: personalized data = high switching costs; even trials must show enterprise-grade] (2x noise)
+    q_min_std=0.1,   # [Chaotic Flow: personalized data = high switching costs; even trials must show enterprise-grade] (0.5x noise)
     # Q_max: High — Fortune 500 use diverse AI use cases across many departments.
     # Gartner 2025: Large enterprises deploy AI across 5+ business functions on average.
     # Bain 2025: Strategic enterprise buyers value reliability + breadth over cutting-edge peaks.
     q_range_mean=0.35,
-    q_range_std=0.32,   # (2x noise)
+    q_range_std=0.08,   # (0.5x noise)
     c_max_mean=100.0,  # Per seat - $100/seat/mo (volume discount expected)
-    c_max_std=152.0,   # Increased variance (2x noise)
+    c_max_std=38.0,   # Reduced variance (0.5x noise)
     slope_mean=0.003,  # Balanced - large volume negotiations
-    slope_std=0.006,   # Increased variance (2x noise)
+    slope_std=0.0015,   # Reduced variance (0.5x noise)
     usage_demand_mean=100.0,  # Per seat, high-volume strategic use ~100K tokens/seat/day
-    usage_demand_std=200.0,  # Increased variance (2x noise)
+    usage_demand_std=50.0,  # Reduced variance (0.5x noise)
     # Margin analysis (tier 3, per seat): 100 × 30 × $0.006 = $18/seat/mo COGS → at $100/seat = 82% gross
     # At tier 4: 100 × 30 × $0.012 = $36/seat → at $100/seat = 64% gross
     # Volume discounts expected (10-20%), compressing effective margins to 45-55%
@@ -1811,24 +1811,24 @@ CUSTOMER_GROUP_E3 = CustomerGroupConfig(
     seat_count_min=200,
     seat_count_max=2000,
     negotiation_rate_mean=0.15,
-    negotiation_rate_std=0.2,  # (2x noise)
+    negotiation_rate_std=0.05,  # (0.5x noise)
     reply_delay_mean=21.0,
-    reply_delay_std=28.0,      # (2x noise)
+    reply_delay_std=7.0,      # (0.5x noise)
     max_negotiation_turns_mean=14.0,
-    max_negotiation_turns_std=16.0,  # (2x noise)
+    max_negotiation_turns_std=4.0,  # (0.5x noise)
     # Lock-in penalty: VERY LOW — Fortune 500 strategic partners routinely commit to multi-year deals.
     # Large enterprises have dedicated vendor management; lock-in is standard operating procedure.
     # Source: Menlo Ventures 2025 — enterprise GenAI deals averaged 2.5-year contracts
     # Source: McKinsey 2025 — Fortune 500 AI partnerships typically 3-5 year strategic commitments
     lockin_penalty_mean=0.002,  # 0.2% per month — minimal aversion, multi-year is standard
-    lockin_penalty_std=0.004,  # (2x noise)
+    lockin_penalty_std=0.001,  # (0.5x noise)
     # Ads sensitivity: Strategic accounts sensitive to ads (premium expectations); highest engagement
     # Source: McKinsey 2025 — Fortune 500 partners expect "white-glove" ad-free experience
     # Source: IAB 2024 — strategic accounts generate ~$0.30/seat/day (deepest engagement, most seats)
     ads_quality_sensitivity_mean=0.20,  # High quality penalty — premium brand expectations
-    ads_quality_sensitivity_std=0.2,  # (2x noise)
+    ads_quality_sensitivity_std=0.05,  # (0.5x noise)
     ads_return_sensitivity_mean=0.30,   # Highest ad revenue — massive engagement, most seats
-    ads_return_sensitivity_std=0.32,   # (2x noise)
+    ads_return_sensitivity_std=0.08,   # (0.5x noise)
 )
 
 # Initial customer groups (visible at Level 1 from start)
@@ -1852,7 +1852,7 @@ ENTERPRISE_CUSTOMER_GROUPS = ['E1', 'E2', 'E3']
 # HARDCODED DISCOVERABLE GROUP PARAMETERS (all mean + std, 2x noise scale)
 # =============================================================================
 # Each discoverable group has fully hardcoded parameters — no RNG for param values.
-# All std values are at 2x scale for high within-group heterogeneity.
+# All std values are at 0.5x scale for high within-group heterogeneity.
 
 # Individual discoverable groups: D_S01-D_S10
 # Keys: group_name → dict of all CustomerGroupConfig numeric params
@@ -1862,143 +1862,143 @@ _INDIVIDUAL_GROUP_PARAMS = {
     # [Upwork 2025: 72% of creative freelancers prefer month-to-month tools]
     # [Publift 2025: creative app users have 40% higher ad engagement than avg]
     'Niche Creators': dict(
-        q_min_mean=0.15, q_min_std=0.24,
-        q_range_mean=0.5, q_range_std=0.36,
-        c_max_mean=80.0, c_max_std=128.0,
-        slope_mean=0.008, slope_std=0.012,
-        usage_demand_mean=120.0, usage_demand_std=192.0,
+        q_min_mean=0.15, q_min_std=0.06,
+        q_range_mean=0.5, q_range_std=0.09,
+        c_max_mean=80.0, c_max_std=32.0,
+        slope_mean=0.008, slope_std=0.003,
+        usage_demand_mean=120.0, usage_demand_std=48.0,
         base_market_cap=200000, annual_cap_growth_rate=0.08,
-        lockin_penalty_mean=0.008, lockin_penalty_std=0.012,
-        ads_quality_sensitivity_mean=0.08, ads_quality_sensitivity_std=0.12,
-        ads_return_sensitivity_mean=0.10, ads_return_sensitivity_std=0.14,
+        lockin_penalty_mean=0.008, lockin_penalty_std=0.003,
+        ads_quality_sensitivity_mean=0.08, ads_quality_sensitivity_std=0.03,
+        ads_return_sensitivity_mean=0.10, ads_return_sensitivity_std=0.035,
     ),
     # D_S02: Academic Researchers — need accuracy for scholarly work, grant-funded
     # [Oxford Academic: baseline for factual accuracy in academic contexts is high]
     # [Nature 2024: 60% of researchers buy annual software licenses (grant cycles)]
     # [Nature 2024: 85% of researchers prefer ad-free tools; will pay premium]
     'Academic Researchers': dict(
-        q_min_mean=0.35, q_min_std=0.32,
-        q_range_mean=0.47, q_range_std=0.32,
-        c_max_mean=100.0, c_max_std=160.0,
-        slope_mean=0.004, slope_std=0.006,
-        usage_demand_mean=200.0, usage_demand_std=320.0,
+        q_min_mean=0.35, q_min_std=0.08,
+        q_range_mean=0.47, q_range_std=0.08,
+        c_max_mean=100.0, c_max_std=40.0,
+        slope_mean=0.004, slope_std=0.0015,
+        usage_demand_mean=200.0, usage_demand_std=80.0,
         base_market_cap=350000, annual_cap_growth_rate=0.06,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.18, ads_quality_sensitivity_std=0.26,
-        ads_return_sensitivity_mean=0.06, ads_return_sensitivity_std=0.08,
+        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.18, ads_quality_sensitivity_std=0.065,
+        ads_return_sensitivity_mean=0.06, ads_return_sensitivity_std=0.02,
     ),
     # D_S03: Non-Profit Workers — extreme budget constraints, any functional free tool welcomed
     # [Chronicle of Philanthropy: <3% tech spend; Godefroid 2024: budget barriers]
     # [NTEN 2025: 78% of nonprofits prefer monthly SaaS to avoid budget lock-in]
     # [NTEN 2025: 62% of nonprofits accept ads in exchange for discounted SaaS]
     'Non-Profit Workers': dict(
-        q_min_mean=0.12, q_min_std=0.2,
-        q_range_mean=0.43, q_range_std=0.32,
-        c_max_mean=35.0, c_max_std=56.0,
-        slope_mean=0.011, slope_std=0.016,
-        usage_demand_mean=60.0, usage_demand_std=96.0,
+        q_min_mean=0.12, q_min_std=0.05,
+        q_range_mean=0.43, q_range_std=0.08,
+        c_max_mean=35.0, c_max_std=14.0,
+        slope_mean=0.011, slope_std=0.004,
+        usage_demand_mean=60.0, usage_demand_std=24.0,
         base_market_cap=150000, annual_cap_growth_rate=0.05,
-        lockin_penalty_mean=0.009, lockin_penalty_std=0.012,
-        ads_quality_sensitivity_mean=0.07, ads_quality_sensitivity_std=0.1,
-        ads_return_sensitivity_mean=0.07, ads_return_sensitivity_std=0.1,
+        lockin_penalty_mean=0.009, lockin_penalty_std=0.003,
+        ads_quality_sensitivity_mean=0.07, ads_quality_sensitivity_std=0.025,
+        ads_return_sensitivity_mean=0.07, ads_return_sensitivity_std=0.025,
     ),
     # D_S04: Small Agency Teams — client-facing output needs baseline quality
     # [HubSpot 2025: agencies churn tools 2x faster; client expectations drive quality]
     # [HubSpot 2025: 78% of agency professionals cite "clean UX" as top-3 tool criterion]
     'Small Agency Teams': dict(
-        q_min_mean=0.25, q_min_std=0.28,
-        q_range_mean=0.53, q_range_std=0.36,
-        c_max_mean=160.0, c_max_std=256.0,
-        slope_mean=0.005, slope_std=0.008,
-        usage_demand_mean=300.0, usage_demand_std=480.0,
+        q_min_mean=0.25, q_min_std=0.07,
+        q_range_mean=0.53, q_range_std=0.09,
+        c_max_mean=160.0, c_max_std=64.0,
+        slope_mean=0.005, slope_std=0.002,
+        usage_demand_mean=300.0, usage_demand_std=120.0,
         base_market_cap=180000, annual_cap_growth_rate=0.07,
-        lockin_penalty_mean=0.007, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.16, ads_quality_sensitivity_std=0.22,
-        ads_return_sensitivity_mean=0.08, ads_return_sensitivity_std=0.12,
+        lockin_penalty_mean=0.007, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.16, ads_quality_sensitivity_std=0.055,
+        ads_return_sensitivity_mean=0.08, ads_return_sensitivity_std=0.03,
     ),
     # D_S05: Indie Game Devs — tolerant adopters of free tools, high usage for code gen
     # [GDC 2025: 69% monthly subs; accept "good enough" for prototyping]
     # [GDC 2025: 73% of indie devs use ad-supported tools during development]
     'Indie Game Devs': dict(
-        q_min_mean=0.15, q_min_std=0.24,
-        q_range_mean=0.57, q_range_std=0.4,
-        c_max_mean=90.0, c_max_std=144.0,
-        slope_mean=0.006, slope_std=0.008,
-        usage_demand_mean=400.0, usage_demand_std=640.0,
+        q_min_mean=0.15, q_min_std=0.06,
+        q_range_mean=0.57, q_range_std=0.1,
+        c_max_mean=90.0, c_max_std=36.0,
+        slope_mean=0.006, slope_std=0.002,
+        usage_demand_mean=400.0, usage_demand_std=160.0,
         base_market_cap=120000, annual_cap_growth_rate=0.09,
-        lockin_penalty_mean=0.008, lockin_penalty_std=0.012,
-        ads_quality_sensitivity_mean=0.06, ads_quality_sensitivity_std=0.08,
-        ads_return_sensitivity_mean=0.14, ads_return_sensitivity_std=0.2,
+        lockin_penalty_mean=0.008, lockin_penalty_std=0.003,
+        ads_quality_sensitivity_mean=0.06, ads_quality_sensitivity_std=0.02,
+        ads_return_sensitivity_mean=0.14, ads_return_sensitivity_std=0.05,
     ),
     # D_S06: Freelance Writers — hypercritical of output quality (it's their craft)
     # [Contently 2025: 15%/month churn; fastest to notice quality regression]
     # [Contently 2025: freelance writers spend avg 4.2hr/day in writing tools]
     'Freelance Writers': dict(
-        q_min_mean=0.25, q_min_std=0.28,
-        q_range_mean=0.45, q_range_std=0.32,
-        c_max_mean=70.0, c_max_std=112.0,
-        slope_mean=0.007, slope_std=0.01,
-        usage_demand_mean=150.0, usage_demand_std=240.0,
+        q_min_mean=0.25, q_min_std=0.07,
+        q_range_mean=0.45, q_range_std=0.08,
+        c_max_mean=70.0, c_max_std=28.0,
+        slope_mean=0.007, slope_std=0.0025,
+        usage_demand_mean=150.0, usage_demand_std=60.0,
         base_market_cap=300000, annual_cap_growth_rate=0.07,
-        lockin_penalty_mean=0.009, lockin_penalty_std=0.012,
-        ads_quality_sensitivity_mean=0.10, ads_quality_sensitivity_std=0.14,
-        ads_return_sensitivity_mean=0.12, ads_return_sensitivity_std=0.16,
+        lockin_penalty_mean=0.009, lockin_penalty_std=0.003,
+        ads_quality_sensitivity_mean=0.10, ads_quality_sensitivity_std=0.035,
+        ads_return_sensitivity_mean=0.12, ads_return_sensitivity_std=0.04,
     ),
     # D_S07: Data Analysts — employed professionals, need precision
     # [Kaggle 2024: 55% annual licenses; precision demands moderate-high floor]
     # [Kaggle 2024: 71% of data professionals prefer ad-free analytics tools]
     'Data Analysts': dict(
-        q_min_mean=0.30, q_min_std=0.32,
-        q_range_mean=0.5, q_range_std=0.32,
-        c_max_mean=130.0, c_max_std=208.0,
-        slope_mean=0.003, slope_std=0.004,
-        usage_demand_mean=250.0, usage_demand_std=400.0,
+        q_min_mean=0.30, q_min_std=0.08,
+        q_range_mean=0.5, q_range_std=0.08,
+        c_max_mean=130.0, c_max_std=52.0,
+        slope_mean=0.003, slope_std=0.001,
+        usage_demand_mean=250.0, usage_demand_std=100.0,
         base_market_cap=280000, annual_cap_growth_rate=0.08,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.17, ads_quality_sensitivity_std=0.24,
-        ads_return_sensitivity_mean=0.08, ads_return_sensitivity_std=0.12,
+        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.17, ads_quality_sensitivity_std=0.06,
+        ads_return_sensitivity_mean=0.08, ads_return_sensitivity_std=0.03,
     ),
     # D_S08: Social Media Managers — need "good enough to post" not perfect
     # [Sprout Social 2025: SM managers evaluate new tools every 6 months]
     # [Sprout Social 2025: SM managers interact with 3x more in-app content]
     'Social Media Managers': dict(
-        q_min_mean=0.15, q_min_std=0.24,
-        q_range_mean=0.45, q_range_std=0.36,
-        c_max_mean=60.0, c_max_std=96.0,
-        slope_mean=0.009, slope_std=0.014,
-        usage_demand_mean=100.0, usage_demand_std=160.0,
+        q_min_mean=0.15, q_min_std=0.06,
+        q_range_mean=0.45, q_range_std=0.09,
+        c_max_mean=60.0, c_max_std=24.0,
+        slope_mean=0.009, slope_std=0.0035,
+        usage_demand_mean=100.0, usage_demand_std=40.0,
         base_market_cap=250000, annual_cap_growth_rate=0.10,
-        lockin_penalty_mean=0.007, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.09, ads_quality_sensitivity_std=0.12,
-        ads_return_sensitivity_mean=0.15, ads_return_sensitivity_std=0.22,
+        lockin_penalty_mean=0.007, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.09, ads_quality_sensitivity_std=0.03,
+        ads_return_sensitivity_mean=0.15, ads_return_sensitivity_std=0.055,
     ),
     # D_S09: UX Designers — extremely sensitive to bad quality (it IS their expertise)
     # [Nielsen Norman 2024: designers rate ad-containing tools 35% lower]
     # [Figma Community 2025: 92% of designers would pay more for ad-free experience]
     'UX Designers': dict(
-        q_min_mean=0.25, q_min_std=0.28,
-        q_range_mean=0.57, q_range_std=0.32,
-        c_max_mean=150.0, c_max_std=240.0,
-        slope_mean=0.003, slope_std=0.004,
-        usage_demand_mean=180.0, usage_demand_std=288.0,
+        q_min_mean=0.25, q_min_std=0.07,
+        q_range_mean=0.57, q_range_std=0.08,
+        c_max_mean=150.0, c_max_std=60.0,
+        slope_mean=0.003, slope_std=0.001,
+        usage_demand_mean=180.0, usage_demand_std=72.0,
         base_market_cap=160000, annual_cap_growth_rate=0.06,
-        lockin_penalty_mean=0.004, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.22, ads_quality_sensitivity_std=0.3,
-        ads_return_sensitivity_mean=0.05, ads_return_sensitivity_std=0.08,
+        lockin_penalty_mean=0.004, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.22, ads_quality_sensitivity_std=0.075,
+        ads_return_sensitivity_mean=0.05, ads_return_sensitivity_std=0.02,
     ),
     # D_S10: Music Producers — demanding audio quality standards, creative workflow
     # [MIDiA 2025: 65% prefer monthly; audio quality expectations very high]
     # [MIDiA 2025: music production tools with ads retain 60% of free users]
     'Music Producers': dict(
-        q_min_mean=0.20, q_min_std=0.28,
-        q_range_mean=0.48, q_range_std=0.36,
-        c_max_mean=100.0, c_max_std=160.0,
-        slope_mean=0.006, slope_std=0.008,
-        usage_demand_mean=140.0, usage_demand_std=224.0,
+        q_min_mean=0.20, q_min_std=0.07,
+        q_range_mean=0.48, q_range_std=0.09,
+        c_max_mean=100.0, c_max_std=40.0,
+        slope_mean=0.006, slope_std=0.002,
+        usage_demand_mean=140.0, usage_demand_std=56.0,
         base_market_cap=100000, annual_cap_growth_rate=0.07,
-        lockin_penalty_mean=0.008, lockin_penalty_std=0.012,
-        ads_quality_sensitivity_mean=0.11, ads_quality_sensitivity_std=0.16,
-        ads_return_sensitivity_mean=0.09, ads_return_sensitivity_std=0.12,
+        lockin_penalty_mean=0.008, lockin_penalty_std=0.003,
+        ads_quality_sensitivity_mean=0.11, ads_quality_sensitivity_std=0.04,
+        ads_return_sensitivity_mean=0.09, ads_return_sensitivity_std=0.03,
     ),
 }
 
@@ -2018,185 +2018,185 @@ _ENTERPRISE_GROUP_PARAMS = {
     # [GSA 2025: federal IT contracts average 3-5 years; FedScoop: 95% reject tools with ads]
     # Census of Governments 2025: ~8,600 IT-purchasing entities x 15% AI adoption = ~1,290
     'Government Agencies': dict(
-        q_min_mean=0.50, q_min_std=0.4,
-        q_range_mean=0.32, q_range_std=0.28,
-        c_max_mean=90.0, c_max_std=144.0,
-        slope_mean=0.003, slope_std=0.004,
-        usage_demand_mean=80.0, usage_demand_std=128.0,
+        q_min_mean=0.50, q_min_std=0.1,
+        q_range_mean=0.32, q_range_std=0.07,
+        c_max_mean=90.0, c_max_std=36.0,
+        slope_mean=0.003, slope_std=0.001,
+        usage_demand_mean=80.0, usage_demand_std=32.0,
         base_market_cap=1300, annual_cap_growth_rate=0.04,
         seat_count_min=50, seat_count_max=500,
-        negotiation_rate_mean=0.20, negotiation_rate_std=0.24,
-        reply_delay_mean=20.0, reply_delay_std=28.0,
-        max_negotiation_turns_mean=14.0, max_negotiation_turns_std=16.0,
-        lockin_penalty_mean=0.001, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.30, ads_quality_sensitivity_std=0.42,
-        ads_return_sensitivity_mean=0.15, ads_return_sensitivity_std=0.22,
+        negotiation_rate_mean=0.20, negotiation_rate_std=0.06,
+        reply_delay_mean=20.0, reply_delay_std=7.0,
+        max_negotiation_turns_mean=14.0, max_negotiation_turns_std=4.0,
+        lockin_penalty_mean=0.001, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.30, ads_quality_sensitivity_std=0.105,
+        ads_return_sensitivity_mean=0.15, ads_return_sensitivity_std=0.055,
     ),
     # D_E02: Educational Institutions — moderate quality needs, COPPA for student data
     # [EdTech Magazine 2025: 85% annual contracts; moderate regulatory burden]
     # [EdTech Magazine 2025: 45% of schools accept sponsored content in free tiers]
     # NCES 2023: ~17,100 IT entities x 8% AI adoption = ~1,370
     'Educational Institutions': dict(
-        q_min_mean=0.25, q_min_std=0.28,
-        q_range_mean=0.47, q_range_std=0.32,
-        c_max_mean=50.0, c_max_std=80.0,
-        slope_mean=0.007, slope_std=0.01,
-        usage_demand_mean=70.0, usage_demand_std=112.0,
+        q_min_mean=0.25, q_min_std=0.07,
+        q_range_mean=0.47, q_range_std=0.08,
+        c_max_mean=50.0, c_max_std=20.0,
+        slope_mean=0.007, slope_std=0.0025,
+        usage_demand_mean=70.0, usage_demand_std=28.0,
         base_market_cap=1400, annual_cap_growth_rate=0.06,
         seat_count_min=80, seat_count_max=800,
-        negotiation_rate_mean=0.35, negotiation_rate_std=0.4,
-        reply_delay_mean=12.0, reply_delay_std=16.0,
-        max_negotiation_turns_mean=8.0, max_negotiation_turns_std=12.0,
-        lockin_penalty_mean=0.003, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.12, ads_quality_sensitivity_std=0.16,
-        ads_return_sensitivity_mean=0.18, ads_return_sensitivity_std=0.26,
+        negotiation_rate_mean=0.35, negotiation_rate_std=0.1,
+        reply_delay_mean=12.0, reply_delay_std=4.0,
+        max_negotiation_turns_mean=8.0, max_negotiation_turns_std=3.0,
+        lockin_penalty_mean=0.003, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.12, ads_quality_sensitivity_std=0.04,
+        ads_return_sensitivity_mean=0.18, ads_return_sensitivity_std=0.065,
     ),
     # D_E03: Healthcare Networks — HIPAA non-negotiable; patient safety critical
     # [Drata: admin/physical/technical safeguards as baseline; errors = patient harm]
     # [KLAS Research 2025: healthcare IT contracts avg 5-7 years; requires ad-free]
     # AHA 2025: ~1,700 enterprise entities x 25% deployed = ~425
     'Healthcare Networks': dict(
-        q_min_mean=0.55, q_min_std=0.4,
-        q_range_mean=0.35, q_range_std=0.24,
-        c_max_mean=130.0, c_max_std=208.0,
-        slope_mean=0.002, slope_std=0.004,
-        usage_demand_mean=120.0, usage_demand_std=192.0,
+        q_min_mean=0.55, q_min_std=0.1,
+        q_range_mean=0.35, q_range_std=0.06,
+        c_max_mean=130.0, c_max_std=52.0,
+        slope_mean=0.002, slope_std=0.001,
+        usage_demand_mean=120.0, usage_demand_std=48.0,
         base_market_cap=425, annual_cap_growth_rate=0.08,
         seat_count_min=100, seat_count_max=1000,
-        negotiation_rate_mean=0.20, negotiation_rate_std=0.24,
-        reply_delay_mean=18.0, reply_delay_std=24.0,
-        max_negotiation_turns_mean=12.0, max_negotiation_turns_std=16.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.28, ads_quality_sensitivity_std=0.4,
-        ads_return_sensitivity_mean=0.12, ads_return_sensitivity_std=0.16,
+        negotiation_rate_mean=0.20, negotiation_rate_std=0.06,
+        reply_delay_mean=18.0, reply_delay_std=6.0,
+        max_negotiation_turns_mean=12.0, max_negotiation_turns_std=4.0,
+        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.28, ads_quality_sensitivity_std=0.1,
+        ads_return_sensitivity_mean=0.12, ads_return_sensitivity_std=0.04,
     ),
     # D_E04: Regional Banks — Dodd-Frank, GLBA, SOX, PCI-DSS compliance
     # [Chargebee: "finance heavily regulated"; zero tolerance for quality issues]
     # [Cornerstone Advisors 2025: bank core tech contracts avg 7+ years; 98% ad-free]
     # FDIC Q3 2025: ~4,379 x 30% deployed = ~1,314
     'Regional Banks': dict(
-        q_min_mean=0.55, q_min_std=0.4,
-        q_range_mean=0.33, q_range_std=0.24,
-        c_max_mean=110.0, c_max_std=176.0,
-        slope_mean=0.002, slope_std=0.004,
-        usage_demand_mean=100.0, usage_demand_std=160.0,
+        q_min_mean=0.55, q_min_std=0.1,
+        q_range_mean=0.33, q_range_std=0.06,
+        c_max_mean=110.0, c_max_std=44.0,
+        slope_mean=0.002, slope_std=0.001,
+        usage_demand_mean=100.0, usage_demand_std=40.0,
         base_market_cap=1300, annual_cap_growth_rate=0.05,
         seat_count_min=60, seat_count_max=600,
-        negotiation_rate_mean=0.25, negotiation_rate_std=0.28,
-        reply_delay_mean=15.0, reply_delay_std=20.0,
-        max_negotiation_turns_mean=10.0, max_negotiation_turns_std=12.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.27, ads_quality_sensitivity_std=0.38,
-        ads_return_sensitivity_mean=0.18, ads_return_sensitivity_std=0.26,
+        negotiation_rate_mean=0.25, negotiation_rate_std=0.07,
+        reply_delay_mean=15.0, reply_delay_std=5.0,
+        max_negotiation_turns_mean=10.0, max_negotiation_turns_std=3.0,
+        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.27, ads_quality_sensitivity_std=0.095,
+        ads_return_sensitivity_mean=0.18, ads_return_sensitivity_std=0.065,
     ),
     # D_E05: Insurance Brokers — claims accuracy; moderate regulatory
     # [Novarica 2025: insurance tech contracts 3-year terms; insurtech tools use sponsored recs]
     # NAIC 2025: ~7,200 entities x 20% = ~1,440
     'Insurance Brokers': dict(
-        q_min_mean=0.35, q_min_std=0.32,
-        q_range_mean=0.43, q_range_std=0.28,
-        c_max_mean=80.0, c_max_std=128.0,
-        slope_mean=0.005, slope_std=0.008,
-        usage_demand_mean=90.0, usage_demand_std=144.0,
+        q_min_mean=0.35, q_min_std=0.08,
+        q_range_mean=0.43, q_range_std=0.07,
+        c_max_mean=80.0, c_max_std=32.0,
+        slope_mean=0.005, slope_std=0.002,
+        usage_demand_mean=90.0, usage_demand_std=36.0,
         base_market_cap=1400, annual_cap_growth_rate=0.06,
         seat_count_min=40, seat_count_max=400,
-        negotiation_rate_mean=0.30, negotiation_rate_std=0.36,
-        reply_delay_mean=10.0, reply_delay_std=14.0,
-        max_negotiation_turns_mean=8.0, max_negotiation_turns_std=12.0,
-        lockin_penalty_mean=0.003, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.18, ads_quality_sensitivity_std=0.26,
-        ads_return_sensitivity_mean=0.22, ads_return_sensitivity_std=0.3,
+        negotiation_rate_mean=0.30, negotiation_rate_std=0.09,
+        reply_delay_mean=10.0, reply_delay_std=3.5,
+        max_negotiation_turns_mean=8.0, max_negotiation_turns_std=3.0,
+        lockin_penalty_mean=0.003, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.18, ads_quality_sensitivity_std=0.065,
+        ads_return_sensitivity_mean=0.22, ads_return_sensitivity_std=0.075,
     ),
     # D_E06: Construction Firms — pragmatic adopters, moderate quality needs
     # [Dodge Construction 2025: 55% prefer annual SaaS; 40% accept ads for discounts]
     # BLS/Census: ~16,500 firms 50+ employees x 5% = ~825
     'Construction Firms': dict(
-        q_min_mean=0.25, q_min_std=0.28,
-        q_range_mean=0.43, q_range_std=0.32,
-        c_max_mean=55.0, c_max_std=88.0,
-        slope_mean=0.007, slope_std=0.01,
-        usage_demand_mean=50.0, usage_demand_std=80.0,
+        q_min_mean=0.25, q_min_std=0.07,
+        q_range_mean=0.43, q_range_std=0.08,
+        c_max_mean=55.0, c_max_std=22.0,
+        slope_mean=0.007, slope_std=0.0025,
+        usage_demand_mean=50.0, usage_demand_std=20.0,
         base_market_cap=825, annual_cap_growth_rate=0.07,
         seat_count_min=30, seat_count_max=300,
-        negotiation_rate_mean=0.40, negotiation_rate_std=0.44,
-        reply_delay_mean=7.0, reply_delay_std=10.0,
-        max_negotiation_turns_mean=6.0, max_negotiation_turns_std=8.0,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.10, ads_quality_sensitivity_std=0.14,
-        ads_return_sensitivity_mean=0.20, ads_return_sensitivity_std=0.28,
+        negotiation_rate_mean=0.40, negotiation_rate_std=0.11,
+        reply_delay_mean=7.0, reply_delay_std=2.5,
+        max_negotiation_turns_mean=6.0, max_negotiation_turns_std=2.0,
+        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.10, ads_quality_sensitivity_std=0.035,
+        ads_return_sensitivity_mean=0.20, ads_return_sensitivity_std=0.07,
     ),
     # D_E07: Telecom Operators — massive infrastructure, moderate regulatory
     # [TM Forum 2025: telecom vendor contracts avg 5+ years; BSS/OSS vendors ad-free]
     # IBISWorld 2025: ~2,200 unique entities x 35% = ~770
     'Telecom Operators': dict(
-        q_min_mean=0.30, q_min_std=0.32,
-        q_range_mean=0.5, q_range_std=0.28,
-        c_max_mean=120.0, c_max_std=192.0,
-        slope_mean=0.003, slope_std=0.004,
-        usage_demand_mean=130.0, usage_demand_std=208.0,
+        q_min_mean=0.30, q_min_std=0.08,
+        q_range_mean=0.5, q_range_std=0.07,
+        c_max_mean=120.0, c_max_std=48.0,
+        slope_mean=0.003, slope_std=0.001,
+        usage_demand_mean=130.0, usage_demand_std=52.0,
         base_market_cap=770, annual_cap_growth_rate=0.05,
         seat_count_min=150, seat_count_max=1500,
-        negotiation_rate_mean=0.18, negotiation_rate_std=0.2,
-        reply_delay_mean=22.0, reply_delay_std=28.0,
-        max_negotiation_turns_mean=14.0, max_negotiation_turns_std=16.0,
-        lockin_penalty_mean=0.001, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.25, ads_quality_sensitivity_std=0.36,
-        ads_return_sensitivity_mean=0.28, ads_return_sensitivity_std=0.4,
+        negotiation_rate_mean=0.18, negotiation_rate_std=0.05,
+        reply_delay_mean=22.0, reply_delay_std=7.0,
+        max_negotiation_turns_mean=14.0, max_negotiation_turns_std=4.0,
+        lockin_penalty_mean=0.001, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.25, ads_quality_sensitivity_std=0.09,
+        ads_return_sensitivity_mean=0.28, ads_return_sensitivity_std=0.1,
     ),
     # D_E08: Energy Companies — regulatory/safety requirements significant
     # [Wood Mackenzie 2025: conservative adoption; safety-critical documentation]
     # EIA/Census: ~3,500 enterprise-grade x 20% = ~700
     'Energy Companies': dict(
-        q_min_mean=0.40, q_min_std=0.32,
-        q_range_mean=0.42, q_range_std=0.28,
-        c_max_mean=100.0, c_max_std=160.0,
-        slope_mean=0.004, slope_std=0.006,
-        usage_demand_mean=90.0, usage_demand_std=144.0,
+        q_min_mean=0.40, q_min_std=0.08,
+        q_range_mean=0.42, q_range_std=0.07,
+        c_max_mean=100.0, c_max_std=40.0,
+        slope_mean=0.004, slope_std=0.0015,
+        usage_demand_mean=90.0, usage_demand_std=36.0,
         base_market_cap=700, annual_cap_growth_rate=0.06,
         seat_count_min=80, seat_count_max=800,
-        negotiation_rate_mean=0.22, negotiation_rate_std=0.24,
-        reply_delay_mean=18.0, reply_delay_std=24.0,
-        max_negotiation_turns_mean=12.0, max_negotiation_turns_std=16.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.20, ads_quality_sensitivity_std=0.28,
-        ads_return_sensitivity_mean=0.25, ads_return_sensitivity_std=0.36,
+        negotiation_rate_mean=0.22, negotiation_rate_std=0.06,
+        reply_delay_mean=18.0, reply_delay_std=6.0,
+        max_negotiation_turns_mean=12.0, max_negotiation_turns_std=4.0,
+        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.20, ads_quality_sensitivity_std=0.07,
+        ads_return_sensitivity_mean=0.25, ads_return_sensitivity_std=0.09,
     ),
     # D_E09: Real Estate Groups — low regulatory burden, marketing-focused content
     # [PwC RE: AI expanding; listings need fact accuracy but creative embellishment OK]
     # [Deloitte Real Estate 2025: 55% of CRE tech platforms include sponsored listings]
     # NAREIT/NAR: ~3,500 enterprise CRE firms x 12% = ~420
     'Real Estate Groups': dict(
-        q_min_mean=0.20, q_min_std=0.24,
-        q_range_mean=0.45, q_range_std=0.32,
-        c_max_mean=65.0, c_max_std=104.0,
-        slope_mean=0.006, slope_std=0.008,
-        usage_demand_mean=60.0, usage_demand_std=96.0,
+        q_min_mean=0.20, q_min_std=0.06,
+        q_range_mean=0.45, q_range_std=0.08,
+        c_max_mean=65.0, c_max_std=26.0,
+        slope_mean=0.006, slope_std=0.002,
+        usage_demand_mean=60.0, usage_demand_std=24.0,
         base_market_cap=420, annual_cap_growth_rate=0.04,
         seat_count_min=30, seat_count_max=350,
-        negotiation_rate_mean=0.38, negotiation_rate_std=0.44,
-        reply_delay_mean=5.0, reply_delay_std=8.0,
-        max_negotiation_turns_mean=6.0, max_negotiation_turns_std=8.0,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.008,
-        ads_quality_sensitivity_mean=0.08, ads_quality_sensitivity_std=0.12,
-        ads_return_sensitivity_mean=0.22, ads_return_sensitivity_std=0.3,
+        negotiation_rate_mean=0.38, negotiation_rate_std=0.11,
+        reply_delay_mean=5.0, reply_delay_std=2.0,
+        max_negotiation_turns_mean=6.0, max_negotiation_turns_std=2.0,
+        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        ads_quality_sensitivity_mean=0.08, ads_quality_sensitivity_std=0.03,
+        ads_return_sensitivity_mean=0.22, ads_return_sensitivity_std=0.075,
     ),
     # D_E10: Shipping Lines — standardization critical but moderate quality bar
     # [Drewry Maritime 2025: shipping IT contracts avg 4+ years; systems strictly enterprise-grade]
     # Census/FMCSA: ~2,500 entities x 18% = ~450
     'Shipping Lines': dict(
-        q_min_mean=0.25, q_min_std=0.28,
-        q_range_mean=0.47, q_range_std=0.28,
-        c_max_mean=75.0, c_max_std=120.0,
-        slope_mean=0.005, slope_std=0.008,
-        usage_demand_mean=70.0, usage_demand_std=112.0,
+        q_min_mean=0.25, q_min_std=0.07,
+        q_range_mean=0.47, q_range_std=0.07,
+        c_max_mean=75.0, c_max_std=30.0,
+        slope_mean=0.005, slope_std=0.002,
+        usage_demand_mean=70.0, usage_demand_std=28.0,
         base_market_cap=450, annual_cap_growth_rate=0.05,
         seat_count_min=60, seat_count_max=600,
-        negotiation_rate_mean=0.22, negotiation_rate_std=0.24,
-        reply_delay_mean=16.0, reply_delay_std=20.0,
-        max_negotiation_turns_mean=10.0, max_negotiation_turns_std=12.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.004,
-        ads_quality_sensitivity_mean=0.22, ads_quality_sensitivity_std=0.3,
-        ads_return_sensitivity_mean=0.20, ads_return_sensitivity_std=0.28,
+        negotiation_rate_mean=0.22, negotiation_rate_std=0.06,
+        reply_delay_mean=16.0, reply_delay_std=5.0,
+        max_negotiation_turns_mean=10.0, max_negotiation_turns_std=3.0,
+        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        ads_quality_sensitivity_mean=0.22, ads_quality_sensitivity_std=0.075,
+        ads_return_sensitivity_mean=0.20, ads_return_sensitivity_std=0.07,
     ),
 }
 
@@ -2487,25 +2487,22 @@ CUSTOMER_GROUPS: Dict[str, CustomerGroupConfig] = dict(INITIAL_CUSTOMER_GROUPS)
 # Discoverable groups: smaller drift rates (±0.0002 to ±0.0005)
 #
 GROUP_PREFERENCE_DRIFT: Dict[str, Dict[str, float]] = {
-    # Initial groups — meaningful drift to test agent adaptation
-    'S1': {'c_max_drift': +0.001},                   # Budget grows +0.1%/day
+    # Group-level drift: ADDITIVE accumulators only (c_max_drift, q_bias_drift).
+    # These accumulate daily and apply to BOTH new and existing customers at read time.
+    # Multiplicative drifts (steepness_left, seat_count) are in INDIVIDUAL_PREFERENCE_DRIFT only.
+    #
+    # c_max_drift: additive $/day shift to group budget capacity
+    # q_bias_drift: additive /day shift to q_min and q_max (participation curve bias)
+    #
+    # Initial groups
+    'S1': {'c_max_drift': +0.001},                   # Budget grows +$0.001/day
     'S2': {},                                          # Stable (no drift)
-    'S3': {'q_bias_drift': +0.0025},  # Participation curve rises +0.0025/day (5× original 0.0005)
-    # Enterprise groups: seat_count_drift models organic workforce expansion/contraction
-    # Rates: multiplicative daily (new = old × (1 + rate)). +0.0003/day ≈ +2.7%/90d ≈ +11%/yr.
-    # CITATIONS:
-    # - Optifai 2025: Enterprise NRR 118% median → ~18% annual seat+revenue expansion
-    #   https://optif.ai/learn/questions/b2b-saas-net-revenue-retention-benchmark/
-    # - BLS 2025: Manufacturing employment -2% YoY; logistics +3%; construction +4.2%
-    #   https://www.bls.gov/charts/county-employment-and-wages/establishments-by-size.htm
-    # - Deloitte 2026: Healthcare workforce +3.5% YoY; financial services flat
-    #   https://www.deloitte.com/us/en/insights/industry/manufacturing-industrial-products/manufacturing-industry-outlook.html
-    # - JP Morgan 2026: 48% of business leaders plan workforce expansion
-    #   https://www.jpmorgan.com/insights/markets-and-economy/business-leaders-outlook/2026-us-business-leaders-outlook
-    'E1': {'c_max_drift': -0.0005, 'seat_count_drift': -0.0002},  # Cost-cutting → layoffs: -1.8%/90d
-    'E2': {'steepness_left_drift': +0.0003, 'seat_count_drift': +0.0003},  # Quality-first grows: +2.7%/90d
-    'E3': {'c_max_drift': +0.0002, 'seat_count_drift': +0.0002},  # Strategic partners: slow expansion +1.8%/90d
-    # Discoverable individual groups — small drifts (no seat_count_drift — single-seat users)
+    'S3': {'q_bias_drift': +0.0025},                   # Participation curve rises +0.0025/day
+    # Enterprise groups (seat_count_drift moved to individual)
+    'E1': {'c_max_drift': -0.0005},                    # Cost-cutting budget pressure
+    'E2': {},                                          # Stable (steepness_left moved to individual)
+    'E3': {'c_max_drift': +0.0002},                    # Strategic partners: slow budget expansion
+    # Discoverable individual groups
     'D_S01': {'c_max_drift': +0.0003},
     'D_S02': {'q_bias_drift': +0.0010},
     'D_S03': {},
@@ -2516,17 +2513,17 @@ GROUP_PREFERENCE_DRIFT: Dict[str, Dict[str, float]] = {
     'D_S08': {'q_bias_drift': +0.0020},
     'D_S09': {'c_max_drift': +0.0002},
     'D_S10': {},
-    # Discoverable enterprise groups — moderate drifts + seat_count_drift per industry
-    'D_E01': {'c_max_drift': -0.0003, 'seat_count_drift': -0.0004},  # Gov: federal workforce cuts
-    'D_E02': {'steepness_left_drift': +0.0002, 'seat_count_drift': +0.0002},  # Education: slow growth
-    'D_E03': {'seat_count_drift': +0.0004},  # Healthcare: +3.5% YoY workforce (BLS)
-    'D_E04': {'c_max_drift': -0.0004, 'seat_count_drift': -0.0001},  # Banks: branch consolidation
-    'D_E05': {'steepness_left_drift': +0.0003, 'seat_count_drift': +0.0001},  # Insurance: stable
-    'D_E06': {'seat_count_drift': +0.0003},  # Construction: +4.2% projected (ConstructConnect)
-    'D_E07': {'c_max_drift': +0.0003, 'seat_count_drift': +0.0001},  # Telecom: slight expansion
-    'D_E08': {'q_bias_drift': +0.0010, 'seat_count_drift': +0.0002},  # Energy: moderate growth
-    'D_E09': {'c_max_drift': -0.0002, 'seat_count_drift': -0.0003},  # Real estate: volatile contraction
-    'D_E10': {'seat_count_drift': +0.0001},  # Shipping: stable global ops
+    # Discoverable enterprise groups (seat_count_drift moved to individual)
+    'D_E01': {'c_max_drift': -0.0003},                 # Gov: budget cuts
+    'D_E02': {},                                       # Education (steepness_left moved to individual)
+    'D_E03': {},                                       # Healthcare (no group-level additive drift)
+    'D_E04': {'c_max_drift': -0.0004},                 # Banks: budget consolidation
+    'D_E05': {},                                       # Insurance (steepness_left moved to individual)
+    'D_E06': {},                                       # Construction (no group-level additive drift)
+    'D_E07': {'c_max_drift': +0.0003},                 # Telecom: slight budget expansion
+    'D_E08': {'q_bias_drift': +0.0010},                # Energy: rising quality demands
+    'D_E09': {'c_max_drift': -0.0002},                 # Real estate: volatile contraction
+    'D_E10': {},                                       # Shipping (no group-level additive drift)
 }
 
 # =============================================================================
@@ -2713,6 +2710,7 @@ INDIVIDUAL_PREFERENCE_DRIFT: Dict[str, Dict[str, float]] = {
     'D_E02': {
         'q_bias_drift': +0.0025,           # 5× rising educational standards
         'c_max_drift': -0.0003,              # Annual budget cycle pressure: -2.7% over 90 days
+        'steepness_left_drift': +0.0002,     # Education: slow threshold sharpening (moved from group drift)
         'seat_count_drift': +0.0002,          # Slow faculty/staff growth: +1.8% over 90 days
     },
 

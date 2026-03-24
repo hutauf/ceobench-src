@@ -668,6 +668,7 @@ def init_database(db_path: Path) -> sqlite3.Connection:
             reputation_impact REAL NOT NULL DEFAULT 0.0,  -- Actual reputation change caused
             influence_score REAL NOT NULL DEFAULT 0.0,  -- V2.1: Group influence weight (HIDDEN)
             reply_to_agent_post_id INTEGER,  -- Links customer reply to agent post (NULL for regular posts)
+            source_group_id TEXT,  -- Actual group this post represents (overrides customer.group_id when market_observer is used as fallback)
             FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
         );
 
@@ -681,7 +682,8 @@ def init_database(db_path: Path) -> sqlite3.Connection:
                 'lead_lost', 'deal_won', 'customer_churned', 'broken_promise',
                 'market_discovery', 'research_complete', 'group_research_complete',
                 'contract_renewal',
-                'macro_economic_update'
+                'macro_economic_update',
+                'social_media'
             )),
             message TEXT NOT NULL  -- Simple notification string
         );
@@ -781,18 +783,27 @@ def init_database(db_path: Path) -> sqlite3.Connection:
         );
 
         -- =====================================================================
-        -- V2.1: Group Parameters (tracks drifted group-level preferences)
+        -- V2.1: Group Parameters (drift accumulators for group-level preferences)
         -- =====================================================================
-        -- Stores current (drifted) group-level parameter means.
-        -- Updated daily by _apply_preference_drift() in simulation.py.
+        -- Stores accumulated group-level drift offsets (additive).
+        -- Updated every 30 days by _apply_preference_drift() in simulation.py.
+        -- Applied at read time to both new and existing customers.
         -- Hidden from agent — they must infer drift from behavioral signals.
         CREATE TABLE IF NOT EXISTS group_parameters (
             group_id TEXT PRIMARY KEY,
-            current_c_max_mean REAL NOT NULL,
-            current_q_min_mean REAL NOT NULL,
-            current_q_max_mean REAL NOT NULL DEFAULT 0.7,
-            current_steepness_left_factor REAL NOT NULL DEFAULT 1.0,
+            drift_q_bias_total REAL NOT NULL DEFAULT 0.0,   -- Accumulated additive q_bias drift
+            drift_c_max_total REAL NOT NULL DEFAULT 0.0,    -- Accumulated additive c_max drift
             last_drift_day INTEGER
+        );
+
+        -- =====================================================================
+        -- Global Drift State (single-row table for global drift accumulator)
+        -- =====================================================================
+        -- Tracks accumulated global q_bias drift (from daily drift + competitor events).
+        -- Applied at read time to both new and existing customers across ALL groups.
+        CREATE TABLE IF NOT EXISTS global_drift_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            global_q_bias_total REAL NOT NULL DEFAULT 0.0
         );
 
         -- =====================================================================
@@ -907,14 +918,13 @@ def init_database(db_path: Path) -> sqlite3.Connection:
         -- Hidden Snapshot Tables (for post-run analysis, invisible to agent)
         -- =====================================================================
 
-        -- Daily snapshot of group-level spawning parameters + reputation + awareness
+        -- Daily snapshot of group-level drift accumulators + reputation + awareness
         CREATE TABLE IF NOT EXISTS _hidden_group_params_history (
             day INTEGER NOT NULL,
             group_id TEXT NOT NULL,
-            current_c_max_mean REAL NOT NULL,
-            current_q_min_mean REAL NOT NULL,
-            current_q_max_mean REAL NOT NULL,
-            current_steepness_left_factor REAL NOT NULL,
+            drift_q_bias_total REAL NOT NULL DEFAULT 0.0,
+            drift_c_max_total REAL NOT NULL DEFAULT 0.0,
+            global_q_bias_total REAL NOT NULL DEFAULT 0.0,
             reputation REAL NOT NULL,
             awareness REAL NOT NULL,
             PRIMARY KEY (day, group_id)
@@ -1016,6 +1026,12 @@ def init_database(db_path: Path) -> sqlite3.Connection:
     # Migration: add comment_post_ids to agent_social_media_posts
     try:
         conn.execute("ALTER TABLE agent_social_media_posts ADD COLUMN comment_post_ids TEXT NOT NULL DEFAULT '[]'")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
+    # Migration: add source_group_id to social_media_posts (actual group for market_observer fallback posts)
+    try:
+        conn.execute("ALTER TABLE social_media_posts ADD COLUMN source_group_id TEXT")
     except sqlite3.OperationalError:
         pass  # Column already exists
 
@@ -1188,23 +1204,26 @@ def get_all_group_reputations(conn: sqlite3.Connection) -> dict:
 # =============================================================================
 
 def init_group_parameters(conn: sqlite3.Connection, customer_groups: dict):
-    """Initialize group_parameters table from CUSTOMER_GROUPS config.
+    """Initialize group_parameters drift accumulators (all start at 0.0).
 
-    Stores initial group means for c_max, q_min, q_max, and steepness_left factor.
-    These values drift every 30 days via _apply_preference_drift().
+    Also initializes the global_drift_state single-row table.
     """
-    for group_id, group in customer_groups.items():
+    for group_id in customer_groups:
         conn.execute("""
             INSERT OR IGNORE INTO group_parameters
-            (group_id, current_c_max_mean, current_q_min_mean, current_q_max_mean,
-             current_steepness_left_factor, last_drift_day)
-            VALUES (?, ?, ?, ?, 1.0, 0)
-        """, (group_id, group.c_max_mean, group.q_min_mean, group.q_min_mean + group.q_range_mean))
+            (group_id, drift_q_bias_total, drift_c_max_total, last_drift_day)
+            VALUES (?, 0.0, 0.0, 0)
+        """, (group_id,))
+    # Initialize global drift state
+    conn.execute("""
+        INSERT OR IGNORE INTO global_drift_state (id, global_q_bias_total)
+        VALUES (1, 0.0)
+    """)
     conn.commit()
 
 
 def get_group_parameters(conn: sqlite3.Connection, group_id: str) -> dict:
-    """Get current (drifted) parameters for a group."""
+    """Get drift accumulators for a group."""
     result = conn.execute(
         "SELECT * FROM group_parameters WHERE group_id = ?",
         (group_id,)
@@ -1214,17 +1233,33 @@ def get_group_parameters(conn: sqlite3.Connection, group_id: str) -> dict:
     return None
 
 
-def update_group_parameters(conn: sqlite3.Connection, group_id: str,
-                            c_max_mean: float, q_min_mean: float,
-                            q_max_mean: float,
-                            steepness_left_factor: float, day: int):
-    """Update drifted group parameters."""
+def update_group_drift(conn: sqlite3.Connection, group_id: str,
+                       q_bias_delta: float, c_max_delta: float, day: int):
+    """Increment group drift accumulators by the given deltas."""
     conn.execute("""
         UPDATE group_parameters
-        SET current_c_max_mean = ?, current_q_min_mean = ?, current_q_max_mean = ?,
-            current_steepness_left_factor = ?, last_drift_day = ?
+        SET drift_q_bias_total = drift_q_bias_total + ?,
+            drift_c_max_total = drift_c_max_total + ?,
+            last_drift_day = ?
         WHERE group_id = ?
-    """, (c_max_mean, q_min_mean, q_max_mean, steepness_left_factor, day, group_id))
+    """, (q_bias_delta, c_max_delta, day, group_id))
+
+
+def get_global_drift(conn: sqlite3.Connection) -> float:
+    """Get the accumulated global q_bias drift total."""
+    result = conn.execute(
+        "SELECT global_q_bias_total FROM global_drift_state WHERE id = 1"
+    ).fetchone()
+    return result['global_q_bias_total'] if result else 0.0
+
+
+def update_global_drift(conn: sqlite3.Connection, q_bias_delta: float):
+    """Increment global q_bias drift accumulator."""
+    conn.execute("""
+        UPDATE global_drift_state
+        SET global_q_bias_total = global_q_bias_total + ?
+        WHERE id = 1
+    """, (q_bias_delta,))
 
 
 def get_all_group_parameters(conn: sqlite3.Connection) -> dict:
@@ -1390,13 +1425,14 @@ def add_social_media_post(conn: sqlite3.Connection, day: int, customer_id: int,
                           shares: int = 0, virality_score: float = 0.0,
                           reputation_impact: float = 0.0,
                           influence_score: float = 0.0,
-                          reply_to_agent_post_id: int = None) -> int:
+                          reply_to_agent_post_id: int = None,
+                          source_group_id: str = None) -> int:
     """Add a social media post and return the post_id."""
     cursor = conn.execute("""
         INSERT INTO social_media_posts
-        (day, customer_id, sentiment, content, likes, shares, virality_score, reputation_impact, influence_score, reply_to_agent_post_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (day, customer_id, sentiment, content, likes, shares, virality_score, reputation_impact, influence_score, reply_to_agent_post_id))
+        (day, customer_id, sentiment, content, likes, shares, virality_score, reputation_impact, influence_score, reply_to_agent_post_id, source_group_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (day, customer_id, sentiment, content, likes, shares, virality_score, reputation_impact, influence_score, reply_to_agent_post_id, source_group_id))
     return cursor.lastrowid
 
 
