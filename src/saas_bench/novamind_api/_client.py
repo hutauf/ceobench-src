@@ -75,13 +75,13 @@ def call(tool_name: str, args: Optional[Dict[str, Any]] = None) -> Dict[str, Any
     return result.get('data', {})
 
 
-def next_day() -> Dict[str, Any]:
-    """Advance the simulator to the next day.
+def next_week() -> Dict[str, Any]:
+    """Advance the simulator by one week (7 days).
 
     Returns:
         Dict with 'day' and 'dashboard' keys
     """
-    url = f"{_base_url()}/next-day"
+    url = f"{_base_url()}/next-day"  # Endpoint kept for backward compat
     req = urllib.request.Request(
         url,
         data=b'{}',
@@ -108,6 +108,10 @@ def next_day() -> Dict[str, Any]:
         raise NovaMindAPIError(error_msg)
 
     return result
+
+
+# Backward compatibility alias
+next_day = next_week
 
 
 def query(sql: str) -> Dict[str, Any]:

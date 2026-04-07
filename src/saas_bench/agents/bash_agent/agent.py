@@ -38,7 +38,7 @@ class BashAgent(BaseAgent):
     tools. Interacts with the simulator via novamind_api Python library
     and ./novamind-operation CLI.
 
-    After calling `./novamind-operation next-day`, context is refreshed:
+    After calling `./novamind-operation next-week`, context is refreshed:
     the conversation is cleared and rebuilt with system prompt + MEMORY.md
     contents + the new dashboard.
     """
@@ -219,9 +219,9 @@ class BashAgent(BaseAgent):
             self.current_day = current_day
             self.turns_today = 0
 
-        # Safety: force next_day if too many turns
+        # Safety: force next_week if too many turns
         if self.turns_today >= self.max_turns_per_day:
-            return Action(tool='bash', arguments={'command': './novamind-operation next-day'})
+            return Action(tool='bash', arguments={'command': './novamind-operation next-week'})
 
         # If we have pending tool call results to process, add them
         if self._pending_tool_calls:
@@ -401,7 +401,7 @@ class BashAgent(BaseAgent):
                 print(f"OpenAI LLM call error (retryable={is_retryable}, status={status}): {e}")
                 if is_retryable:
                     # Retry with exponential backoff — keep trying forever until
-                    # the endpoint comes back. Never fall back to next-day.
+                    # the endpoint comes back. Never fall back to next-week.
                     self._consecutive_errors = getattr(self, '_consecutive_errors', 0) + 1
                     wait_time = min(120, 10 * (2 ** min(self._consecutive_errors - 1, 3)))
                     print(f"  Server error ({self._consecutive_errors}), retrying in {wait_time}s...")
@@ -411,7 +411,7 @@ class BashAgent(BaseAgent):
                     continue  # Loop back to retry
                 else:
                     print(f"Traceback: {traceback.format_exc()}")
-                    return Action(tool='bash', arguments={'command': './novamind-operation next-day'})
+                    return Action(tool='bash', arguments={'command': './novamind-operation next-week'})
 
     def _call_anthropic(self) -> Optional[Action]:
         """Call Anthropic/Bedrock API and parse the response."""

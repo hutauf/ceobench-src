@@ -21,7 +21,7 @@ from numpy.random import Generator, PCG64
 
 from ...config import BenchmarkConfig, SCENARIO_PACKS, ScenarioPack
 from ...database import init_database, get_cash, get_active_subscriber_count, get_config
-from ...environment import build_daily_dashboard
+from ...environment import build_weekly_dashboard
 from ...simulation import Simulator, DayResult
 from ...tools import AgentTools
 from ...shocks import ShockManager
@@ -289,9 +289,15 @@ class ClaudeCodeRunner:
         """Generate the system prompt for the agent by loading from shared template."""
         # Load simulator instructions (tool_list filled dynamically from TOOL_DOCS)
         from ...tools import get_tool_summary_table
+        _td = self.config.total_days
         simulator_file = Path(__file__).parent.parent / "simulator_instructions.md"
         with open(simulator_file, 'r') as f:
-            simulator_instructions = f.read().format(tool_list=get_tool_summary_table())
+            simulator_instructions = f.read().format(
+                tool_list=get_tool_summary_table(),
+                total_days=_td,
+                total_weeks=(_td + 6) // 7,
+                total_years=f"{_td / 365:.1f}",
+            )
 
         # Load from shared template
         template_file = Path(__file__).parent.parent / "agent_template.md"
@@ -308,10 +314,10 @@ class ClaudeCodeRunner:
             simulator_instructions=simulator_instructions
         )
 
-    def _build_daily_dashboard(self, day: int, last_result: Optional[DayResult] = None) -> str:
-        """Build the daily dashboard. Delegates to the shared build_daily_dashboard()."""
+    def _build_weekly_dashboard(self, day: int, last_result: Optional[DayResult] = None) -> str:
+        """Build the weekly dashboard. Delegates to the shared build_weekly_dashboard()."""
         inbox = self.shock_manager.get_inbox_items(day)
-        return build_daily_dashboard(self.conn, day, last_result, inbox_items=inbox)
+        return build_weekly_dashboard(self.conn, day, last_result, inbox_items=inbox)
 
     def _create_mcp_config(self) -> Path:
         """Create MCP server configuration file."""
@@ -509,15 +515,16 @@ class ClaudeCodeRunner:
                     print(f"  ⚡ Shock: {shock.shock_type}")
 
             # Build dashboard
-            dashboard = self._build_daily_dashboard(day, last_result)
+            dashboard = self._build_weekly_dashboard(day, last_result)
 
             if verbose:
                 print(dashboard[:500])  # Print truncated dashboard
 
             # Run agent turn
-            prompt = f"Day {day} has started.\n\n{dashboard}\n\nReview the situation and take actions. Call next_day when you're done with today's decisions."
+            week = (day + 6) // 7
+            prompt = f"Week {week} (Day {day}) has started.\n\n{dashboard}\n\nReview the situation and take actions. Call next_week when you're done with this week's decisions."
 
-            # Multi-turn loop for the day
+            # Multi-turn loop for the week
             day_ended = False
             turns = 0
 
@@ -534,20 +541,20 @@ class ClaudeCodeRunner:
                         print(f"  ❌ Error: {response['error']}")
                     break
 
-                # Check for next_day tool call
-                if self._check_for_next_day(response):
+                # Check for next_week tool call
+                if self._check_for_next_week(response):
                     day_ended = True
                     if verbose:
-                        print(f"  → Agent called next_day (turns: {turns})")
+                        print(f"  → Agent called next_week (turns: {turns})")
 
                 # Extract any rationales from response
                 self._extract_rationales(response)
 
                 # Update prompt for continuation
-                prompt = "Continue with your actions for today, or call next_day when done."
+                prompt = "Continue with your actions for this week, or call next_week when done."
 
-            # Run simulation step
-            last_result = self.simulator.step_day()
+            # Run simulation step (one week = 7 days)
+            last_result = self.simulator.step_week()
 
             # Log daily state
             self.event_logger.log_daily_state(
@@ -623,17 +630,18 @@ class ClaudeCodeRunner:
             workspace_dir=str(self.workspace_dir)
         )
 
-    def _check_for_next_day(self, response: Dict[str, Any]) -> bool:
-        """Check if the response contains a next_day tool call."""
+    def _check_for_next_week(self, response: Dict[str, Any]) -> bool:
+        """Check if the response contains a next_week tool call."""
         # This depends on Claude Code's output format
         # Look for tool calls in the response
         if "tool_calls" in response:
             for call in response["tool_calls"]:
-                if call.get("name") == "next_day":
+                if call.get("name") in ("next_week", "next_day"):
                     return True
         if "output" in response:
             # Check text output for signals
-            if "NEXT_DAY_SIGNAL" in str(response["output"]):
+            output = str(response["output"])
+            if "NEXT_WEEK_SIGNAL" in output or "NEXT_DAY_SIGNAL" in output:
                 return True
         return False
 

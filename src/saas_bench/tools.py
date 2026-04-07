@@ -93,7 +93,7 @@ TOOL_DOCS = {
             "current": "Dict[str, float] — final prices for all plans {'A': float, 'B': float, 'C': float}",
             "_access": "result['current']['A'] → current price of plan A"
         },
-        "impact": "Affects customer acquisition (higher prices = fewer sign-ups), churn (price vs value), and revenue. Changes take effect on next_day.",
+        "impact": "Affects customer acquisition (higher prices = fewer sign-ups), churn (price vs value), and revenue. Changes take effect on next_week.",
         "example_call": {
             "tool": "set_prices",
             "arguments": {"A": 25, "B": 69, "C": 179}
@@ -1085,53 +1085,48 @@ TOOL_DOCS = {
         }
     },
 
-    "next_day": {
-        "name": "next_day",
+    "next_week": {
+        "name": "next_week",
         "category": "Simulation Control",
-        "description": "Advance the simulation by one day and receive the next day's dashboard.",
+        "description": "Advance the simulation by one week (7 days) and receive the weekly dashboard.",
         "inputSchema": {"type": "object", "properties": {}},
         "parameters": {},
         "returns": {
-            "dashboard_example": "=== DAY 46 DASHBOARD ===\n\nCASH: $85,234\nSUBSCRIBERS: 145\n\nYESTERDAY'S METRICS:\n  - Usage: 48,230 units\n  - New subscribers: 5\n  - Cancellations: 2\n  - Upgrades: 0\n  - Downgrades: 1\n  - Overload: 0.0%\n  - Outage: No\n\nCURRENT CONFIG:\n  - Prices: A=$29.0, B=$79.0, C=$199.0\n  - Model tiers: A=2, B=3, C=4\n  - Daily spend: ads=$500.0, ops=$500.0, dev=$500.0\n  - Capacity tier: 0\n  - Quality (q_shared): +0.0200 | Decay: 0.0008/day (20% R&D reduction)\n\nINBOX (2 messages):\n  - New enterprise lead from TechCorp\n  - Support ticket from Plan B user\n\n=========================",
+            "dashboard_example": "=== Week 7 Dashboard (Day 49) ===\n\nCASH: $85,234\nSUBSCRIBERS: 145\n\nTHIS WEEK'S METRICS:\n  - Usage: 337,610 units\n  - New subscribers: 35\n  - Cancellations: 14\n  - Upgrades: 3\n  - Downgrades: 5\n  - Overload (peak): 0.0%\n  - Outage: No\n\nCURRENT CONFIG:\n  - Prices: A=$29.0, B=$79.0, C=$199.0\n  - Model tiers: A=2, B=3, C=4\n  - Daily spend: ads=$500.0, ops=$500.0, dev=$500.0\n  - Capacity tier: 0\n\nINBOX (2 messages):\n  - New enterprise leads this week\n  - Enterprise replies this week\n\n=========================",
             "game_over": "GAME OVER - BANKRUPT! (when cash < 0)",
             "simulation_complete": "SIMULATION COMPLETE! (when final day reached)"
         },
         "dashboard_notes": {
-            "MRR": "Monthly Recurring Revenue = SUM(effective_price) from all active subscriptions. Enterprise customers may have negotiated prices different from list prices, so MRR \u2260 subscriber_count \u00d7 list_price. Use python_exec to break down MRR by plan/customer for detailed analysis.",
-            "Revenue_vs_MRR": "Daily 'Revenue' in Yesterday's Metrics shows actual payments collected that day. Billing is staggered (each customer has a billing_day_mod30), so daily revenue fluctuates. MRR is the theoretical monthly total if all subscribers paid today."
+            "MRR": "Monthly Recurring Revenue = SUM(effective_price) from all active subscriptions. Enterprise customers may have negotiated prices different from list prices, so MRR ≠ subscriber_count × list_price. Use python_exec to break down MRR by plan/customer for detailed analysis.",
+            "Revenue_vs_MRR": "Weekly 'Revenue' shows total payments collected during the week. Billing is staggered (each customer has a billing_day_mod30), so weekly revenue may vary. MRR is the theoretical monthly total if all subscribers paid today."
         },
         "what_happens": [
-            "1. Daily calculations run (if registered)",
-            "2. New customers spawned based on marketing + reputation",
-            "3. Customers at billing day re-evaluate plans (may switch/cancel)",
-            "4. Usage simulated, compute costs incurred",
-            "5. Service metrics calculated (latency, errors, outages)",
-            "6. Revenue collected from billing customers",
-            "7. Fixed costs deducted (capacity, operations, development, advertising)",
-            "8. Social posts generated based on satisfaction",
-            "9. Enterprise negotiations processed (customer replies, timeouts)",
-            "10. VC negotiations processed (counter-offers delivered)",
-            "11. Each predefined VC independently rolls for daily approach (per-VC probability)",
-            "12. Deal expiry processed (accepted-but-unsettled deals + stale threads)",
-            "13. Reputation updated",
-            "14. Dashboard built and returned"
+            "1. Weekly calculations run (if registered)",
+            "2. For each of 7 days: new customers spawned, billing evaluated, usage simulated",
+            "3. Service metrics calculated (latency, errors, outages) — peak values shown",
+            "4. Revenue collected from billing customers (cumulative for week)",
+            "5. Fixed costs deducted (capacity, operations, development, advertising) × 7",
+            "6. Social posts generated on last day of week",
+            "7. Enterprise negotiations processed (customer replies, 7-day timeout)",
+            "8. Reputation updated daily",
+            "9. Weekly dashboard built and returned"
         ],
         "output_schema": {
-            "_note": "Returns the day's dashboard as formatted text (stdout). Use novamind-operation next-day in bash — dashboard appears in stdout.",
+            "_note": "Returns the week's dashboard as formatted text (stdout). Use novamind-operation next-week in bash — dashboard appears in stdout.",
             "_access": "Dashboard text is printed to stdout — parse for CASH, SUBSCRIBERS, INBOX"
         },
-        "impact": "This is the main action that advances time. All configuration changes take effect when next_day is called.",
+        "impact": "This is the main action that advances time by one week. All configuration changes take effect when next_week is called.",
         "example_call": {
-            "tool": "next_day",
+            "tool": "next_week",
             "arguments": {}
         },
-        "internal_notes": "Full simulation step order: daily_calcs → shocks/events → lead_generation → billing_cycle (re-evaluate, churn, renew, bill) → usage_sim → service_metrics → cost_accounting → social_posts → enterprise_negotiation_processing → reputation_update → dashboard_build. Hidden state updated: customer_state (satisfaction, relationship), group_reputation, group_awareness, group_parameters (drift).",
+        "internal_notes": "Internally calls step_day() 7 times. Customer social media posts only generated on day 7. Reputation updates run daily. All additive metrics (revenue, costs, leads, etc.) are cumulative for the week. Snapshot metrics (cash, subs, MRR) are end-of-week values. Service metrics show peak (worst) values across the week.",
         "sample_io": {
             "success": [
-                {"label": "Normal day", "input": {}, "output": "=== DAY 46 DASHBOARD ===\n\nCASH: $85,234  |  MRR: $12,350  |  SUBSCRIBERS: 145\n\nYESTERDAY'S METRICS:\n  Revenue: $412  |  Costs: $2,845\n  New subscribers: 5  |  Cancellations: 2\n  Usage: 48,230 units (capacity: 200,000 = 24.1%)\n  Overload: 0.0%  |  Outage: No\n\nINBOX (2 new):\n  #42: New enterprise lead from TechCorp (200 seats)\n  #43: Quality trending down alert\n\n========================="}
+                {"label": "Normal week", "input": {}, "output": "=== Week 7 Dashboard (Day 49) ===\n\nCASH: $85,234  |  MRR: $12,350  |  SUBSCRIBERS: 145\n\nTHIS WEEK'S METRICS:\n  Revenue: $2,884  |  Costs: $19,915\n  New subscribers: 35  |  Cancellations: 14\n  Usage: 337,610 units\n  Overload (peak): 0.0%  |  Outage: No\n\nINBOX (2 new):\n  📨 3 new enterprise leads this week (600 total seats)\n  ✉️ 2 new enterprise replies this week\n\n========================="}
             ],
             "failure": [
-                {"label": "Bankruptcy", "input": {}, "output": "GAME OVER — BANKRUPT! Cash dropped below $0 on day 46.\n\nFinal stats: 145 subscribers, $12,350 MRR, $-1,234 cash.\n"},
+                {"label": "Bankruptcy", "input": {}, "output": "GAME OVER — BANKRUPT! Cash dropped below $0.\n\nFinal stats: 145 subscribers, $12,350 MRR, $-1,234 cash.\n"},
                 {"label": "Simulation complete", "input": {}, "output": "SIMULATION COMPLETE! Final day reached.\n\nFinal stats: 12,000 subscribers, $1,250,000 MRR, $8,500,000 cash."}
             ]
         }
@@ -1550,7 +1545,7 @@ TOOL_DOCS = {
             "tool_names": {
                 "type": "str | List[str] | None",
                 "description": "Tool name(s) to get docs for. Can be: a single tool name (string), a list of tool names, 'all' for all tools, or omitted/None for all tools.",
-                "examples": ["set_prices", ["set_prices", "next_day"], "all", None]
+                "examples": ["set_prices", ["set_prices", "next_week"], "all", None]
             }
         },
         "returns": {
@@ -1583,7 +1578,7 @@ TOOL_DOCS = {
     "log_rationale": {
         "name": "log_rationale",
         "category": "Session Management",
-        "description": "Log your thinking, rationale, or reasoning for decisions. MUST be called EXACTLY ONCE per day, immediately before calling next_day.",
+        "description": "Log your thinking, rationale, or reasoning for decisions. MUST be called EXACTLY ONCE per week, immediately before calling next_week.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -1593,7 +1588,7 @@ TOOL_DOCS = {
             "required": ["rationale"]
         },
         "parameters": {
-            "rationale": {"type": "str", "description": "Your thinking, reasoning, and decision rationale for this day's actions"},
+            "rationale": {"type": "str", "description": "Your thinking, reasoning, and decision rationale for this week's actions"},
             "context": {"type": "str", "description": "Optional additional context (e.g., key metrics snapshot)"}
         },
         "returns": {
@@ -1604,14 +1599,14 @@ TOOL_DOCS = {
             "logged": "bool — always True on success",
             "_access": "result['logged'] → True"
         },
-        "impact": "Records your decision-making process. MANDATORY — must be called exactly once per day before next_day.",
+        "impact": "Records your decision-making process. MANDATORY — must be called exactly once per week before next_week.",
         "example_call": {
             "tool": "log_rationale",
-            "arguments": {"rationale": "Day 15: Revenue growing at $2K/day. Increased ad spend to $500 to accelerate growth while margins are healthy. Watching churn rate — if it exceeds 5% will reduce prices."},
+            "arguments": {"rationale": "Week 3: Revenue growing steadily. Increased ad spend to $500 to accelerate growth while margins are healthy. Watching churn rate — if it exceeds 5% will reduce prices."},
         },
         "sample_io": {
             "success": [
-                {"label": "Daily rationale", "input": {"rationale": "Day 15: Revenue growing at $2K/day. Increased ad spend to accelerate growth."}, "output": "Rationale logged: Day 15: Revenue growing at $2K/day. Increased ad spend to accelerate growth...."}
+                {"label": "Weekly rationale", "input": {"rationale": "Week 3: Revenue growing steadily. Increased ad spend to accelerate growth."}, "output": "Rationale logged: Week 3: Revenue growing steadily. Increased ad spend to accelerate growth...."}
             ]
         }
     },

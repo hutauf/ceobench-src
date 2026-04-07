@@ -3,7 +3,7 @@
 __version__ = "0.1.0"
 
 # Core environment
-from .environment import SaaSBenchEnv, Action, StepResult, build_daily_dashboard
+from .environment import SaaSBenchEnv, Action, StepResult, build_weekly_dashboard
 
 # Agent base class
 from .agents import BaseAgent
@@ -17,5 +17,5 @@ __all__ = [
     'StepResult',
     'BaseAgent',
     'BenchmarkConfig',
-    'build_daily_dashboard',
+    'build_weekly_dashboard',
 ]

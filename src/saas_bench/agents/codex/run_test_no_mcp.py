@@ -181,7 +181,7 @@ Run these bash commands to control the simulation:
 python {cli_tool} status
 
 # Advance to next day (REQUIRED to progress)
-python {cli_tool} next_day
+python {cli_tool} next_week
 
 # Set prices for plans A, B, C
 python {cli_tool} set_prices --A 29 --B 79 --C 199
@@ -204,8 +204,8 @@ python {cli_tool} log_rationale "My strategy is..."
 ## Your Task
 1. Analyze the current state
 2. Make strategic decisions using the CLI commands above
-3. Call `next_day` to advance
-4. Repeat until day {total_days} or bankruptcy
+3. Call `next_week` to advance
+4. Repeat until week {total_weeks} or bankruptcy
 
 START NOW - use the bash commands above!
 """
@@ -221,14 +221,14 @@ IMPORTANT: Use bash commands to interact with the game. The CLI tool is at:
 Example commands:
 python {cli_tool} status
 python {cli_tool} set_daily_spend --ads 5000 --ops 1000 --dev 1000
-python {cli_tool} next_day
+python {cli_tool} next_week
 
 Current status:
 {dashboard}
 
 Your goal: Maximize cash by day {total_days}.
 
-Strategy suggestion: Start by setting advertising spend to attract customers, then call next_day repeatedly.
+Strategy suggestion: Start by setting advertising spend to attract customers, then call next_week repeatedly.
 
 BEGIN NOW - run commands to play the game!"""
 

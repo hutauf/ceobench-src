@@ -4,9 +4,9 @@ This document describes how the NovaMind SaaS business simulator works. Understa
 
 ## Overview
 
-You are the CEO of NovaMind AI, a B2B/B2C AI SaaS company. Your goal is to maximize cash over {total_days} simulated days ({total_years} years). You manage pricing, spending, infrastructure, R&D, and enterprise sales.
+You are the CEO of NovaMind AI, a B2B/B2C AI SaaS company. Your goal is to maximize cash over {total_days} simulated days ({total_weeks} weeks / {total_years} years). Time advances in weekly increments (7 days per step). You manage pricing, spending, infrastructure, R&D, and enterprise sales.
 
-> **YOUR OBJECTIVE:** Maximize cash over {total_days} days. Cash = YOUR SCORE.
+> **YOUR OBJECTIVE:** Maximize cash over {total_weeks} weeks. Cash = YOUR SCORE.
 
 ## Customer Segments
 
@@ -100,7 +100,7 @@ Each customer has a personal quality-price curve:
 - You MUST respond with `send_enterprise_deal` using compact tuple format: `deals=[[customer_id, [["plan", price_per_seat], ...]]]` — all contracts are month-to-month (1 month)
 - Grace period: 1 day to reply with no penalty
 - Late reply: -0.02 relationship/day after grace period
-- 3-day timeout: if YOU (the agent) do not reply within 3 days, the lead is PERMANENTLY LOST (or existing customer cancels). The clock starts when the customer message arrives — you must call `send_enterprise_deal` within 3 simulation days.
+- 7-day timeout (1 week): if YOU (the agent) do not reply within 7 days (1 week), the lead is PERMANENTLY LOST (or existing customer cancels). The clock starts when the customer message arrives — you must call `send_enterprise_deal` within 1 simulation week.
 - Limited negotiation turns per customer — rejection on final turn = customer lost forever
 
 ### Proactive Renegotiation
@@ -171,16 +171,16 @@ Daily costs: capacity tier + compute (usage × tier cost) + advertising + operat
 - Posts are publicly visible via `get_social_posts`
 - Sentiment must be inferred from content (sentiment column is hidden)
 - Viral negative posts can significantly damage reputation
-- You can post or reply to customer posts via `post_social_media` (max 280 chars, 1/day) — strong posts go viral. Viral posts can either boost or tank new lead arrival speed for each group depending on whether that customer group likes the post or not
+- You can post or reply to customer posts via `post_social_media` (max 280 chars, 1/week) — strong posts go viral. Viral posts can either boost or tank new lead arrival speed for each group depending on whether that customer group likes the post or not
 
-**CRITICAL REQUIREMENT:** You MUST call `log_rationale` EXACTLY ONCE per day, immediately before advancing to the next day. This is NOT optional.
+**CRITICAL REQUIREMENT:** You MUST call `log_rationale` EXACTLY ONCE per week, immediately before advancing to the next week. This is NOT optional.
 
-**IMPORTANT:** Log exactly ONE rationale per day - no more, no less. Your single daily rationale should include:
+**IMPORTANT:** Log exactly ONE rationale per week - no more, no less. Your single weekly rationale should include:
 - Your analysis of the current situation and key metrics
 - What changes you made (or why you kept settings the same)
 - Your strategy and any hypotheses you're testing
-- What you're watching for in the coming days
+- What you're watching for in the coming weeks
 
-You can call any tool any number of times within a day. Advance to the next day when you are ready.
+You can call any tool any number of times within a week. Advance to the next week when you are ready.
 
-**NOTE:** The `next_day` call may take a long time (several minutes) at large subscriber counts. The simulator processes billing, churn, usage, reputation, and other mechanics for every customer individually. This is normal and expected — just wait for the response. Do not assume the call has failed or timed out.
+**NOTE:** The `next_week` call may take a long time (several minutes) at large subscriber counts. The simulator processes billing, churn, usage, reputation, and other mechanics for every customer individually across 7 simulated days. This is normal and expected — just wait for the response. Do not assume the call has failed or timed out.

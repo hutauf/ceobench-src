@@ -763,7 +763,7 @@ def get_threads_needing_reply(conn: sqlite3.Connection, current_day: int) -> Lis
     return [row['thread_id'] for row in rows]
 
 
-def get_threads_awaiting_agent_response(conn: sqlite3.Connection, current_day: int, timeout_days: int = 3) -> List[dict]:
+def get_threads_awaiting_agent_response(conn: sqlite3.Connection, current_day: int, timeout_days: int = 7) -> List[dict]:
     """Get threads where agent hasn't responded within timeout_days.
 
     Returns threads where the latest turn has status='awaiting_agent_reply'

@@ -52,14 +52,14 @@ def _cmd_next_day(args):
     (revenue, costs, new/cancelled subs, usage, overload, outages), INBOX
     (new notifications), and current config summary.
 
-    **NOTE:** The next_day call may take several minutes at large subscriber
+    **NOTE:** The next_week call may take several minutes at large subscriber
     counts. This is normal — just wait for the response.
 
     Exit code 0 on success, 1 on failure.
     """
-    from .novamind_api._client import next_day
+    from .novamind_api._client import next_week
     try:
-        result = next_day()
+        result = next_week()
         dashboard = result.get('dashboard', '')
         print(dashboard)
     except Exception as e:
@@ -71,10 +71,11 @@ def operation_main():
     """Entry point for novamind-operation CLI.
 
     Commands:
-        next-day    Advance the simulator to the next day
+        next-week   Advance the simulator by one week (7 days)
+        next-day    Alias for next-week (backward compat)
 
     Examples:
-        ./novamind-operation next-day
+        ./novamind-operation next-week
     """
     parser = argparse.ArgumentParser(
         prog='novamind-operation',
@@ -82,9 +83,13 @@ def operation_main():
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
-    # next-day
-    sub_next = subparsers.add_parser('next-day', help='Advance to the next simulation day')
+    # next-week (primary)
+    sub_next = subparsers.add_parser('next-week', help='Advance to the next simulation week (7 days)')
     sub_next.set_defaults(func=_cmd_next_day)
+
+    # next-day (backward compat alias)
+    sub_next_day = subparsers.add_parser('next-day', help='Alias for next-week')
+    sub_next_day.set_defaults(func=_cmd_next_day)
 
     args = parser.parse_args()
     args.func(args)

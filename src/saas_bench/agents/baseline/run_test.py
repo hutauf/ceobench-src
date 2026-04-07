@@ -39,7 +39,7 @@ from saas_bench.customer_llm import CustomerSimulator
 from saas_bench.tools import AgentTools, get_tool_descriptions
 from saas_bench.shocks import ShockManager
 from saas_bench.event_logger import EventLogger
-from saas_bench.environment import Action, build_daily_dashboard, get_thread_inbox_items
+from saas_bench.environment import Action, build_weekly_dashboard, get_thread_inbox_items
 
 
 def now() -> str:
@@ -734,17 +734,18 @@ class BaselineRunner:
                 'uinteger': rng_state['uinteger'],
             }
 
-        # Restore simulator day counter (step_day increments by 1, so set to last completed day)
+        # Restore simulator day counter (step_week increments by 7, so set to last completed day)
         if self.simulator:
             self.simulator.current_day = cp_day
 
     def _build_dashboard(self, day: int, last_result=None) -> str:
-        """Build the daily dashboard. Delegates to the shared build_daily_dashboard()."""
+        """Build the weekly dashboard. Delegates to the shared build_weekly_dashboard()."""
         inbox = self.shock_manager.get_inbox_items(day)
-        # Add thread inbox items (new threads + new messages on existing threads)
-        inbox.extend(get_thread_inbox_items(self.conn, day))
+        # Add thread inbox items (new threads + new messages for the week)
+        week_start = max(1, day - 6)
+        inbox.extend(get_thread_inbox_items(self.conn, day, week_start_day=week_start))
         calc_outputs = self.tools.run_daily_calculations()
-        return build_daily_dashboard(self.conn, day, last_result, calc_outputs, inbox)
+        return build_weekly_dashboard(self.conn, day, last_result, calc_outputs, inbox)
 
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """Execute a tool by dispatching to the appropriate AgentTools method."""
@@ -874,22 +875,27 @@ class BaselineRunner:
         game_outcome = None
         last_result = None
 
-        for day in range(start_day, self.total_days + 1):
+        # Iterate by weeks (7-day steps). start_day is the first day of the current week.
+        # step_week() will advance internal day by 7.
+        for week_start in range(start_day, self.total_days + 1, 7):
+            day = week_start  # Day number shown to agent (start of week)
             current_day = day
+            week = (day + 6) // 7
             self.tools.set_current_day(day)
             self.event_logger.set_day(day)
 
             if verbose:
                 print(f"\n{'='*40}")
-                print(f"DAY {day}")
+                print(f"WEEK {week} (Day {day})")
                 print(f"{'='*40}")
 
-            # Check for shocks
-            new_shocks = self.shock_manager.check_and_generate_shocks(day)
-            for shock in new_shocks:
-                self.event_logger.log_shock(shock.shock_type, shock.details)
-                if verbose:
-                    print(f"  ⚡ Shock: {shock.shock_type}")
+            # Check for shocks (for all 7 days of the week)
+            for shock_day in range(day, min(day + 7, self.total_days + 1)):
+                new_shocks = self.shock_manager.check_and_generate_shocks(shock_day)
+                for shock in new_shocks:
+                    self.event_logger.log_shock(shock.shock_type, shock.details)
+                    if verbose:
+                        print(f"  ⚡ Shock: {shock.shock_type}")
 
             # Build dashboard
             dashboard = self._build_dashboard(day, last_result)
@@ -910,17 +916,17 @@ class BaselineRunner:
                 action = self.agent.act(observation, 0, False, info)
 
                 if action is None:
-                    # No action, force next_day
-                    action = Action(tool='next_day')
+                    # No action, force next_week
+                    action = Action(tool='next_week')
 
                 # Execute action
-                if action.tool == 'next_day':
+                if action.tool in ('next_week', 'next_day'):
                     day_ended = True
-                    observation = "Day ended. Moving to next day..."
-                    # Log next_day tool result
-                    self._log_tool_result(self.agent.total_turns, day, 'next_day', {}, observation)
+                    observation = "Week ended. Moving to next week..."
+                    # Log next_week tool result
+                    self._log_tool_result(self.agent.total_turns, day, 'next_week', {}, observation)
                     if verbose:
-                        print(f"    [Turn {turns_today}] next_day")
+                        print(f"    [Turn {turns_today}] next_week")
                 else:
                     # Execute tool by calling the appropriate method on AgentTools
                     if verbose:
@@ -934,16 +940,16 @@ class BaselineRunner:
 
                 info = {'day': day, 'cash': get_cash(self.conn)}
 
-            # Run simulation step (with timeout detection)
+            # Run simulation step — one week (7 days) with timeout detection
             import time as _time
             _step_start = _time.monotonic()
-            day_result = self.simulator.step_day()
+            day_result = self.simulator.step_week()
             _step_elapsed = _time.monotonic() - _step_start
             last_result = day_result
 
-            if _step_elapsed > 300:
-                # step_day took >5 minutes — save checkpoint and quit
-                print(f"\n⚠️  step_day took {_step_elapsed:.1f}s on day {day} (>300s threshold)")
+            if _step_elapsed > 2100:
+                # step_week took >35 minutes — save checkpoint and quit
+                print(f"\n⚠️  step_week took {_step_elapsed:.1f}s on day {day_result.day} (>2100s threshold)")
                 print(f"Auto-quitting to prevent runaway timeouts. Saving checkpoint...")
                 self._save_checkpoint(day)
                 self.event_logger.save_incremental()
@@ -951,7 +957,11 @@ class BaselineRunner:
                 game_outcome = 'timeout'
                 break
 
-            # Log daily state
+            # Update current_day to reflect actual end-of-week day from simulator
+            current_day = day_result.day
+            self.tools.set_current_day(current_day)
+
+            # Log weekly state
             self.event_logger.log_daily_state(
                 cash=day_result.cash,
                 mrr=day_result.mrr,
@@ -964,10 +974,10 @@ class BaselineRunner:
             )
 
             if verbose:
-                print(f"  📊 End of day: Cash=${day_result.cash:,.0f}, IndSubs={day_result.total_individual_subscribers}, EntSeats={day_result.total_enterprise_subscription_seats}")
+                print(f"  📊 End of week {week} (day {current_day}): Cash=${day_result.cash:,.0f}, IndSubs={day_result.total_individual_subscribers}, EntSeats={day_result.total_enterprise_subscription_seats}")
 
-            # Save checkpoint after each completed day
-            self._save_checkpoint(day)
+            # Save checkpoint after each completed week
+            self._save_checkpoint(current_day)
             self.event_logger.save_incremental()
 
             # Check for bankruptcy
@@ -975,7 +985,7 @@ class BaselineRunner:
                 game_ended = True
                 game_outcome = 'bankrupt'
                 if verbose:
-                    print(f"\n💀 BANKRUPT at day {day}!")
+                    print(f"\n💀 BANKRUPT at day {current_day}!")
                 break
 
         # Determine final outcome

@@ -2,7 +2,7 @@
 """CLI tool for SaaS Bench - allows Codex to interact via bash commands.
 
 Usage:
-    saas-bench-cli next_day
+    saas-bench-cli next_week
     saas-bench-cli set_prices --A 29 --B 79 --C 199
     saas-bench-cli set_daily_spend --ads 1000 --ops 500 --dev 500
     saas-bench-cli log_rationale "My reasoning here"
@@ -95,7 +95,7 @@ def cmd_status(args):
 
 
 def cmd_next_day(args):
-    """Advance to next day and show new dashboard."""
+    """Advance by one week (7 days) and show new dashboard."""
     from saas_bench.database import get_cash, get_active_subscriber_count, get_config, init_database
     from saas_bench.simulation import Simulator
     from saas_bench.shocks import ShockManager
@@ -257,8 +257,9 @@ def main():
     # status
     subparsers.add_parser('status', help='Show current dashboard')
 
-    # next_day
-    subparsers.add_parser('next_day', help='Advance to next day')
+    # next_week (also accept next_day for backward compat)
+    subparsers.add_parser('next_week', help='Advance to next week')
+    subparsers.add_parser('next_day', help='Advance to next week (alias)')
 
     # set_prices
     prices_parser = subparsers.add_parser('set_prices', help='Set plan prices')
@@ -284,7 +285,7 @@ def main():
 
     if args.command == 'status':
         cmd_status(args)
-    elif args.command == 'next_day':
+    elif args.command in ('next_week', 'next_day'):
         cmd_next_day(args)
     elif args.command == 'set_prices':
         cmd_set_prices(args)

@@ -6,7 +6,7 @@ the SaaS business simulation. The environment follows the Gym API pattern:
 - step(action) -> (observation, reward, done, truncated, info)
 
 Actions are tool calls (tool name + arguments).
-Observations are tool outputs (including daily dashboard from next_day).
+Observations are tool outputs (including weekly dashboard from next_week).
 """
 
 import sqlite3
@@ -22,25 +22,27 @@ from .simulation import Simulator, DayResult
 from .tools import AgentTools, ToolResult
 
 
-def build_daily_dashboard(
+def build_weekly_dashboard(
     conn: sqlite3.Connection,
     day: int,
     day_result: Optional[DayResult] = None,
     calc_outputs: Optional[Dict[str, str]] = None,
     inbox_items: Optional[list] = None,
 ) -> str:
-    """Build the daily dashboard string — SINGLE SOURCE OF TRUTH.
+    """Build the weekly dashboard string — SINGLE SOURCE OF TRUTH.
 
-    This is the canonical dashboard format returned by the next_day tool.
+    This is the canonical dashboard format returned by the next_week tool.
     All agent runners and the environment should call this function instead
     of maintaining their own dashboard builders.
 
     Args:
         conn: Database connection
-        day: Current day number
-        day_result: Results from the previous day's simulation (None on Day 1)
+        day: Current day number (last day of the week)
+        day_result: Accumulated results from the week's simulation (None on Week 1).
+                    Additive fields (new_leads, cancellations, etc.) are cumulative
+                    for the week. Snapshot fields (cash, mrr, subs) are end-of-week.
         calc_outputs: Dict mapping calculation name to output string
-        inbox_items: List of inbox items (notifications, threads) for today
+        inbox_items: List of inbox items (notifications, threads) for this week
 
     Returns:
         Formatted dashboard string
@@ -80,8 +82,9 @@ def build_daily_dashboard(
         """).fetchone()[0]
         mrr = get_mrr(conn)
 
+    week = (day + 6) // 7  # Week number (1-indexed)
     lines = [
-        f"=== Day {day} Dashboard ===",
+        f"=== Week {week} Dashboard (Day {day}) ===",
         "",
         f"Cash: ${cash:,.0f}",
         f"Individual Subscribers: {ind_subs}",
@@ -90,19 +93,19 @@ def build_daily_dashboard(
         f"Open Issues: {open_issues}",
     ]
 
-    # Yesterday's metrics (only after Day 1)
+    # This week's metrics (only after Week 1)
     if day_result:
         lines.extend([
             "",
-            "--- Yesterday's Metrics ---",
+            "--- This Week's Metrics ---",
             f"Usage: {day_result.total_usage:,} units",
             f"New Individual Leads: {day_result.new_individual_leads} | New Enterprise Leads: {day_result.new_enterprise_leads}",
             f"New Individual Subscribers: {day_result.new_individual_subscribers} | New Enterprise Subscribed Seats: {day_result.new_enterprise_subscribers_seats}",
             f"Cancellations: {day_result.cancellations}",
             f"Upgrades: {day_result.upgrades} | Downgrades: {day_result.downgrades}",
-            f"Overload: {day_result.overload:.1%}" if day_result.overload > 0 else "Overload: None",
-            f"Outage: {'YES (' + str(day_result.downtime_minutes) + ' min)' if day_result.outage else 'No'}",
-            f"P95 Latency: {day_result.p95_ms:.0f}ms | Error Rate: {day_result.error_rate:.2%}",
+            f"Overload (peak): {day_result.overload:.1%}" if day_result.overload > 0 else "Overload: None",
+            f"Outage: {'YES (' + str(day_result.downtime_minutes) + ' min total)' if day_result.outage else 'No'}",
+            f"P95 Latency (peak): {day_result.p95_ms:.0f}ms | Error Rate (peak): {day_result.error_rate:.2%}",
             f"Revenue: ${day_result.payments_received:,.0f} | Costs: ${day_result.total_costs:,.0f}",
         ])
 
@@ -149,19 +152,21 @@ def build_daily_dashboard(
         gb_str = f"+{gb:.4f}" if gb > 0 else "0"
         lines.append(f"{gid:<8} {qa:<14.4f} {qb:<14.4f} {qc:<14.4f} {gb_str:<10}")
 
-    # Agent social media post metrics (comments on yesterday's posts)
-    if day > 1:
+    # Agent social media post metrics (comments on this week's posts)
+    if day > 7:
+        # Show agent posts from the previous week (7 days)
+        week_start = day - 7
         agent_posts = conn.execute("""
             SELECT asp.agent_post_id, asp.content, asp.views, asp.comment_post_ids,
                    COUNT(smp.post_id) AS comment_count
             FROM agent_social_media_posts asp
             LEFT JOIN social_media_posts smp ON smp.reply_to_agent_post_id = asp.agent_post_id
-            WHERE asp.day = ?
+            WHERE asp.day > ? AND asp.day <= ?
             GROUP BY asp.agent_post_id
-        """, (day - 1,)).fetchall()
+        """, (week_start, day)).fetchall()
         if agent_posts:
             lines.append("")
-            lines.append("--- Your Social Media Posts (Yesterday) ---")
+            lines.append("--- Your Social Media Posts (This Week) ---")
             for post in agent_posts:
                 comment_ids_str = ""
                 try:
@@ -173,10 +178,10 @@ def build_daily_dashboard(
                 lines.append(f"  Post #{post['agent_post_id']}: {post['views']} views, {post['comment_count']} comments{comment_ids_str} — \"{post['content'][:80]}{'...' if len(post['content']) > 80 else ''}\"")
 
 
-    # Daily calculation outputs
+    # Weekly calculation outputs
     if calc_outputs:
         lines.append("")
-        lines.append("--- Daily Calculations ---")
+        lines.append("--- Weekly Calculations ---")
         for name, output in calc_outputs.items():
             lines.append(f"[{name}]")
             lines.append(output[:500])  # Truncate long outputs
@@ -193,36 +198,44 @@ def build_daily_dashboard(
     return '\n'.join(lines)
 
 
-def get_thread_inbox_items(conn: sqlite3.Connection, day: int) -> List[str]:
-    """Get inbox summary items — counts of new enterprise messages today.
+def get_thread_inbox_items(conn: sqlite3.Connection, day: int, week_start_day: int = None) -> List[str]:
+    """Get inbox summary items — counts of new enterprise messages this week.
 
     Standalone function so both the environment class and run_test.py can use it.
 
+    Args:
+        conn: Database connection
+        day: Current day number (end of week)
+        week_start_day: First day of the week (default: day - 6)
+
     Returns list of formatted summary strings for the inbox section.
     """
+    if week_start_day is None:
+        week_start_day = max(1, day - 6)
+
     items = []
 
-    # Count new enterprise threads created today
+    # Count new enterprise threads created this week
     new_threads = conn.execute("""
         SELECT COUNT(*) as cnt,
                COALESCE(SUM(CAST(c.seat_count AS INTEGER)), 0) as total_seats
         FROM enterprise_turns et
         JOIN customers c ON et.customer_id = c.customer_id
-        WHERE et.turn_number = 0 AND et.day = ?
-    """, (day,)).fetchone()
+        WHERE et.turn_number = 0 AND et.day >= ? AND et.day <= ?
+    """, (week_start_day, day)).fetchone()
 
     if new_threads['cnt'] > 0:
-        items.append(f"📨 {new_threads['cnt']} new enterprise leads today ({new_threads['total_seats']:,} total seats)")
+        items.append(f"📨 {new_threads['cnt']} new enterprise leads this week ({new_threads['total_seats']:,} total seats)")
 
-    # Count new enterprise replies today (customer replies on existing threads)
+    # Count new enterprise replies this week (customer replies on existing threads)
     new_replies = conn.execute("""
         SELECT COUNT(*) as cnt
         FROM enterprise_turns et
-        WHERE et.day = ? AND et.turn_number > 0 AND et.sender = 'customer'
-    """, (day,)).fetchone()
+        WHERE et.day >= ? AND et.day <= ? AND et.turn_number > 0 AND et.sender = 'customer'
+    """, (week_start_day, day)).fetchone()
 
     if new_replies['cnt'] > 0:
-        items.append(f"✉️ {new_replies['cnt']} new enterprise replies today")
+        items.append(f"✉️ {new_replies['cnt']} new enterprise replies this week")
 
     # Count total open threads awaiting agent response
     awaiting = conn.execute("""
@@ -265,7 +278,7 @@ class SaaSBenchEnv:
 
     The agent interacts with the environment through tool calls.
     Each step executes one tool and returns the output.
-    The `next_day` tool advances the simulation and returns the daily dashboard.
+    The `next_week` tool advances the simulation by 7 days and returns the weekly dashboard.
 
     Memory tools are NOT included - agents manage their own memory/context.
     """
@@ -290,7 +303,7 @@ class SaaSBenchEnv:
 
         'get_cost_info',
         'get_tool_documentation',
-        'next_day',
+        'next_week',
         'reject_enterprise_deal',
         # V2: Database exploration
         'list_all_tables',
@@ -419,13 +432,13 @@ class SaaSBenchEnv:
             )
 
         # Execute the tool
-        if action.tool == 'next_day':
-            return self._handle_next_day()
+        if action.tool == 'next_week':
+            return self._handle_next_week()
         else:
             return self._handle_tool_call(action)
 
     def _handle_tool_call(self, action: Action) -> StepResult:
-        """Handle a non-next_day tool call."""
+        """Handle a non-next_week tool call."""
         tool_name = action.tool
         args = action.arguments
 
@@ -498,7 +511,7 @@ class SaaSBenchEnv:
 
             return StepResult(
                 observation=observation,
-                reward=0.0,  # No reward for non-next_day actions
+                reward=0.0,  # No reward for non-next_week actions
                 done=False,
                 truncated=False,
                 info={'success': result.success, 'data': result.data}
@@ -513,15 +526,15 @@ class SaaSBenchEnv:
                 info={'error': str(e)}
             )
 
-    def _handle_next_day(self) -> StepResult:
-        """Handle the next_day action - advance simulation and return dashboard."""
-        # Run daily calculations first
+    def _handle_next_week(self) -> StepResult:
+        """Handle the next_week action - advance simulation by 7 days and return dashboard."""
+        # Run weekly calculations first
         calc_outputs = self._run_daily_calculations()
 
-        # Advance simulation
-        day_result = self.simulator.step_day()
-        self.last_day_result = day_result
-        self.current_day = day_result.day
+        # Advance simulation by one week (7 days internally)
+        week_result = self.simulator.step_week()
+        self.last_day_result = week_result
+        self.current_day = week_result.day
 
         # Update tools with new day
         self.tools.set_current_day(self.current_day)
@@ -538,17 +551,17 @@ class SaaSBenchEnv:
 
         self._done = done or truncated
 
-        # Build daily dashboard
-        dashboard = self._build_daily_dashboard(day_result, calc_outputs)
+        # Build weekly dashboard
+        dashboard = self._build_weekly_dashboard(week_result, calc_outputs)
 
         # Calculate reward (change in cash + some MRR bonus)
-        reward = self._calculate_reward(day_result)
+        reward = self._calculate_reward(week_result)
 
         info = {
             'day': self.current_day,
             'cash': cash,
-            'mrr': day_result.mrr,
-            'day_result': day_result,
+            'mrr': week_result.mrr,
+            'day_result': week_result,
             'bankruptcy': cash < 0,
         }
 
@@ -561,16 +574,16 @@ class SaaSBenchEnv:
         )
 
     def _build_initial_dashboard(self) -> str:
-        """Build the initial dashboard for Day 1. Delegates to build_daily_dashboard()."""
-        dashboard = build_daily_dashboard(self.conn, self.current_day)
+        """Build the initial dashboard for Week 1. Delegates to build_weekly_dashboard()."""
+        dashboard = build_weekly_dashboard(self.conn, self.current_day)
         dashboard += "\n\nWelcome to NovaMind! Your AI SaaS company is ready to launch."
-        dashboard += "\nUse tools to configure your business, then call next_day to advance."
+        dashboard += "\nUse tools to configure your business, then call next_week to advance."
         return dashboard
 
-    def _build_daily_dashboard(self, result: DayResult, calc_outputs: Dict[str, str]) -> str:
-        """Build the daily dashboard from day results. Delegates to build_daily_dashboard()."""
+    def _build_weekly_dashboard(self, result: DayResult, calc_outputs: Dict[str, str]) -> str:
+        """Build the weekly dashboard from week results. Delegates to build_weekly_dashboard()."""
         inbox_items = self._get_inbox_items()
-        return build_daily_dashboard(
+        return build_weekly_dashboard(
             self.conn, self.current_day, result, calc_outputs, inbox_items
         )
 

@@ -2,7 +2,7 @@
 
 This agent uses an LLM to make decisions. Supports both OpenAI-compatible APIs
 (OpenAI, xAI) and Anthropic APIs (direct, Bedrock).
-It maintains conversation context and refreshes it after calling next_day.
+It maintains conversation context and refreshes it after calling next_week.
 """
 
 import json
@@ -32,7 +32,7 @@ class BaselineAgent(BaseAgent):
 
     Features:
     - Maintains conversation context within a day
-    - Refreshes context after calling next_day (new day = fresh context)
+    - Refreshes context after calling next_week (new week = fresh context)
     - Manages its own memory (not environment-side)
     - Uses function calling to select tools
     """
@@ -55,7 +55,7 @@ class BaselineAgent(BaseAgent):
             client: API client (OpenAI, Anthropic, or AnthropicBedrock)
             model: Model to use (default gpt-4o)
             system_prompt: Custom system prompt (uses default if None)
-            max_turns_per_day: Max tool calls per day before forcing next_day
+            max_turns_per_day: Max tool calls per week before forcing next_week
             response_callback: Optional callback for logging raw responses
             reasoning_effort: Reasoning effort level for GPT-5.2+ (none, low, medium, high, xhigh)
             tool_result_callback: Optional callback for logging tool results (turn, day, tool_name, args, result)
@@ -96,9 +96,19 @@ class BaselineAgent(BaseAgent):
         base_dir = Path(__file__).parent
 
         from ...tools import get_tool_summary_table
+        from ...config import BenchmarkConfig
+        _default_cfg = BenchmarkConfig()
+        _total_days = _default_cfg.total_days
+        _total_weeks = (_total_days + 6) // 7
+        _total_years = _total_days / 365
         simulator_file = base_dir.parent / "simulator_instructions.md"
         with open(simulator_file, 'r') as f:
-            simulator_instructions = f.read().format(tool_list=get_tool_summary_table())
+            simulator_instructions = f.read().format(
+                tool_list=get_tool_summary_table(),
+                total_days=_total_days,
+                total_weeks=_total_weeks,
+                total_years=f"{_total_years:.1f}",
+            )
 
         template_file = base_dir / "system_prompt.md"
         with open(template_file, 'r') as f:
@@ -120,7 +130,7 @@ class BaselineAgent(BaseAgent):
         """Choose an action based on the observation.
 
         The agent processes tool outputs and decides the next action.
-        After calling next_day, context is refreshed for the new day.
+        After calling next_week, context is refreshed for the new week.
 
         Args:
             observation: Tool output or dashboard string
@@ -143,9 +153,9 @@ class BaselineAgent(BaseAgent):
             self.current_day = current_day
             self.turns_today = 0
 
-        # Safety: force next_day if too many turns
+        # Safety: force next_week if too many turns
         if self.turns_today >= self.max_turns_per_day:
-            return Action(tool='next_day')
+            return Action(tool='next_week')
 
         # If we have pending tool call results to process, add them
         if self._pending_tool_calls:
@@ -376,8 +386,8 @@ class BaselineAgent(BaseAgent):
             import traceback
             print(f"OpenAI LLM call error: {e}")
             print(f"Traceback: {traceback.format_exc()}")
-            # On error, try to advance day
-            return Action(tool='next_day')
+            # On error, try to advance week
+            return Action(tool='next_week')
 
     def _call_anthropic(self) -> Optional[Action]:
         """Call Anthropic/Bedrock API and parse the response."""
@@ -640,8 +650,8 @@ def run_agent_loop(
             action = agent.act(obs, 0, False, info)
 
             if action is None:
-                # Agent returned None, force next_day
-                action = Action(tool='next_day')
+                # Agent returned None, force next_week
+                action = Action(tool='next_week')
 
             # Execute action
             result = env.step(action)
@@ -650,7 +660,7 @@ def run_agent_loop(
             total_reward += result.reward
             step_count += 1
 
-            if verbose and action.tool == 'next_day':
+            if verbose and action.tool in ('next_week', 'next_day'):
                 day = result.info.get('day', 0)
                 cash = result.info.get('cash', 0)
                 print(f"Day {day}: Cash=${cash:,.0f}")

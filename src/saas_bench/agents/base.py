@@ -53,7 +53,7 @@ class BaseAgent(ABC):
         Returns:
             Action to take, or None to indicate no more actions this turn.
             Note: For most agents, you'll want to keep acting until you call
-            next_day, which advances the simulation.
+            next_week, which advances the simulation by one week.
         """
         pass
 

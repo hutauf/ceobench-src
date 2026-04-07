@@ -408,10 +408,10 @@ class BashAgentToolExecutor:
             except Exception:
                 pass
 
-            # If command is ./novamind-operation next-day, raise to kill the run
-            if './novamind-operation next-day' in command:
+            # If command is ./novamind-operation next-week (or legacy next-day), raise to kill the run
+            if './novamind-operation next-week' in command or './novamind-operation next-day' in command:
                 raise NextDayTimeoutError(
-                    f"next_day timed out after {self.bash_timeout}s",
+                    f"next_week timed out after {self.bash_timeout}s",
                     partial_stdout=partial_stdout,
                     partial_stderr=partial_stderr,
                 )

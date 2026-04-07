@@ -192,9 +192,9 @@ class MCPServer:
         }
 
         # Special cases not in AgentTools
-        if name == "next_day":
-            # Signal to advance the day - actual simulation step happens in runner
-            return "NEXT_DAY_SIGNAL"
+        if name in ("next_week", "next_day"):
+            # Signal to advance the week - actual simulation step happens in runner
+            return "NEXT_WEEK_SIGNAL"
 
         if name == "log_rationale":
             entry = RationaleEntry(

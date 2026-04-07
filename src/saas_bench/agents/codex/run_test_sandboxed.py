@@ -302,7 +302,12 @@ def run_test(
     from saas_bench.tools import get_tool_summary_table
     simulator_instructions_file = Path(__file__).parent.parent / "simulator_instructions.md"
     with open(simulator_instructions_file, 'r') as f:
-        simulator_instructions = f.read().format(tool_list=get_tool_summary_table())
+        simulator_instructions = f.read().format(
+            tool_list=get_tool_summary_table(),
+            total_days=total_days,
+            total_weeks=(total_days + 6) // 7,
+            total_years=f"{total_days / 365:.1f}",
+        )
 
     # Format the template with run-specific values
     system_prompt = template_content.format(
@@ -327,12 +332,12 @@ INSTRUCTIONS:
 1. Review the dashboard above
 2. Use MCP tools to adjust pricing, spending, capacity, etc.
 3. Use log_rationale to record your thinking
-4. Call next_day when done - it will run the simulation and return the next day's dashboard
+4. Call next_week when done - it will run the simulation for 7 days and return the weekly dashboard
 5. Continue until you complete all {total_days} days or go bankrupt
 
-The next_day tool returns the dashboard for the following day, so keep calling it to progress through the simulation.
+The next_week tool advances the simulation by one week (7 days) and returns the weekly dashboard, so keep calling it to progress through the simulation.
 
-Available MCP tools: set_prices, set_model_tiers, set_daily_spend, set_ad_channel_spend, set_targeted_ad_spend, set_capacity_tier, set_usage_quotas, python_exec, log_rationale, next_day, and more.
+Available MCP tools: set_prices, set_model_tiers, set_daily_spend, set_ad_channel_spend, set_targeted_ad_spend, set_capacity_tier, set_usage_quotas, python_exec, log_rationale, next_week, and more.
 
 Start by analyzing Day 1 and making your first decisions!"""
 
@@ -388,7 +393,7 @@ Start by analyzing Day 1 and making your first decisions!"""
         if iteration == 1:
             current_prompt = prompt
         else:
-            current_prompt = f"Continue managing NovaMind AI. Current day: {current_day}, Cash: ${current_cash:,.0f}. Keep calling next_day until you reach day {total_days} or go bankrupt."
+            current_prompt = f"Continue managing NovaMind AI. Current day: {current_day}, Cash: ${current_cash:,.0f}. Keep calling next_week until you reach day {total_days} or go bankrupt."
 
         codex_cmd = [
             "codex",

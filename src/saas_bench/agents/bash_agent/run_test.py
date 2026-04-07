@@ -269,9 +269,9 @@ class BashAgentRunner:
             return "(Dashboard unavailable)"
 
     def _advance_day_http(self) -> Dict:
-        """Force day advancement via HTTP POST /next-day."""
+        """Force week advancement via HTTP POST /next-day (API endpoint kept for compat)."""
         try:
-            return self._http_post('/next-day', timeout=1800)
+            return self._http_post('/next-day', timeout=4200)
         except urllib.error.URLError as e:
             return {"success": False, "error": str(e)}
 
@@ -626,7 +626,7 @@ class BashAgentRunner:
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
         """Execute a bash_agent tool.
 
-        Raises NextDayTimeoutError if ./novamind-operation next-day times out,
+        Raises NextDayTimeoutError if ./novamind-operation next-week times out,
         which triggers run checkpoint + kill in the run loop.
         """
         result = self.tool_executor.execute(tool_name, arguments)
@@ -725,8 +725,8 @@ class BashAgentRunner:
                 _day_llm_total += _llm_elapsed
 
                 if action is None:
-                    # No action — force next-day via bash
-                    action = Action(tool='bash', arguments={'command': './novamind-operation next-day'})
+                    # No action — force next-week via bash
+                    action = Action(tool='bash', arguments={'command': './novamind-operation next-week'})
 
                 tool_name = action.tool
                 tool_args_preview = ""
@@ -751,7 +751,7 @@ class BashAgentRunner:
                     result = self._execute_tool(action.tool, action.arguments or {})
                 except self._NextDayTimeoutError as e:
                     _tool_elapsed = _time.monotonic() - _t0
-                    print(f"\n⚠️  next_day timed out on day {day} ({e})")
+                    print(f"\n⚠️  next_week timed out on day {day} ({e})")
                     print(f"Auto-quitting. Saving checkpoint at day {day - 1}...")
                     self._save_checkpoint(day - 1)
                     game_ended = True

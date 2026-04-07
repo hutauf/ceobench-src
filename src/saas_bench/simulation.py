@@ -3371,7 +3371,11 @@ class Simulator:
         # ========================================================================
         # System 2: Sample up to 10 candidates for LLM social posts
         # Uses the SAME weight as System 1 reputation — unified weighting.
+        # When _suppress_customer_posts is set (step_week days 1-6), skip sampling.
         # ========================================================================
+        if getattr(self, '_suppress_customer_posts', False):
+            return [], influence_cache
+
         if not candidates:
             return [], influence_cache
 
@@ -5107,17 +5111,17 @@ Guidelines:
         return enterprise_churn_events
 
     def _process_agent_response_timeouts(self, config: dict, enterprise_churn_events: list):
-        """Process threads where agent hasn't responded within 3 days.
+        """Process threads where agent hasn't responded within 7 days (1 week).
 
         L11: Batch-optimized — pre-fetches all needed data in 2 bulk queries,
         then does all writes via executemany. Eliminates N per-thread DB round-trips.
 
-        If agent doesn't respond to customer within 3 days:
+        If agent doesn't respond to customer within 7 days:
         - For new_lead: Lead is lost (subscription marked as 'lost', thread closed)
         - For existing customers (churn_prevention, plan_change, budget_freeze):
           Customer cancels their subscription
         """
-        timeout_days = 3
+        timeout_days = 7
         timed_out_threads = get_threads_awaiting_agent_response(
             self.conn, self.current_day, timeout_days
         )
@@ -6486,6 +6490,89 @@ Guidelines:
                  churned_today, new_today)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, sat_snapshot_rows)
+
+    def step_week(self) -> DayResult:
+        """Simulate one week (7 days) and return accumulated results.
+
+        Calls step_day() 7 times internally. Customer social media posts
+        are suppressed for days 1-6 and only generated on day 7.
+        Returns a DayResult with cumulative metrics for the week
+        (additive fields summed, snapshot fields from last day).
+        """
+        import time as _time
+        _week_start = _time.monotonic()
+
+        accumulated = None
+        for i in range(7):
+            # Suppress customer social posts for first 6 days of the week
+            self._suppress_customer_posts = (i < 6)
+            day_result = self.step_day()
+
+            if accumulated is None:
+                # First day — copy all fields
+                accumulated = DayResult(
+                    day=day_result.day,
+                    total_usage=day_result.total_usage,
+                    overload=day_result.overload,
+                    outage=day_result.outage,
+                    downtime_minutes=day_result.downtime_minutes,
+                    p95_ms=day_result.p95_ms,
+                    error_rate=day_result.error_rate,
+                    new_subscribers=day_result.new_subscribers,
+                    new_leads=day_result.new_leads,
+                    cancellations=day_result.cancellations,
+                    upgrades=day_result.upgrades,
+                    downgrades=day_result.downgrades,
+                    payments_received=day_result.payments_received,
+                    total_costs=day_result.total_costs,
+                    cash=day_result.cash,
+                    mrr=day_result.mrr,
+                    new_individual_leads=day_result.new_individual_leads,
+                    new_enterprise_leads=day_result.new_enterprise_leads,
+                    new_individual_subscribers=day_result.new_individual_subscribers,
+                    new_enterprise_subscribers_seats=day_result.new_enterprise_subscribers_seats,
+                    total_individual_subscribers=day_result.total_individual_subscribers,
+                    total_enterprise_subscription_seats=day_result.total_enterprise_subscription_seats,
+                )
+            else:
+                # Accumulate additive fields
+                accumulated.total_usage += day_result.total_usage
+                accumulated.new_subscribers += day_result.new_subscribers
+                accumulated.new_leads += day_result.new_leads
+                accumulated.cancellations += day_result.cancellations
+                accumulated.upgrades += day_result.upgrades
+                accumulated.downgrades += day_result.downgrades
+                accumulated.payments_received += day_result.payments_received
+                accumulated.total_costs += day_result.total_costs
+                accumulated.new_individual_leads += day_result.new_individual_leads
+                accumulated.new_enterprise_leads += day_result.new_enterprise_leads
+                accumulated.new_individual_subscribers += day_result.new_individual_subscribers
+                accumulated.new_enterprise_subscribers_seats += day_result.new_enterprise_subscribers_seats
+
+                # Snapshot fields — take from last day
+                accumulated.day = day_result.day
+                accumulated.cash = day_result.cash
+                accumulated.mrr = day_result.mrr
+                accumulated.total_individual_subscribers = day_result.total_individual_subscribers
+                accumulated.total_enterprise_subscription_seats = day_result.total_enterprise_subscription_seats
+
+                # Service metrics — take worst case across the week
+                accumulated.overload = max(accumulated.overload, day_result.overload)
+                accumulated.p95_ms = max(accumulated.p95_ms, day_result.p95_ms)
+                accumulated.error_rate = max(accumulated.error_rate, day_result.error_rate)
+                accumulated.downtime_minutes += day_result.downtime_minutes
+                if day_result.outage:
+                    accumulated.outage = True
+
+        # Reset suppression flag
+        self._suppress_customer_posts = False
+
+        _week_total = _time.monotonic() - _week_start
+        if _week_total > 30.0:
+            import sys
+            print(f"[step_week] Week ending day {accumulated.day}: {_week_total:.1f}s", file=sys.stderr)
+
+        return accumulated
 
     def step_day(self) -> DayResult:
         """Simulate one day and return results."""

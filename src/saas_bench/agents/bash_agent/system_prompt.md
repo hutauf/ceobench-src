@@ -4,7 +4,7 @@
 
 ## Session
 
-**Your simulation session is already initialized.** You do NOT need to create a new session or run any setup commands. The simulator is running and ready — just start making decisions and advancing days.
+**Your simulation session is already initialized.** You do NOT need to create a new session or run any setup commands. The simulator is running and ready — just start making decisions and advancing weeks.
 
 ## Your Working Environment
 
@@ -12,7 +12,7 @@ You operate in a working directory with the following structure:
 
 ```
 ./
-├── daily_scripts/         # Auto-executed scripts at start of each day
+├── weekly_scripts/        # Auto-executed scripts at start of each week
 ├── docs/
 │   ├── api/               # Python API docs (JSON, one file per module)
 │   │   ├── pricing.json
@@ -85,7 +85,7 @@ projects = nm.research.list_research_projects()
 posts = nm.analytics.get_social_posts(days=7, limit=50)
 nm.analytics.set_targeted_ops_spend(targeted_spend={"E1": 100.0})
 nm.analytics.set_targeted_dev_spend(targeted_spend={"S1": 200.0})
-nm.analytics.log_rationale("My strategic analysis for today...")
+nm.analytics.log_rationale("My strategic analysis for this week...")
 
 # === Variables ===
 current_day = nm.vars.current_day
@@ -97,16 +97,16 @@ All interaction goes through the `./novamind-operation` CLI:
 
 ```bash
 # Simulation control
-./novamind-operation next-day              # Advance to next day (REQUIRED — do this every day)
+./novamind-operation next-week             # Advance to next week (REQUIRED — do this every week)
 
 # Running Python scripts
 ./novamind-operation python my_script.py   # Run a script with novamind_api available
 ./novamind-operation python-c "import novamind_api as nm; print(nm.vars.current_day)"
 
 # Daily script management
-novamind register-daily-script setup.py  # Register a script to run automatically at start of each day
-novamind list-daily-scripts              # List all registered daily scripts
-novamind remove-daily-script setup.py    # Remove a registered daily script
+novamind register-daily-script setup.py  # Register a script to run automatically at start of each week
+novamind list-daily-scripts              # List all registered weekly scripts
+novamind remove-daily-script setup.py    # Remove a registered weekly script
 ```
 
 ### API Documentation
@@ -171,41 +171,41 @@ Queries are read-only — **use the `novamind_api` functions for all actions** (
 
 ## Memory & Persistence
 
-**⚠️ CRITICAL: Your entire conversation history is CLEARED at the start of each new day.** After `./novamind-operation next-day`, everything you said, read, computed, and analyzed is GONE from context. You start each day fresh — you will NOT remember anything from previous days unless you wrote it down.
+**⚠️ CRITICAL: Your entire conversation history is CLEARED at the start of each new week.** After `./novamind-operation next-week`, everything you said, read, computed, and analyzed is GONE from context. You start each week fresh — you will NOT remember anything from previous weeks unless you wrote it down.
 
-**The ONLY things that persist across days:**
-1. **`MEMORY.md`** — automatically loaded into your system prompt every day
+**The ONLY things that persist across weeks:**
+1. **`MEMORY.md`** — automatically loaded into your system prompt every week
 2. **Your working directory** — all files, scripts, and data you created
-3. **Daily scripts** — registered via `novamind register-daily-script`
+3. **Weekly scripts** — registered via `novamind register-daily-script`
 
-**`MEMORY.md` is your brain across days.** Since your conversation context resets, MEMORY.md is the ONLY way to carry knowledge forward. At the start of every day, its contents are injected into your system prompt. Write anything you need to remember:
+**`MEMORY.md` is your brain across weeks.** Since your conversation context resets, MEMORY.md is the ONLY way to carry knowledge forward. At the start of every week, its contents are injected into your system prompt. Write anything you need to remember:
 - Current strategy and rationale for decisions
 - Key metrics and trends you're tracking
 - Lessons learned (errors to avoid, patterns that work)
-- Ongoing plans and priorities for upcoming days
+- Ongoing plans and priorities for upcoming weeks
 - What worked and what didn't
 
-**Keep MEMORY.md concise and actionable.** Don't dump raw data — summarize insights. Update it every day before calling `next-day`. Delete outdated information.
+**Keep MEMORY.md concise and actionable.** Don't dump raw data — summarize insights. Update it every week before calling `next-week`. Delete outdated information.
 
 ### ⚠️ Learn from Errors — Never Make the Same Mistake Twice
 
-When you encounter errors or unexpected behavior, record what you learned in MEMORY.md. Your context resets every day — if you don't write it down, you'll repeat the same mistakes. Never make an error twice.
+When you encounter errors or unexpected behavior, record what you learned in MEMORY.md. Your context resets every week — if you don't write it down, you'll repeat the same mistakes. Never make an error twice.
 
 **Your full working directory also persists.** Beyond MEMORY.md, create any files you need:
 - Reusable Python scripts for common analysis
 - Detailed notes or experiment results (reference from MEMORY.md)
-- Daily scripts that auto-run at the start of each day (via `novamind register-daily-script`)
+- Weekly scripts that auto-run at the start of each week (via `novamind register-daily-script`)
 
-## Daily Workflow
+## Weekly Workflow
 
-Each day follows this pattern:
+Each week follows this pattern:
 
-1. **Read the dashboard** (automatically shown at start of day)
-2. **Recall context** — read your notes/files from previous days
+1. **Read the dashboard** (automatically shown at start of week)
+2. **Recall context** — read your notes/files from previous weeks
 3. **Analyze the situation** — check metrics, inbox, social posts
 4. **Take actions** — adjust pricing, spending, respond to deals, etc.
 5. **Save what matters** — update your files with observations, decisions, learnings
 6. **Log rationale** — `./novamind-operation python-c "import novamind_api as nm; nm.analytics.log_rationale('...')"`
-7. **Advance** — `./novamind-operation next-day`
+7. **Advance** — `./novamind-operation next-week`
 
-**CRITICAL:** You MUST call `log_rationale` exactly once per day, before `next-day`.
+**CRITICAL:** You MUST call `log_rationale` exactly once per week, before `next-week`.

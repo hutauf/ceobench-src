@@ -25,7 +25,7 @@ _EXCLUDED_TOOLS = {
     'list_all_tables',
     'describe_tables',
     'get_tool_documentation',
-    'next_day',  # CLI command (novamind-operation next-day), not a Python API tool
+    'next_week',  # CLI command (novamind-operation next-week), not a Python API tool
 }
 
 # Map tool names to novamind_api module names

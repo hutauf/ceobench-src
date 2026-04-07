@@ -89,7 +89,7 @@ class SaaSBenchMCPServer:
         # Load existing rationales from file (persists across MCP server restarts)
         self.rationales: List[RationaleEntry] = self._load_rationales()
 
-        # Track if next_day was called
+        # Track if next_week was called
         self.day_ended = False
 
         # MCP server
@@ -280,7 +280,7 @@ class SaaSBenchMCPServer:
             self.simulator = Simulator(self.conn, bench_config, self.rng)
 
         # Always sync simulator's current_day with what's actually in the database
-        # This prevents issues when next_day is called multiple times in a session
+        # This prevents issues when next_week is called multiple times in a session
         max_day_row = self.conn.execute("SELECT COALESCE(MAX(day), 0) FROM service_day").fetchone()
         db_current_day = max_day_row[0] if max_day_row else 0
         self.simulator.current_day = db_current_day
@@ -438,15 +438,15 @@ class SaaSBenchMCPServer:
         """Execute a tool and return the result.
 
         Tool dispatch is centralized in _build_dispatch(). Special cases
-        (next_day, log_rationale) are handled inline since they have
+        (next_week, log_rationale) are handled inline since they have
         custom logic beyond just calling AgentTools.
         """
         tools = self.tools
 
-        # === Special case: next_day (runs simulation step) ===
-        if name == "next_day":
-            # Run simulation step for current day
-            self.last_result = self.simulator.step_day()
+        # === Special case: next_week (runs simulation step) ===
+        if name in ("next_week", "next_day"):
+            # Run simulation step for current week (7 days)
+            self.last_result = self.simulator.step_week()
 
             # Check for bankruptcy
             if self.simulator.shutdown_mode:

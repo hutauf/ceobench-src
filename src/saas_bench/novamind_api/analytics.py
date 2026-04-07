@@ -44,9 +44,9 @@ def set_targeted_dev_spend(targeted_spend: Dict[str, float]) -> Dict:
 
 
 def log_rationale(rationale: str) -> Dict:
-    """Log your strategic rationale for the day.
+    """Log your strategic rationale for the week.
 
-    MUST be called exactly once per day, before next-day.
+    MUST be called exactly once per week, before next-week.
 
     Args:
         rationale: Your analysis, strategy, and reasoning.

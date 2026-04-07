@@ -256,7 +256,7 @@ def cmd_start_server(args, base: Path):
         # Save protected DB after each day
         save_session_db(conn, nmdb_path)
         # Log to history
-        _log_history({"type": "next_day", "day": day, "timestamp": time.time()})
+        _log_history({"type": "next_week", "day": day, "timestamp": time.time()})
 
     # Create and start API server
     api_server = NovaMindAPIServer(

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Set
 
 from .tools import AgentTools, ToolResult
 from .database import TABLE_DOCS
-from .environment import build_daily_dashboard
+from .environment import build_weekly_dashboard
 
 
 # ---- Hidden columns / tables (same policy as python_exec sandbox) ----
@@ -367,10 +367,10 @@ class _APIHandler(BaseHTTPRequestHandler):
             self._send_json({"success": False, "error": str(e), "traceback": traceback.format_exc()}, 500)
 
     def _handle_next_day(self):
-        """Handle next-day advancement: POST /next-day."""
+        """Handle next-week advancement: POST /next-day (kept for API compat)."""
         try:
             server: NovaMindAPIServer = self.server._api_server
-            result = server.advance_day()
+            result = server.advance_week()
             self._send_json(result)
         except Exception as e:
             import traceback
@@ -511,14 +511,14 @@ class _APIHandler(BaseHTTPRequestHandler):
     def _handle_dashboard_get(self):
         """Return current dashboard: GET /dashboard.
 
-        Returns the last built dashboard (from advance_day), or builds
+        Returns the last built dashboard (from advance_week), or builds
         a fresh one for the current day if none exists yet.
         """
         server: NovaMindAPIServer = self.server._api_server
         dashboard = server._last_dashboard
         if not dashboard and server.conn:
             day = server.tools.current_day
-            dashboard = build_daily_dashboard(server.conn, day)
+            dashboard = build_weekly_dashboard(server.conn, day)
         self._send_json({
             "dashboard": dashboard or f"=== Day {server.tools.current_day} ===\n(No data)",
             "day": server.tools.current_day,
@@ -650,16 +650,16 @@ class NovaMindAPIServer:
                 return ToolResult(False, f"Unknown tool: {tool_name}")
             return dispatch_fn(self.tools, args)
 
-    # Maximum allowed time for step_day before auto-quit (seconds)
-    STEP_DAY_TIMEOUT = 1200
+    # Maximum allowed time for step_week before auto-quit (seconds)
+    STEP_WEEK_TIMEOUT = 4200  # 7× longer than old per-day timeout
 
-    def advance_day(self) -> Dict[str, Any]:
-        """Advance the simulator by one day and return the dashboard.
+    def advance_week(self) -> Dict[str, Any]:
+        """Advance the simulator by one week (7 days) and return the dashboard.
 
-        Enforces a hard timeout (STEP_DAY_TIMEOUT seconds) on step_day().
+        Enforces a hard timeout (STEP_WEEK_TIMEOUT seconds) on step_week().
         If exceeded, returns an error so the runner can save checkpoint and exit.
 
-        If a shock_manager is configured, shocks are checked before step_day
+        If a shock_manager is configured, shocks are checked before step_week
         and inbox items are included in the dashboard.
         """
         import time as _time
@@ -668,25 +668,26 @@ class NovaMindAPIServer:
         with self._lock:
             if self.simulator is None:
                 return {"success": False, "error": "No simulator configured"}
-            new_day = self.tools.current_day + 1
+            old_day = self.tools.current_day
 
-        # Check for shocks BEFORE step_day (so shock effects apply this day)
+        # Check for shocks BEFORE step_week (so shock effects apply this week)
         if self.shock_manager:
-            new_shocks = self.shock_manager.check_and_generate_shocks(new_day)
-            if self.event_logger:
-                for shock in new_shocks:
-                    self.event_logger.log_shock(shock.shock_type, shock.details)
+            for d in range(old_day + 1, old_day + 8):
+                new_shocks = self.shock_manager.check_and_generate_shocks(d)
+                if self.event_logger:
+                    for shock in new_shocks:
+                        self.event_logger.log_shock(shock.shock_type, shock.details)
 
-        # Run step_day in a worker thread so we can enforce a timeout.
+        # Run step_week in a worker thread so we can enforce a timeout.
         _step_start = _time.monotonic()
 
         def _do_step():
-            return self.simulator.step_day()
+            return self.simulator.step_week()
 
         executor = ThreadPoolExecutor(max_workers=1)
         future = executor.submit(_do_step)
         try:
-            day_result = future.result(timeout=self.STEP_DAY_TIMEOUT)
+            week_result = future.result(timeout=self.STEP_WEEK_TIMEOUT)
         except FuturesTimeoutError:
             elapsed = _time.monotonic() - _step_start
             self._last_step_elapsed = elapsed
@@ -694,36 +695,39 @@ class NovaMindAPIServer:
             executor.shutdown(wait=False, cancel_futures=True)
             return {
                 "success": False,
-                "error": "step_day_timeout",
+                "error": "step_week_timeout",
                 "elapsed": elapsed,
-                "message": f"step_day exceeded {self.STEP_DAY_TIMEOUT}s timeout ({elapsed:.1f}s elapsed). Save checkpoint and exit.",
+                "message": f"step_week exceeded {self.STEP_WEEK_TIMEOUT}s timeout ({elapsed:.1f}s elapsed). Save checkpoint and exit.",
             }
         executor.shutdown(wait=False)
 
         self._last_step_elapsed = _time.monotonic() - _step_start
+        new_day = week_result.day
 
         with self._lock:
-            self._last_day_result = day_result
+            self._last_day_result = week_result
             self.tools.set_current_day(new_day)
 
-        # Build inbox items from shocks + enterprise threads
+        # Build inbox items from shocks + enterprise threads (covering the whole week)
         inbox = []
         if self.shock_manager:
             inbox.extend(self.shock_manager.get_inbox_items(new_day))
         if self.conn:
             from saas_bench.environment import get_thread_inbox_items
-            inbox.extend(get_thread_inbox_items(self.conn, new_day))
+            week_start = old_day + 1
+            inbox.extend(get_thread_inbox_items(self.conn, new_day, week_start_day=week_start))
 
-        # Build dashboard OUTSIDE the lock so daily scripts can call back
+        # Build dashboard OUTSIDE the lock so weekly scripts can call back
         # to the API server (e.g., nm.query()) without deadlocking.
         if self.dashboard_callback:
-            dashboard = self.dashboard_callback(new_day, day_result)
+            dashboard = self.dashboard_callback(new_day, week_result)
         elif self.conn:
-            # Run daily scripts if available
+            # Run weekly scripts if available
             calc_outputs = self._run_daily_scripts_internal() if hasattr(self, '_daily_script_snapshots') else None
-            dashboard = build_daily_dashboard(self.conn, new_day, day_result, calc_outputs, inbox)
+            dashboard = build_weekly_dashboard(self.conn, new_day, week_result, calc_outputs, inbox)
         else:
-            dashboard = f"=== Day {new_day} Dashboard ===\n(No dashboard data available)"
+            week = (new_day + 6) // 7
+            dashboard = f"=== Week {week} Dashboard (Day {new_day}) ===\n(No dashboard data available)"
 
         with self._lock:
             self._last_dashboard = dashboard

@@ -15,7 +15,7 @@ from openai import OpenAI
 
 from .config import BenchmarkConfig, SCENARIO_PACKS, ScenarioPack
 from .database import init_database, get_cash, get_active_subscriber_count, get_config
-from .environment import build_daily_dashboard
+from .environment import build_weekly_dashboard
 from .simulation import Simulator, DayResult
 from .tools import AgentTools, get_tool_descriptions
 from .shocks import ShockManager
@@ -118,17 +118,17 @@ class Benchmark:
         self.simulator.set_event_logger(self.event_logger)
         self.tools.set_event_logger(self.event_logger)
 
-    def _build_daily_dashboard(self, day: int, day_result: Optional[DayResult] = None,
+    def _build_weekly_dashboard(self, day: int, day_result: Optional[DayResult] = None,
                                calculation_outputs: Dict[str, str] = None) -> str:
-        """Build the daily dashboard. Delegates to the shared build_daily_dashboard().
+        """Build the weekly dashboard. Delegates to the shared build_weekly_dashboard().
 
         Args:
-            day: Current day number
-            day_result: DayResult from simulation step (None on Day 1)
+            day: Current day number (end of week)
+            day_result: DayResult from simulation step (None on Week 1)
             calculation_outputs: Optional dict mapping calculation name to output
         """
         inbox = self.shock_manager.get_inbox_items(day)
-        return build_daily_dashboard(
+        return build_weekly_dashboard(
             self.conn, day, day_result, calculation_outputs, inbox
         )
 
@@ -331,7 +331,7 @@ class Benchmark:
                 if last_result:
                     print(f"  Yesterday: ind_leads={last_result.new_individual_leads}, ent_leads={last_result.new_enterprise_leads}, ind_subs={last_result.new_individual_subscribers}, ent_seats={last_result.new_enterprise_subscribers_seats}, cancels={last_result.cancellations}")
 
-            # Multi-turn control loop: keep calling agent until next_day tool is called
+            # Multi-turn control loop: keep calling agent until next_week tool is called
             tools = get_tool_descriptions()
             turn = 0
             max_turns = 20  # Safety limit to prevent infinite loops
@@ -378,18 +378,18 @@ class Benchmark:
                         call_id = output_item.call_id
                         turn_tool_calls.append(tool_name)
 
-                        # Check for next_day tool
-                        if tool_name == "next_day":
+                        # Check for next_week tool
+                        if tool_name in ("next_week", "next_day"):
                             if verbose:
-                                print(f"  📞 next_day() -> Agent finished for today")
+                                print(f"  📞 next_week() -> Agent finished for this week")
                             day_ended = True
-                            # Log next_day action
-                            self.event_logger.log_agent_action("next_day", {}, "Day ended", True)
+                            # Log next_week action
+                            self.event_logger.log_agent_action("next_week", {}, "Week ended", True)
                             # Run daily calculations and build dashboard
                             calc_outputs = self.tools.run_daily_calculations()
                             if verbose and calc_outputs:
                                 print(f"  📈 Daily calculations: {list(calc_outputs.keys())}")
-                            dashboard = self._build_daily_dashboard(day, last_result, calc_outputs)
+                            dashboard = self._build_weekly_dashboard(day, last_result, calc_outputs)
                             tool_results.append({
                                 'call_id': call_id,
                                 'output': f"Day ended. Advancing to next day.\n\n{dashboard}"
@@ -444,8 +444,8 @@ class Benchmark:
             if verbose and turn >= max_turns:
                 print(f"  ⚠️ Hit max turns limit ({max_turns})")
 
-            # Run simulation for this day
-            last_result = self.simulator.step_day()
+            # Run simulation for this week
+            last_result = self.simulator.step_week()
             self.daily_results.append(last_result)
             daily_cash.append(last_result.cash)
 

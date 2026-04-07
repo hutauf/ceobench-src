@@ -118,7 +118,7 @@ Building and maintaining strong customer relationships is critical for retention
 
 ## Available Tools
 
-You can call any tool infinitely within a day. Call `next_day` to proceed to the next day.
+You can call any tool infinitely within a week. Call `next_week` to proceed to the next week.
 
 ### Business Configuration
 
@@ -165,7 +165,7 @@ You can call any tool infinitely within a day. Call `next_day` to proceed to the
 
 | Tool | Description |
 |------|-------------|
-| `next_day` | Advance the simulation by one day and receive the next day's dashboard |
+| `next_week` | Advance the simulation by one week (7 days) and receive the weekly dashboard |
 
 ### Thinking & Reasoning
 
@@ -173,7 +173,7 @@ You can call any tool infinitely within a day. Call `next_day` to proceed to the
 |------|-------------|
 | `log_rationale` | Log your thinking, reasoning, and decision rationale. Use this to record why you made decisions. |
 
-**CRITICAL REQUIREMENT:** You MUST call `log_rationale` at least once EVERY SINGLE DAY before calling `next_day`. This is mandatory for tracking your decision-making process.
+**CRITICAL REQUIREMENT:** You MUST call `log_rationale` at least once EVERY SINGLE WEEK before calling `next_week`. This is mandatory for tracking your decision-making process.
 """
 
 
@@ -290,12 +290,12 @@ Use the tools available to:
 5. set_capacity_tier(tier) - Set server capacity
 6. python_exec(code) - Analyze database for insights
 7. Communicate with large customers
-8. next_day() - END YOUR TURN and advance to next day
+8. next_week() - END YOUR TURN and advance to next week (7 days)
 
-⚠️ IMPORTANT: You can make MULTIPLE tool calls per day. The day does NOT advance until you call next_day().
+⚠️ IMPORTANT: You can make MULTIPLE tool calls per week. The week does NOT advance until you call next_week().
 - First, gather information (get_cost_info, python_exec)
 - Then, TAKE ACTIONS (set_prices, set_daily_spend, set_capacity_tier, set_model_tiers)
-- Finally, call next_day() to end your turn
+- Finally, call next_week() to end your turn
 
 STRATEGY: Keep costs LOW, grow revenue SUSTAINABLY. Never let cash go negative!"""
 
@@ -444,9 +444,9 @@ Pre-loaded in python_exec: `conn` (SQLite), `rows(sql)` -> list, `row(sql)` -> s
 2. Analyze if needed (python_exec for deeper insights)
 3. Take actions (set_prices, set_model_tiers, set_daily_spend, set_capacity_tier, etc.)
 4. Update memory with insights and decisions
-5. Call `next_day()` to end your turn
+5. Call `next_week()` to end your turn
 
-**CRITICAL:** You MUST call `next_day()` to advance the simulation!"""
+**CRITICAL:** You MUST call `next_week()` to advance the simulation!"""
 
         user_prompt = f"""=== DAY {observation['day']} of {self.config.total_days} ===
 
