@@ -186,34 +186,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Social Media Ads',
         description='Facebook, Instagram, TikTok — reaches individuals via feeds and influencer content',
         leads_per_1000_dollars={
-            'S1': 76.5,  # Best channel for S1: viral social discovery (9× base)
-            'S2': 40.5,  # Moderate: some professionals on social (9× base)
-            'S3': 25.2,  # Lower: power users prefer technical content (9× base)
-            'E1': 0.75,  # Very low: enterprises don't buy from TikTok; whole-company acquisition
-            'E2': 0.45,  # Negligible: professional services avoid social ads entirely
-            'E3': 0.23, # Negligible: C-level doesn't buy from Instagram
+            'S1': 1147.5,  # Best channel for S1: viral social discovery (135× base)
+            'S2': 607.5,  # Moderate: some professionals on social (135× base)
+            'S3': 378.0,  # Lower: power users prefer technical content (135× base)
+            'E1': 0.262,  # Very low: enterprises don't buy from TikTok; whole-company acquisition (÷2)
+            'E2': 0.158,  # Negligible: professional services avoid social ads entirely (÷2)
+            'E3': 0.081, # Negligible: C-level doesn't buy from Instagram (÷2)
             # Discoverable individual groups
-            'D_S01': 63.0,  # Niche Creators: highly active on social (9× base)
-            'D_S02': 15.3,  # Academic Researchers: rarely on social for tools (9× base)
-            'D_S03': 37.8,  # Non-Profit Workers: community-oriented social (9× base)
-            'D_S04': 46.8,  # Small Agency Teams: manage social for clients (9× base)
-            'D_S05': 49.5,  # Indie Game Devs: active on TikTok/Twitter (9× base)
-            'D_S06': 28.8,  # Freelance Writers: moderate social presence (9× base)
-            'D_S07': 18.0,  # Data Analysts: prefer technical content (9× base)
-            'D_S08': 72.0,  # Social Media Managers: live on social platforms (9× base)
-            'D_S09': 40.5,  # UX Designers: active on design-focused social (9× base)
-            'D_S10': 54.0,  # Music Producers: active on Instagram/TikTok (9× base)
+            'D_S01': 945.0,  # Niche Creators: highly active on social (135× base)
+            'D_S02': 229.5,  # Academic Researchers: rarely on social for tools (135× base)
+            'D_S03': 567.0,  # Non-Profit Workers: community-oriented social (135× base)
+            'D_S04': 702.0,  # Small Agency Teams: manage social for clients (135× base)
+            'D_S05': 742.5,  # Indie Game Devs: active on TikTok/Twitter (135× base)
+            'D_S06': 432.0,  # Freelance Writers: moderate social presence (135× base)
+            'D_S07': 270.0,  # Data Analysts: prefer technical content (135× base)
+            'D_S08': 1080.0,  # Social Media Managers: live on social platforms (135× base)
+            'D_S09': 607.5,  # UX Designers: active on design-focused social (135× base)
+            'D_S10': 810.0,  # Music Producers: active on Instagram/TikTok (135× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.15,  # Government Agencies: zero social media procurement
-            'D_E02': 0.38, # Educational Institutions: some ed-tech social presence
-            'D_E03': 0.23, # Healthcare Networks: HIPAA-conscious, avoid social
-            'D_E04': 0.15,  # Regional Banks: conservative, no social buying
-            'D_E05': 0.23, # Insurance Brokers: minimal social presence
-            'D_E06': 0.3,  # Construction Firms: field workers on Facebook
-            'D_E07': 0.38, # Telecom Operators: some digital marketing awareness
-            'D_E08': 0.15,  # Energy Companies: safety-focused, no social buying
-            'D_E09': 0.45,  # Real Estate Groups: active on social for listings
-            'D_E10': 0.15,  # Shipping Lines: operational focus, no social
+            'D_E01': 0.052,  # Government Agencies: zero social media procurement (÷2)
+            'D_E02': 0.133, # Educational Institutions: some ed-tech social presence (÷2)
+            'D_E03': 0.081, # Healthcare Networks: HIPAA-conscious, avoid social (÷2)
+            'D_E04': 0.052,  # Regional Banks: conservative, no social buying (÷2)
+            'D_E05': 0.081, # Insurance Brokers: minimal social presence (÷2)
+            'D_E06': 0.105,  # Construction Firms: field workers on Facebook (÷2)
+            'D_E07': 0.133, # Telecom Operators: some digital marketing awareness (÷2)
+            'D_E08': 0.052,  # Energy Companies: safety-focused, no social buying (÷2)
+            'D_E09': 0.158,  # Real Estate Groups: active on social for listings (÷2)
+            'D_E10': 0.052,  # Shipping Lines: operational focus, no social (÷2)
         }
     ),
     'search_ads': AdChannel(
@@ -221,34 +221,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Search Engine Ads',
         description='Google Ads, Bing — reaches S2/S3 who research tools via search',
         leads_per_1000_dollars={
-            'S1': 31.5,  # Moderate: search for deals and alternatives (9× base)
-            'S2': 34.2,  # Best search channel for S2: thorough research (9× base)
-            'S3': 20.7,  # Strong: power users search for technical solutions (9× base)
-            'E1': 0.9,  # Very low: procurement team vendor comparison; whole-company sale
-            'E2': 0.75,  # Very low: compliance research leads to long eval cycle
-            'E3': 0.45,  # Negligible: strategic partners prefer referrals over search
+            'S1': 472.5,  # Moderate: search for deals and alternatives (135× base)
+            'S2': 513.0,  # Best search channel for S2: thorough research (135× base)
+            'S3': 310.5,  # Strong: power users search for technical solutions (135× base)
+            'E1': 0.315,  # Very low: procurement team vendor comparison; whole-company sale (÷2)
+            'E2': 0.262,  # Very low: compliance research leads to long eval cycle (÷2)
+            'E3': 0.158,  # Negligible: strategic partners prefer referrals over search (÷2)
             # Discoverable individual groups
-            'D_S01': 25.2,  # Niche Creators: search for creative tools (9× base)
-            'D_S02': 36.0,  # Academic Researchers: heavy tool search (9× base)
-            'D_S03': 23.4,  # Non-Profit Workers: search for affordable tools (9× base)
-            'D_S04': 28.8,  # Small Agency Teams: search for PM tools (9× base)
-            'D_S05': 27.0,  # Indie Game Devs: search for dev tools (9× base)
-            'D_S06': 34.2,  # Freelance Writers: search for writing tools (9× base)
-            'D_S07': 31.5,  # Data Analysts: search for analytics tools (9× base)
-            'D_S08': 20.7,  # Social Media Managers: less search, more social (9× base)
-            'D_S09': 27.0,  # UX Designers: search for prototyping tools (9× base)
-            'D_S10': 16.2,  # Music Producers: niche search, prefer community (9× base)
+            'D_S01': 378.0,  # Niche Creators: search for creative tools (135× base)
+            'D_S02': 540.0,  # Academic Researchers: heavy tool search (135× base)
+            'D_S03': 351.0,  # Non-Profit Workers: search for affordable tools (135× base)
+            'D_S04': 432.0,  # Small Agency Teams: search for PM tools (135× base)
+            'D_S05': 405.0,  # Indie Game Devs: search for dev tools (135× base)
+            'D_S06': 513.0,  # Freelance Writers: search for writing tools (135× base)
+            'D_S07': 472.5,  # Data Analysts: search for analytics tools (135× base)
+            'D_S08': 310.5,  # Social Media Managers: less search, more social (135× base)
+            'D_S09': 405.0,  # UX Designers: search for prototyping tools (135× base)
+            'D_S10': 243.0,  # Music Producers: niche search, prefer community (135× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.6,  # Government Agencies: formal procurement, some vendor search
-            'D_E02': 0.75,  # Educational Institutions: ed-tech evaluation via search
-            'D_E03': 0.68, # Healthcare Networks: compliance-focused vendor search
-            'D_E04': 0.53, # Regional Banks: conservative, limited search
-            'D_E05': 0.6,  # Insurance Brokers: vendor comparison research
-            'D_E06': 0.45,  # Construction Firms: less tech-focused search
-            'D_E07': 0.75,  # Telecom Operators: tech-savvy vendor evaluation
-            'D_E08': 0.53, # Energy Companies: specialized vendor search
-            'D_E09': 0.68, # Real Estate Groups: PropTech search
-            'D_E10': 0.45,  # Shipping Lines: logistics tech vendor search
+            'D_E01': 0.21,  # Government Agencies: formal procurement, some vendor search (÷2)
+            'D_E02': 0.262,  # Educational Institutions: ed-tech evaluation via search (÷2)
+            'D_E03': 0.238, # Healthcare Networks: compliance-focused vendor search (÷2)
+            'D_E04': 0.185, # Regional Banks: conservative, limited search (÷2)
+            'D_E05': 0.21,  # Insurance Brokers: vendor comparison research (÷2)
+            'D_E06': 0.158,  # Construction Firms: less tech-focused search (÷2)
+            'D_E07': 0.262,  # Telecom Operators: tech-savvy vendor evaluation (÷2)
+            'D_E08': 0.185, # Energy Companies: specialized vendor search (÷2)
+            'D_E09': 0.238, # Real Estate Groups: PropTech search (÷2)
+            'D_E10': 0.158,  # Shipping Lines: logistics tech vendor search (÷2)
         }
     ),
     'linkedin': AdChannel(
@@ -256,34 +256,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='LinkedIn Ads',
         description='Professional network — best channel for reaching enterprise decision makers',
         leads_per_1000_dollars={
-            'S1': 12.6,  # Low: freelancers less active on LinkedIn (9× base)
-            'S2': 16.2,  # Moderate: professionals browse LinkedIn (9× base)
-            'S3': 9.0,  # Low: devs prefer Twitter/HN over LinkedIn (9× base)
-            'E1': 0.9,  # Best enterprise channel: VPs browse LinkedIn; account acquisition
-            'E2': 0.82, # Strong: thought leadership reaches quality buyers
-            'E3': 0.6,  # Moderate: C-level executives network here
+            'S1': 189.0,  # Low: freelancers less active on LinkedIn (135× base)
+            'S2': 243.0,  # Moderate: professionals browse LinkedIn (135× base)
+            'S3': 135.0,  # Low: devs prefer Twitter/HN over LinkedIn (135× base)
+            'E1': 0.315,  # Best enterprise channel: VPs browse LinkedIn; account acquisition (÷2)
+            'E2': 0.287, # Strong: thought leadership reaches quality buyers (÷2)
+            'E3': 0.21,  # Moderate: C-level executives network here (÷2)
             # Discoverable individual groups
-            'D_S01': 6.3,  # Niche Creators: minimal LinkedIn presence (9× base)
-            'D_S02': 13.5,  # Academic Researchers: some academic networking (9× base)
-            'D_S03': 11.7,  # Non-Profit Workers: LinkedIn for grants (9× base)
-            'D_S04': 16.2,  # Small Agency Teams: LinkedIn for clients (9× base)
-            'D_S05': 4.5,  # Indie Game Devs: very low LinkedIn activity (9× base)
-            'D_S06': 15.3,  # Freelance Writers: LinkedIn for gigs (9× base)
-            'D_S07': 18.0,  # Data Analysts: active on LinkedIn professionally (9× base)
-            'D_S08': 9.9,  # Social Media Managers: LinkedIn for B2B (9× base)
-            'D_S09': 12.6,  # UX Designers: portfolio + job networking (9× base)
-            'D_S10': 4.5,  # Music Producers: minimal LinkedIn presence (9× base)
+            'D_S01': 94.5,  # Niche Creators: minimal LinkedIn presence (135× base)
+            'D_S02': 202.5,  # Academic Researchers: some academic networking (135× base)
+            'D_S03': 175.5,  # Non-Profit Workers: LinkedIn for grants (135× base)
+            'D_S04': 243.0,  # Small Agency Teams: LinkedIn for clients (135× base)
+            'D_S05': 67.5,  # Indie Game Devs: very low LinkedIn activity (135× base)
+            'D_S06': 229.5,  # Freelance Writers: LinkedIn for gigs (135× base)
+            'D_S07': 270.0,  # Data Analysts: active on LinkedIn professionally (135× base)
+            'D_S08': 148.5,  # Social Media Managers: LinkedIn for B2B (135× base)
+            'D_S09': 189.0,  # UX Designers: portfolio + job networking (135× base)
+            'D_S10': 67.5,  # Music Producers: minimal LinkedIn presence (135× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.75,  # Government Agencies: contracting officers on LinkedIn
-            'D_E02': 0.6,  # Educational Institutions: deans/IT on LinkedIn
-            'D_E03': 0.9,  # Healthcare Networks: C-suite healthcare on LinkedIn
-            'D_E04': 0.82, # Regional Banks: banking executives on LinkedIn
-            'D_E05': 0.75,  # Insurance Brokers: professional networking
-            'D_E06': 0.45,  # Construction Firms: less LinkedIn activity
-            'D_E07': 0.97, # Telecom Operators: tech executives active on LinkedIn
-            'D_E08': 0.82, # Energy Companies: sustainability officers on LinkedIn
-            'D_E09': 0.75,  # Real Estate Groups: deal-driven LinkedIn networking
-            'D_E10': 0.53, # Shipping Lines: logistics execs moderate LinkedIn
+            'D_E01': 0.262,  # Government Agencies: contracting officers on LinkedIn (÷2)
+            'D_E02': 0.21,  # Educational Institutions: deans/IT on LinkedIn (÷2)
+            'D_E03': 0.315,  # Healthcare Networks: C-suite healthcare on LinkedIn (÷2)
+            'D_E04': 0.287, # Regional Banks: banking executives on LinkedIn (÷2)
+            'D_E05': 0.262,  # Insurance Brokers: professional networking (÷2)
+            'D_E06': 0.158,  # Construction Firms: less LinkedIn activity (÷2)
+            'D_E07': 0.339, # Telecom Operators: tech executives active on LinkedIn (÷2)
+            'D_E08': 0.287, # Energy Companies: sustainability officers on LinkedIn (÷2)
+            'D_E09': 0.262,  # Real Estate Groups: deal-driven LinkedIn networking (÷2)
+            'D_E10': 0.185, # Shipping Lines: logistics execs moderate LinkedIn (÷2)
         }
     ),
     'content_marketing': AdChannel(
@@ -291,34 +291,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Content Marketing',
         description='Blog posts, SEO, whitepapers — reaches S2/S3/E2 through detailed evaluation content',
         leads_per_1000_dollars={
-            'S1': 31.5,  # Moderate: S1 wants quick solutions, not long reads (9× base)
-            'S2': 37.8,  # Very strong: S2 reads reviews, comparisons (9× base)
-            'S3': 27.0,  # Strong: S3 trusts technical blog posts (9× base)
-            'E1': 1.12, # Low: vendor comparison content drives account-level interest
-            'E2': 1.27, # Best enterprise channel for E2: whitepapers + case studies
-            'E3': 0.82, # Low: strategic content resonates but long sales cycle
+            'S1': 472.5,  # Moderate: S1 wants quick solutions, not long reads (135× base)
+            'S2': 567.0,  # Very strong: S2 reads reviews, comparisons (135× base)
+            'S3': 405.0,  # Strong: S3 trusts technical blog posts (135× base)
+            'E1': 0.392, # Low: vendor comparison content drives account-level interest (÷2)
+            'E2': 0.444, # Best enterprise channel for E2: whitepapers + case studies (÷2)
+            'E3': 0.287, # Low: strategic content resonates but long sales cycle (÷2)
             # Discoverable individual groups
-            'D_S01': 23.4,  # Niche Creators: tutorials and tool reviews (9× base)
-            'D_S02': 40.5,  # Academic Researchers: best channel — papers (9× base)
-            'D_S03': 25.2,  # Non-Profit Workers: case studies (9× base)
-            'D_S04': 34.2,  # Small Agency Teams: workflow blogs (9× base)
-            'D_S05': 28.8,  # Indie Game Devs: dev blogs (9× base)
-            'D_S06': 42.3,  # Freelance Writers: writing tool reviews (9× base)
-            'D_S07': 36.0,  # Data Analysts: technical tutorials (9× base)
-            'D_S08': 25.2,  # Social Media Managers: platform strategy (9× base)
-            'D_S09': 31.5,  # UX Designers: design process blogs (9× base)
-            'D_S10': 18.0,  # Music Producers: production technique (9× base)
+            'D_S01': 351.0,  # Niche Creators: tutorials and tool reviews (135× base)
+            'D_S02': 607.5,  # Academic Researchers: best channel — papers (135× base)
+            'D_S03': 378.0,  # Non-Profit Workers: case studies (135× base)
+            'D_S04': 513.0,  # Small Agency Teams: workflow blogs (135× base)
+            'D_S05': 432.0,  # Indie Game Devs: dev blogs (135× base)
+            'D_S06': 634.5,  # Freelance Writers: writing tool reviews (135× base)
+            'D_S07': 540.0,  # Data Analysts: technical tutorials (135× base)
+            'D_S08': 378.0,  # Social Media Managers: platform strategy (135× base)
+            'D_S09': 472.5,  # UX Designers: design process blogs (135× base)
+            'D_S10': 270.0,  # Music Producers: production technique (135× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 1.05,  # Government Agencies: compliance whitepapers
-            'D_E02': 1.35,  # Educational Institutions: ed-tech case studies
-            'D_E03': 1.2,  # Healthcare Networks: clinical workflow whitepapers
-            'D_E04': 0.97, # Regional Banks: fintech comparison content
-            'D_E05': 1.05,  # Insurance Brokers: claims efficiency case studies
-            'D_E06': 0.75,  # Construction Firms: less content-driven
-            'D_E07': 1.12, # Telecom Operators: tech evaluation whitepapers
-            'D_E08': 1.2,  # Energy Companies: sustainability/efficiency content
-            'D_E09': 0.97, # Real Estate Groups: PropTech case studies
-            'D_E10': 0.82, # Shipping Lines: logistics optimization content
+            'D_E01': 0.367,  # Government Agencies: compliance whitepapers (÷2)
+            'D_E02': 0.472,  # Educational Institutions: ed-tech case studies (÷2)
+            'D_E03': 0.42,  # Healthcare Networks: clinical workflow whitepapers (÷2)
+            'D_E04': 0.339, # Regional Banks: fintech comparison content (÷2)
+            'D_E05': 0.367,  # Insurance Brokers: claims efficiency case studies (÷2)
+            'D_E06': 0.262,  # Construction Firms: less content-driven (÷2)
+            'D_E07': 0.392, # Telecom Operators: tech evaluation whitepapers (÷2)
+            'D_E08': 0.42,  # Energy Companies: sustainability/efficiency content (÷2)
+            'D_E09': 0.339, # Real Estate Groups: PropTech case studies (÷2)
+            'D_E10': 0.287, # Shipping Lines: logistics optimization content (÷2)
         }
     ),
     'referral_program': AdChannel(
@@ -326,34 +326,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Referral Program',
         description='Customer referral incentives — cheapest channel, powered by satisfied users sharing',
         leads_per_1000_dollars={
-            'S1': 81.0,  # Very high: share deals with friends for credits (9× base)
-            'S2': 58.5,  # Very high: recommend to professional colleagues (9× base)
-            'S3': 43.2,  # High: tech communities share tools heavily (9× base)
-            'E1': 2.1,  # Low: internal referrals between departments; whole-company deals
-            'E2': 1.88, # Low: peer recommendations in professional circles
-            'E3': 1.5,  # Low: executive referral networks; long eval cycles
+            'S1': 1215.0,  # Very high: share deals with friends for credits (135× base)
+            'S2': 877.5,  # Very high: recommend to professional colleagues (135× base)
+            'S3': 648.0,  # High: tech communities share tools heavily (135× base)
+            'E1': 0.735,  # Low: internal referrals between departments; whole-company deals (÷2)
+            'E2': 0.658, # Low: peer recommendations in professional circles (÷2)
+            'E3': 0.525,  # Low: executive referral networks; long eval cycles (÷2)
             # Discoverable individual groups
-            'D_S01': 67.5,  # Niche Creators: strong community sharing (9× base)
-            'D_S02': 46.8,  # Academic Researchers: recommend to lab colleagues (9× base)
-            'D_S03': 54.0,  # Non-Profit Workers: mission-driven sharing (9× base)
-            'D_S04': 49.5,  # Small Agency Teams: recommend to partners (9× base)
-            'D_S05': 58.5,  # Indie Game Devs: dev communities share (9× base)
-            'D_S06': 37.8,  # Freelance Writers: moderate referral culture (9× base)
-            'D_S07': 42.3,  # Data Analysts: share in analytics communities (9× base)
-            'D_S08': 63.0,  # Social Media Managers: natural sharers (9× base)
-            'D_S09': 46.8,  # UX Designers: design community recs (9× base)
-            'D_S10': 52.2,  # Music Producers: strong community referrals (9× base)
+            'D_S01': 1012.5,  # Niche Creators: strong community sharing (135× base)
+            'D_S02': 702.0,  # Academic Researchers: recommend to lab colleagues (135× base)
+            'D_S03': 810.0,  # Non-Profit Workers: mission-driven sharing (135× base)
+            'D_S04': 742.5,  # Small Agency Teams: recommend to partners (135× base)
+            'D_S05': 877.5,  # Indie Game Devs: dev communities share (135× base)
+            'D_S06': 567.0,  # Freelance Writers: moderate referral culture (135× base)
+            'D_S07': 634.5,  # Data Analysts: share in analytics communities (135× base)
+            'D_S08': 945.0,  # Social Media Managers: natural sharers (135× base)
+            'D_S09': 702.0,  # UX Designers: design community recs (135× base)
+            'D_S10': 783.0,  # Music Producers: strong community referrals (135× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 1.12,  # Government Agencies: slow procurement; inter-agency referrals rare
-            'D_E02': 1.65,   # Educational Institutions: academic peer recommendations
-            'D_E03': 1.35,   # Healthcare Networks: clinical peer networks; compliance barriers
-            'D_E04': 1.2,   # Regional Banks: consortium referrals; regulatory hurdles
-            'D_E05': 1.5,   # Insurance Brokers: industry peer networks; compliance review
-            'D_E06': 1.35,   # Construction Firms: contractor network referrals
-            'D_E07': 1.5,   # Telecom Operators: industry peer sharing
-            'D_E08': 1.12,  # Energy Companies: utility consortium; long eval cycles
-            'D_E09': 1.65,   # Real Estate Groups: deal-network referrals
-            'D_E10': 1.05,   # Shipping Lines: port/logistics network; few players
+            'D_E01': 0.392,  # Government Agencies: slow procurement; inter-agency referrals rare (÷2)
+            'D_E02': 0.577,   # Educational Institutions: academic peer recommendations (÷2)
+            'D_E03': 0.472,   # Healthcare Networks: clinical peer networks; compliance barriers (÷2)
+            'D_E04': 0.42,   # Regional Banks: consortium referrals; regulatory hurdles (÷2)
+            'D_E05': 0.525,   # Insurance Brokers: industry peer networks; compliance review (÷2)
+            'D_E06': 0.472,   # Construction Firms: contractor network referrals (÷2)
+            'D_E07': 0.525,   # Telecom Operators: industry peer sharing (÷2)
+            'D_E08': 0.392,  # Energy Companies: utility consortium; long eval cycles (÷2)
+            'D_E09': 0.577,   # Real Estate Groups: deal-network referrals (÷2)
+            'D_E10': 0.367,   # Shipping Lines: port/logistics network; few players (÷2)
         }
     ),
 }
@@ -365,7 +365,7 @@ class BenchmarkConfig:
 
     # Simulation parameters
     seed: int = 42
-    total_days: int = 3650
+    total_days: int = 500  # Was 3650; scaling (competitor events, drift) now over 500 days
 
     # Initial state
     # Option A: Increased starting cash for more runway
@@ -483,9 +483,9 @@ class BenchmarkConfig:
         'S1': 87,   # Largest segment, viral social sharing
         'S2': 57,   # Professional network referrals
         'S3': 39,   # Tech community word-of-mouth
-        'E1': 11,   # Enterprise peer referrals
-        'E2': 9,    # Quality-focused industry networks
-        'E3': 7,    # Executive referral networks
+        'E1': 7.70,   # Enterprise peer referrals
+        'E2': 6.30,    # Quality-focused industry networks
+        'E3': 4.90,    # Executive referral networks
         # --- Discoverable individual groups (D_S01-D_S10) ---
         # Each rate reflects the group's real-world virality/WOM dynamics
         'D_S01': 52,   # Niche Creators: high creative community sharing (Figma-like viral loops via Dribbble/Behance)
@@ -500,16 +500,16 @@ class BenchmarkConfig:
         'D_S10': 45,   # Music Producers: strong creative community, collaboration-driven (BeatStars/SoundCloud sharing)
         # --- Discoverable enterprise groups (D_E01-D_E10) ---
         # Enterprise rates much lower: 1-8 week referral cycles, formal procurement (Saxifrage 2025)
-        'D_E01': 2.5,  # Government Agencies: slowest -- formal RFP procurement, zero virality
-        'D_E02': 7.5,  # Educational Institutions: cross-campus sharing, ed-tech conferences drive WOM
-        'D_E03': 4.0,  # Healthcare Networks: HIPAA constraints limit sharing; clinical peer recs only
-        'D_E04': 3.5,  # Regional Banks: conservative culture, slow banking consortium referrals
-        'D_E05': 5.0,  # Insurance Brokers: moderate industry peer networks, conference-driven
-        'D_E06': 4.5,  # Construction Firms: contractor network referrals, field crew WOM
-        'D_E07': 6.0,  # Telecom Operators: tech-savvy, industry peer sharing at trade events
-        'D_E08': 3.0,  # Energy Companies: utility consortiums, very slow adoption cycles
-        'D_E09': 7.0,  # Real Estate Groups: deal-network referrals, active broker sharing
-        'D_E10': 2.0,  # Shipping Lines: operational focus, lowest virality, port logistics networks only
+        'D_E01': 1.75,  # Government Agencies: slowest -- formal RFP procurement, zero virality
+        'D_E02': 5.25,  # Educational Institutions: cross-campus sharing, ed-tech conferences drive WOM
+        'D_E03': 2.80,  # Healthcare Networks: HIPAA constraints limit sharing; clinical peer recs only
+        'D_E04': 2.45,  # Regional Banks: conservative culture, slow banking consortium referrals
+        'D_E05': 3.50,  # Insurance Brokers: moderate industry peer networks, conference-driven
+        'D_E06': 3.15,  # Construction Firms: contractor network referrals, field crew WOM
+        'D_E07': 4.20,  # Telecom Operators: tech-savvy, industry peer sharing at trade events
+        'D_E08': 2.10,  # Energy Companies: utility consortiums, very slow adoption cycles
+        'D_E09': 4.90,  # Real Estate Groups: deal-network referrals, active broker sharing
+        'D_E10': 1.40,  # Shipping Lines: operational focus, lowest virality, port logistics networks only
     })
 
     # Reputation system (per-group) - reality-matched churn attribution
@@ -520,7 +520,7 @@ class BenchmarkConfig:
     # Base product quality on Day 1 (before any dev spending or research).
     # Model tier multiplier is applied to this: delivered_quality = product_quality × tier_multiplier
     # where product_quality = base_product_quality + q_shared_bonus + q_group_bonus
-    base_product_quality: float = 0.1
+    base_product_quality: float = 0.2
 
     # Development improvement rates
     # Reality-matched: Software quality improves ~15-25% with sustained R&D investment
@@ -541,15 +541,15 @@ class BenchmarkConfig:
     # Stacks with per-group q_bias_drift in GROUP_PREFERENCE_DRIFT.
     # Additive: q_min += drift, q_max += drift (both shift together, no caps).
     # 0.0015/day ≈ +0.55/year baseline rise (halved from 0.003).
-    global_q_bias_drift: float = 0.0015
+    global_q_bias_drift: float = 0.0  # TEMPORARILY DISABLED (was 0.0015)
 
     # === COMPETITOR EVENT SYSTEM ===
     # Periodic competitor events raise user quality expectations.
-    # Frequency: 2× original (mean 30 days between events).
-    # Magnitude: scales linearly from 1× at day 0 to 16× at total_days.
+    # Frequency: 6× original (mean 10 days between events).
+    # Magnitude: scales linearly from 1× at day 0 to 6× at total_days.
     # Early game = small disruptions, late game = major market shifts.
-    competitor_event_mean_interval: int = 20      # 3× original (was 60)
-    competitor_event_min_interval: int = 10       # 3× original (was 30)
+    competitor_event_mean_interval: int = 10      # 6× original (was 60)
+    competitor_event_min_interval: int = 5        # 6× original (was 30)
     competitor_event_post_days: int = 3           # Days of competitor-themed social posts after event
     competitor_event_posts_per_day: int = 2       # Posts/day during event window
     # Boost distribution: lognormal(mu, sigma) — BASE values (1× magnitude)
@@ -559,10 +559,10 @@ class BenchmarkConfig:
     competitor_event_boost_min: float = 0.004     # Original 1× floor
     competitor_event_boost_max: float = 0.35      # Original 1× cap
     competitor_event_magnitude_scale_min: float = 1.0   # Scale at day 0
-    competitor_event_magnitude_scale_max: float = 6.0   # Scale at total_days (halved from 12)
+    competitor_event_magnitude_scale_max: float = 6.0   # Scale at total_days (was 4.0)
 
     # Grace period: no drift or competitor events for the first N days
-    drift_grace_period_days: int = 180  # No global/group/individual drift or competitor events before this day
+    drift_grace_period_days: int = 90  # No global/group/individual drift or competitor events before this day
 
     # Issue generation
     # Reality-matched: Average SaaS products see 5-15% MAU monthly ticket rates
@@ -1226,73 +1226,73 @@ class ResearchTier:
 
 
 RESEARCH_TIERS: List[ResearchTier] = [
-    # Cost: halved from previous. No hidden multiplier on quality boost (applied directly).
-    # Delay: non-linear growth, all >= 30 days, ~40-50% CV
+    # Cost: 2/3 of v3.2w values. No hidden multiplier on quality boost (applied directly).
+    # Delay: non-linear growth, ~40-50% CV
     # Quality: non-linear growth, ~50% CV (high risk/reward)
     ResearchTier(tier=1,  name="Prompt Engineering Optimization",
                  description="Systematic prompt tuning and output consistency improvements",
-                 cost=250_000,   mean_days=23,  std_days=12,  mean_quality_boost=0.04,  std_quality_boost=0.020),
+                 cost=166_667,   mean_days=12,  std_days=12,  mean_quality_boost=0.04,  std_quality_boost=0.020),
     ResearchTier(tier=2,  name="Evaluation & Testing Pipeline",
                  description="Automated quality evaluation, regression testing, and A/B experimentation",
-                 cost=500_000,   mean_days=33,  std_days=20,  mean_quality_boost=0.07,  std_quality_boost=0.035),
+                 cost=333_333,   mean_days=17,  std_days=20,  mean_quality_boost=0.07,  std_quality_boost=0.035),
     ResearchTier(tier=3,  name="Caching & Latency Optimization",
                  description="Smart caching layer, response latency improvements, and query optimization",
-                 cost=750_000,   mean_days=46,  std_days=30,  mean_quality_boost=0.11,  std_quality_boost=0.055),
+                 cost=500_000,   mean_days=23,  std_days=30,  mean_quality_boost=0.11,  std_quality_boost=0.055),
     ResearchTier(tier=4,  name="Fine-Tuning Infrastructure",
                  description="Custom fine-tuning pipeline for domain-specific model improvements",
-                 cost=1_000_000, mean_days=63,  std_days=42,  mean_quality_boost=0.16,  std_quality_boost=0.080),
+                 cost=666_667,   mean_days=32,  std_days=42,  mean_quality_boost=0.16,  std_quality_boost=0.080),
     ResearchTier(tier=5,  name="RAG & Knowledge Integration",
                  description="Retrieval-augmented generation with re-ranking and knowledge graph integration",
-                 cost=1_250_000, mean_days=83,  std_days=58,  mean_quality_boost=0.22,  std_quality_boost=0.110),
+                 cost=833_333,   mean_days=42,  std_days=58,  mean_quality_boost=0.22,  std_quality_boost=0.110),
     ResearchTier(tier=6,  name="Multi-Modal Support",
                  description="Image, document, and structured data understanding capabilities",
-                 cost=1_500_000, mean_days=106, std_days=75,  mean_quality_boost=0.30,  std_quality_boost=0.150),
+                 cost=1_000_000,   mean_days=53,  std_days=75,  mean_quality_boost=0.30,  std_quality_boost=0.150),
     ResearchTier(tier=7,  name="Agentic Capabilities",
                  description="Multi-step reasoning, tool use, and autonomous task completion",
-                 cost=1_750_000, mean_days=133, std_days=95,  mean_quality_boost=0.40,  std_quality_boost=0.200),
+                 cost=1_166_667,   mean_days=67,  std_days=95,  mean_quality_boost=0.40,  std_quality_boost=0.200),
     ResearchTier(tier=8,  name="RLHF & Alignment",
                  description="Reinforcement learning from human feedback for preference alignment",
-                 cost=2_000_000, mean_days=166, std_days=120, mean_quality_boost=0.52,  std_quality_boost=0.260),
+                 cost=1_333_333, mean_days=83,  std_days=120, mean_quality_boost=0.52,  std_quality_boost=0.260),
     ResearchTier(tier=9,  name="Next-Gen Architecture",
                  description="Major model architecture upgrade for step-change quality improvement",
-                 cost=2_250_000, mean_days=206, std_days=150, mean_quality_boost=0.67,  std_quality_boost=0.335),
+                 cost=1_500_000, mean_days=103, std_days=150, mean_quality_boost=0.67,  std_quality_boost=0.335),
     ResearchTier(tier=10, name="Self-Evolving Model Ecosystem",
                  description="Orchestrated system of specialized models that self-optimize and continuously improve",
-                 cost=2_500_000, mean_days=253, std_days=185, mean_quality_boost=0.85, std_quality_boost=0.425),
+                 cost=1_666_667, mean_days=127, std_days=185, mean_quality_boost=0.85, std_quality_boost=0.425),
 
     # --- Frontier Tiers (11-20) ---
-    # Cost: halved from previous. Long timelines, very high variance.
+    # Cost: 2/3 of v3.2w values. Long timelines, very high variance.
     # Quality: large boosts (1.1 to 8.0 mean), very high variance (~55-75% CV)
     ResearchTier(tier=11, name="Synthetic Data Engine",
                  description="Large-scale synthetic data generation and curriculum learning pipeline for domain coverage",
-                 cost=3_750_000,   mean_days=280,  std_days=230,  mean_quality_boost=1.10,  std_quality_boost=0.660),
+                 cost=2_500_000,   mean_days=140,  std_days=230,  mean_quality_boost=1.10,  std_quality_boost=0.660),
     ResearchTier(tier=12, name="Distributed Training Cluster",
                  description="Multi-node distributed training infrastructure for full model retraining at scale",
-                 cost=5_500_000,   mean_days=320,  std_days=290,  mean_quality_boost=1.40,  std_quality_boost=0.840),
+                 cost=3_666_667,   mean_days=160,  std_days=290,  mean_quality_boost=1.40,  std_quality_boost=0.840),
     ResearchTier(tier=13, name="Constitutional AI Framework",
                  description="Advanced safety and alignment framework with self-critique and reward model ensemble",
-                 cost=7_500_000,   mean_days=366,  std_days=360,  mean_quality_boost=1.75,  std_quality_boost=1.050),
+                 cost=5_000_000,   mean_days=183,  std_days=360,  mean_quality_boost=1.75,  std_quality_boost=1.050),
     ResearchTier(tier=14, name="Mixture of Experts Overhaul",
                  description="Sparse mixture-of-experts architecture with dynamic routing and expert specialization",
-                 cost=10_000_000,  mean_days=420,  std_days=440,  mean_quality_boost=2.15,  std_quality_boost=1.400),
+                 cost=6_666_667,   mean_days=210,  std_days=440,  mean_quality_boost=2.15,  std_quality_boost=1.400),
     ResearchTier(tier=15, name="World Model & Reasoning Core",
                  description="Internal world model for causal reasoning, planning, and counterfactual simulation",
-                 cost=13_750_000,  mean_days=480,  std_days=540,  mean_quality_boost=2.70,  std_quality_boost=1.890),
+                 cost=9_166_667,   mean_days=240,  std_days=540,  mean_quality_boost=2.70,  std_quality_boost=1.890),
     ResearchTier(tier=16, name="Autonomous Research Agent",
                  description="Self-directed research loop that identifies weaknesses and designs targeted training runs",
-                 cost=17_500_000,  mean_days=546,  std_days=620,  mean_quality_boost=3.40,  std_quality_boost=2.380),
+                 cost=11_666_667,   mean_days=273,  std_days=620,  mean_quality_boost=3.40,  std_quality_boost=2.380),
     ResearchTier(tier=17, name="Neural Architecture Search",
                  description="Automated architecture discovery using evolutionary search over billion-parameter design space",
-                 cost=22_500_000,  mean_days=633,  std_days=720,  mean_quality_boost=4.20,  std_quality_boost=3.150),
+                 cost=15_000_000,  mean_days=317,  std_days=720,  mean_quality_boost=4.20,  std_quality_boost=3.150),
     ResearchTier(tier=18, name="Foundation Model Distillation",
                  description="Multi-teacher distillation from frontier models into a compact, specialized powerhouse",
-                 cost=27_500_000,  mean_days=720,  std_days=830,  mean_quality_boost=5.20,  std_quality_boost=3.900),
+                 cost=18_333_333,  mean_days=360,  std_days=830,  mean_quality_boost=5.20,  std_quality_boost=3.900),
     ResearchTier(tier=19, name="Recursive Self-Improvement",
                  description="Model that iteratively improves its own training process and data selection strategy",
-                 cost=32_500_000,  mean_days=833,  std_days=1000, mean_quality_boost=6.50,  std_quality_boost=5.200),
+                 cost=21_666_667,  mean_days=417,  std_days=1000, mean_quality_boost=6.50,  std_quality_boost=5.200),
     ResearchTier(tier=20, name="Artificial General Reasoning",
                  description="Moonshot program for general-purpose reasoning across all domains with emergent capabilities",
-                 cost=37_500_000,  mean_days=933,  std_days=1120, mean_quality_boost=8.00,  std_quality_boost=6.400),
+                 cost=25_000_000,  mean_days=467,  std_days=1120, mean_quality_boost=8.00,  std_quality_boost=6.400),
 ]
 
 RESEARCH_TIERS_BY_ID: Dict[int, ResearchTier] = {rt.tier: rt for rt in RESEARCH_TIERS}
@@ -1378,8 +1378,8 @@ class CustomerGroupConfig:
     #   https://www.thesaascfo.com/multi-year-saas-discounts/
     # - Salesforce negotiations: long-term lock-in carries hidden risks for buyers
     #   https://salesforcenegotiations.com/salesforce-multi-year-contracts-hidden-risks-and-negotiation-strategies/
-    lockin_penalty_mean: float = 0.005  # Default 0.5% per additional contract month
-    lockin_penalty_std: float = 0.002   # Within-group variance
+    lockin_penalty_mean: float = 0.100  # Default 10% per additional contract month (20× from 0.005)
+    lockin_penalty_std: float = 0.040   # Within-group variance (20× from 0.002)
 
     # Ads sensitivity parameters
     # ads_quality_sensitivity: quality penalty = ads_quality_sensitivity × log_scaled_effective_ads
@@ -1512,8 +1512,8 @@ CUSTOMER_GROUP_S1 = CustomerGroupConfig(
     # Freelancers have irregular income, need flexibility to cancel anytime.
     # Source: DemandSage 2025 — 70% of freelancers prefer month-to-month subscriptions
     # Source: UserTesting 2024 — price-sensitive users 2-3x more likely to avoid annual plans
-    lockin_penalty_mean=0.008,  # 0.8% per month — strong lock-in aversion
-    lockin_penalty_std=0.003,  # (0.5x noise)
+    lockin_penalty_mean=0.160,  # 16% per month — strong lock-in aversion (20× from 0.008)
+    lockin_penalty_std=0.060,  # (20× from 0.003)
     # Ads sensitivity: Low-budget freelancers are sensitive to ads degrading UX, low ad revenue per user
     # Source: HubSpot 2024 — price-sensitive users show moderate negative reaction to in-app ads
     # Source: IAB 2024 — freelancer/student users generate ~$0.08/day ad revenue (low engagement)
@@ -1565,8 +1565,8 @@ CUSTOMER_GROUP_S2 = CustomerGroupConfig(
     # Lawyers/consultants expect to renegotiate terms; moderate lock-in tolerance.
     # Source: KeyBanc 2024 — 60% of professional AI tool users prefer annual with exit clause
     # Source: BCG 2024 — professionals accept annual plans if quality is proven
-    lockin_penalty_mean=0.005,  # 0.5% per month — moderate aversion
-    lockin_penalty_std=0.002,  # (0.5x noise)
+    lockin_penalty_mean=0.100,  # 10% per month — moderate aversion (20× from 0.005)
+    lockin_penalty_std=0.040,  # (20× from 0.002)
     # Ads sensitivity: Professionals are more engaged, ads more disruptive to workflows
     # Source: BCG 2024 — 68% of professionals cite ads as "significant distraction" in work tools
     # Source: IAB 2024 — professional users generate ~$0.15/day ad revenue (active engagement)
@@ -1619,8 +1619,8 @@ CUSTOMER_GROUP_S3 = CustomerGroupConfig(
     # Developer culture strongly favors open standards and ability to switch tools.
     # Source: StackOverflow 2024 Survey — 65% of devs prefer monthly/cancelable subscriptions
     # Source: GitHub Copilot pricing at $10-19/mo monthly (no forced annual) reflects dev preference
-    lockin_penalty_mean=0.006,  # 0.6% per month — devs dislike lock-in
-    lockin_penalty_std=0.002,  # (0.5x noise)
+    lockin_penalty_mean=0.120,  # 12% per month — devs dislike lock-in (20× from 0.006)
+    lockin_penalty_std=0.040,  # (20× from 0.002)
     # Ads sensitivity: Power users/devs are accustomed to tools, moderate ads tolerance
     # Source: StackOverflow 2024 — developers accept tasteful ads (e.g. GitHub sponsors)
     # Source: IAB 2024 — power users generate ~$0.12/day ad revenue (high but focused usage)
@@ -1703,8 +1703,8 @@ CUSTOMER_GROUP_E1 = CustomerGroupConfig(
     # Budget-conscious orgs accept annual commitments for volume discounts.
     # Source: Zuora 2025 — 85% of enterprise SaaS contracts are annual or multi-year
     # Source: Paddle 2025 — contract commitments reduce churn 40-60% (enterprises accept this tradeoff)
-    lockin_penalty_mean=0.005,  # 0.5% per month — moderate, accept lock-in for lower prices
-    lockin_penalty_std=0.002,  # (0.5x noise)
+    lockin_penalty_mean=0.100,  # 10% per month — moderate, accept lock-in for lower prices (20× from 0.005)
+    lockin_penalty_std=0.040,  # (20× from 0.002)
     # Ads sensitivity: Enterprise tolerates some ads if non-intrusive; high engagement = high ad revenue
     # Source: HubSpot 2024 — enterprise users 2-3x more negative to intrusive ads, but tolerate subtle ones
     # Source: IAB 2024 — enterprise accounts generate ~$0.20/seat/day ad impressions (high traffic)
@@ -1762,8 +1762,8 @@ CUSTOMER_GROUP_E2 = CustomerGroupConfig(
     # Law firms, biotech, financial services routinely sign multi-year enterprise agreements.
     # Source: Gartner 2024 — regulated industries prefer 2-3 year contracts for vendor stability
     # Source: KeyBanc 2024 — quality-focused enterprises accept 24-36 month terms
-    lockin_penalty_mean=0.003,  # 0.3% per month — low aversion, accustomed to long contracts
-    lockin_penalty_std=0.001,  # (0.5x noise)
+    lockin_penalty_mean=0.060,  # 6% per month — low aversion, accustomed to long contracts (20× from 0.003)
+    lockin_penalty_std=0.020,  # (20× from 0.001)
     # Ads sensitivity: Large enterprises hate ads (brand/compliance concerns); very high traffic = high returns
     # Source: HubSpot 2024 — regulated enterprises (law/biotech/finance) 3x more likely to cancel over ads
     # Source: IAB 2024 — quality-first enterprise seats generate ~$0.25/seat/day (premium engagement)
@@ -1821,8 +1821,8 @@ CUSTOMER_GROUP_E3 = CustomerGroupConfig(
     # Large enterprises have dedicated vendor management; lock-in is standard operating procedure.
     # Source: Menlo Ventures 2025 — enterprise GenAI deals averaged 2.5-year contracts
     # Source: McKinsey 2025 — Fortune 500 AI partnerships typically 3-5 year strategic commitments
-    lockin_penalty_mean=0.002,  # 0.2% per month — minimal aversion, multi-year is standard
-    lockin_penalty_std=0.001,  # (0.5x noise)
+    lockin_penalty_mean=0.040,  # 4% per month — minimal aversion, multi-year is standard (20× from 0.002)
+    lockin_penalty_std=0.020,  # (20× from 0.001)
     # Ads sensitivity: Strategic accounts sensitive to ads (premium expectations); highest engagement
     # Source: McKinsey 2025 — Fortune 500 partners expect "white-glove" ad-free experience
     # Source: IAB 2024 — strategic accounts generate ~$0.30/seat/day (deepest engagement, most seats)
@@ -1869,7 +1869,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.008, slope_std=0.003,
         usage_demand_mean=120.0, usage_demand_std=48.0,
         base_market_cap=200000, annual_cap_growth_rate=0.08,
-        lockin_penalty_mean=0.008, lockin_penalty_std=0.003,
+        lockin_penalty_mean=0.160, lockin_penalty_std=0.060,  # 20× from 0.008/0.003
         ads_quality_sensitivity_mean=0.08, ads_quality_sensitivity_std=0.03,
         ads_return_sensitivity_mean=0.10, ads_return_sensitivity_std=0.035,
     ),
@@ -1884,7 +1884,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.004, slope_std=0.0015,
         usage_demand_mean=200.0, usage_demand_std=80.0,
         base_market_cap=350000, annual_cap_growth_rate=0.06,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.100, lockin_penalty_std=0.040,  # 20× from 0.005/0.002
         ads_quality_sensitivity_mean=0.18, ads_quality_sensitivity_std=0.065,
         ads_return_sensitivity_mean=0.06, ads_return_sensitivity_std=0.02,
     ),
@@ -1899,7 +1899,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.011, slope_std=0.004,
         usage_demand_mean=60.0, usage_demand_std=24.0,
         base_market_cap=150000, annual_cap_growth_rate=0.05,
-        lockin_penalty_mean=0.009, lockin_penalty_std=0.003,
+        lockin_penalty_mean=0.180, lockin_penalty_std=0.060,  # 20× from 0.009/0.003
         ads_quality_sensitivity_mean=0.07, ads_quality_sensitivity_std=0.025,
         ads_return_sensitivity_mean=0.07, ads_return_sensitivity_std=0.025,
     ),
@@ -1913,7 +1913,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.005, slope_std=0.002,
         usage_demand_mean=300.0, usage_demand_std=120.0,
         base_market_cap=180000, annual_cap_growth_rate=0.07,
-        lockin_penalty_mean=0.007, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.140, lockin_penalty_std=0.040,  # 20× from 0.007/0.002
         ads_quality_sensitivity_mean=0.16, ads_quality_sensitivity_std=0.055,
         ads_return_sensitivity_mean=0.08, ads_return_sensitivity_std=0.03,
     ),
@@ -1927,7 +1927,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.006, slope_std=0.002,
         usage_demand_mean=400.0, usage_demand_std=160.0,
         base_market_cap=120000, annual_cap_growth_rate=0.09,
-        lockin_penalty_mean=0.008, lockin_penalty_std=0.003,
+        lockin_penalty_mean=0.160, lockin_penalty_std=0.060,  # 20× from 0.008/0.003
         ads_quality_sensitivity_mean=0.06, ads_quality_sensitivity_std=0.02,
         ads_return_sensitivity_mean=0.14, ads_return_sensitivity_std=0.05,
     ),
@@ -1941,7 +1941,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.007, slope_std=0.0025,
         usage_demand_mean=150.0, usage_demand_std=60.0,
         base_market_cap=300000, annual_cap_growth_rate=0.07,
-        lockin_penalty_mean=0.009, lockin_penalty_std=0.003,
+        lockin_penalty_mean=0.180, lockin_penalty_std=0.060,  # 20× from 0.009/0.003
         ads_quality_sensitivity_mean=0.10, ads_quality_sensitivity_std=0.035,
         ads_return_sensitivity_mean=0.12, ads_return_sensitivity_std=0.04,
     ),
@@ -1955,7 +1955,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.003, slope_std=0.001,
         usage_demand_mean=250.0, usage_demand_std=100.0,
         base_market_cap=280000, annual_cap_growth_rate=0.08,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.100, lockin_penalty_std=0.040,  # 20× from 0.005/0.002
         ads_quality_sensitivity_mean=0.17, ads_quality_sensitivity_std=0.06,
         ads_return_sensitivity_mean=0.08, ads_return_sensitivity_std=0.03,
     ),
@@ -1969,7 +1969,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.009, slope_std=0.0035,
         usage_demand_mean=100.0, usage_demand_std=40.0,
         base_market_cap=250000, annual_cap_growth_rate=0.10,
-        lockin_penalty_mean=0.007, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.140, lockin_penalty_std=0.040,  # 20× from 0.007/0.002
         ads_quality_sensitivity_mean=0.09, ads_quality_sensitivity_std=0.03,
         ads_return_sensitivity_mean=0.15, ads_return_sensitivity_std=0.055,
     ),
@@ -1983,7 +1983,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.003, slope_std=0.001,
         usage_demand_mean=180.0, usage_demand_std=72.0,
         base_market_cap=160000, annual_cap_growth_rate=0.06,
-        lockin_penalty_mean=0.004, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.080, lockin_penalty_std=0.040,  # 20× from 0.004/0.002
         ads_quality_sensitivity_mean=0.22, ads_quality_sensitivity_std=0.075,
         ads_return_sensitivity_mean=0.05, ads_return_sensitivity_std=0.02,
     ),
@@ -1997,7 +1997,7 @@ _INDIVIDUAL_GROUP_PARAMS = {
         slope_mean=0.006, slope_std=0.002,
         usage_demand_mean=140.0, usage_demand_std=56.0,
         base_market_cap=100000, annual_cap_growth_rate=0.07,
-        lockin_penalty_mean=0.008, lockin_penalty_std=0.003,
+        lockin_penalty_mean=0.160, lockin_penalty_std=0.060,  # 20× from 0.008/0.003
         ads_quality_sensitivity_mean=0.11, ads_quality_sensitivity_std=0.04,
         ads_return_sensitivity_mean=0.09, ads_return_sensitivity_std=0.03,
     ),
@@ -2029,7 +2029,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.20, negotiation_rate_std=0.06,
         reply_delay_mean=20.0, reply_delay_std=7.0,
         max_negotiation_turns_mean=14.0, max_negotiation_turns_std=4.0,
-        lockin_penalty_mean=0.001, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.020, lockin_penalty_std=0.020,  # 20× from 0.001/0.001
         ads_quality_sensitivity_mean=0.30, ads_quality_sensitivity_std=0.105,
         ads_return_sensitivity_mean=0.15, ads_return_sensitivity_std=0.055,
     ),
@@ -2048,7 +2048,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.35, negotiation_rate_std=0.1,
         reply_delay_mean=12.0, reply_delay_std=4.0,
         max_negotiation_turns_mean=8.0, max_negotiation_turns_std=3.0,
-        lockin_penalty_mean=0.003, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.060, lockin_penalty_std=0.020,  # 20× from 0.003/0.001
         ads_quality_sensitivity_mean=0.12, ads_quality_sensitivity_std=0.04,
         ads_return_sensitivity_mean=0.18, ads_return_sensitivity_std=0.065,
     ),
@@ -2067,7 +2067,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.20, negotiation_rate_std=0.06,
         reply_delay_mean=18.0, reply_delay_std=6.0,
         max_negotiation_turns_mean=12.0, max_negotiation_turns_std=4.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.040, lockin_penalty_std=0.020,  # 20× from 0.002/0.001
         ads_quality_sensitivity_mean=0.28, ads_quality_sensitivity_std=0.1,
         ads_return_sensitivity_mean=0.12, ads_return_sensitivity_std=0.04,
     ),
@@ -2086,7 +2086,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.25, negotiation_rate_std=0.07,
         reply_delay_mean=15.0, reply_delay_std=5.0,
         max_negotiation_turns_mean=10.0, max_negotiation_turns_std=3.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.040, lockin_penalty_std=0.020,  # 20× from 0.002/0.001
         ads_quality_sensitivity_mean=0.27, ads_quality_sensitivity_std=0.095,
         ads_return_sensitivity_mean=0.18, ads_return_sensitivity_std=0.065,
     ),
@@ -2104,7 +2104,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.30, negotiation_rate_std=0.09,
         reply_delay_mean=10.0, reply_delay_std=3.5,
         max_negotiation_turns_mean=8.0, max_negotiation_turns_std=3.0,
-        lockin_penalty_mean=0.003, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.060, lockin_penalty_std=0.020,  # 20× from 0.003/0.001
         ads_quality_sensitivity_mean=0.18, ads_quality_sensitivity_std=0.065,
         ads_return_sensitivity_mean=0.22, ads_return_sensitivity_std=0.075,
     ),
@@ -2122,7 +2122,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.40, negotiation_rate_std=0.11,
         reply_delay_mean=7.0, reply_delay_std=2.5,
         max_negotiation_turns_mean=6.0, max_negotiation_turns_std=2.0,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.100, lockin_penalty_std=0.040,  # 20× from 0.005/0.002
         ads_quality_sensitivity_mean=0.10, ads_quality_sensitivity_std=0.035,
         ads_return_sensitivity_mean=0.20, ads_return_sensitivity_std=0.07,
     ),
@@ -2140,7 +2140,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.18, negotiation_rate_std=0.05,
         reply_delay_mean=22.0, reply_delay_std=7.0,
         max_negotiation_turns_mean=14.0, max_negotiation_turns_std=4.0,
-        lockin_penalty_mean=0.001, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.020, lockin_penalty_std=0.020,  # 20× from 0.001/0.001
         ads_quality_sensitivity_mean=0.25, ads_quality_sensitivity_std=0.09,
         ads_return_sensitivity_mean=0.28, ads_return_sensitivity_std=0.1,
     ),
@@ -2158,7 +2158,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.22, negotiation_rate_std=0.06,
         reply_delay_mean=18.0, reply_delay_std=6.0,
         max_negotiation_turns_mean=12.0, max_negotiation_turns_std=4.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.040, lockin_penalty_std=0.020,  # 20× from 0.002/0.001
         ads_quality_sensitivity_mean=0.20, ads_quality_sensitivity_std=0.07,
         ads_return_sensitivity_mean=0.25, ads_return_sensitivity_std=0.09,
     ),
@@ -2177,7 +2177,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.38, negotiation_rate_std=0.11,
         reply_delay_mean=5.0, reply_delay_std=2.0,
         max_negotiation_turns_mean=6.0, max_negotiation_turns_std=2.0,
-        lockin_penalty_mean=0.005, lockin_penalty_std=0.002,
+        lockin_penalty_mean=0.100, lockin_penalty_std=0.040,  # 20× from 0.005/0.002
         ads_quality_sensitivity_mean=0.08, ads_quality_sensitivity_std=0.03,
         ads_return_sensitivity_mean=0.22, ads_return_sensitivity_std=0.075,
     ),
@@ -2195,7 +2195,7 @@ _ENTERPRISE_GROUP_PARAMS = {
         negotiation_rate_mean=0.22, negotiation_rate_std=0.06,
         reply_delay_mean=16.0, reply_delay_std=5.0,
         max_negotiation_turns_mean=10.0, max_negotiation_turns_std=3.0,
-        lockin_penalty_mean=0.002, lockin_penalty_std=0.001,
+        lockin_penalty_mean=0.040, lockin_penalty_std=0.020,  # 20× from 0.002/0.001
         ads_quality_sensitivity_mean=0.22, ads_quality_sensitivity_std=0.075,
         ads_return_sensitivity_mean=0.20, ads_return_sensitivity_std=0.07,
     ),
@@ -2800,103 +2800,103 @@ REPUTATION_INFLUENCE_MATRIX: Dict[str, Dict[str, float]] = {
     #
     # --- Initial groups (S1-S3, E1-E3) ---
     'S1': {  # Price-Sensitive/Gig
-           'S1': 1.00, 'S2': 0.050, 'S3': 0.15, 'E1': 0.020, 'E2': 0.010, 'E3': 0.010,
+           'S1': 1.00, 'S2': 0.050, 'S3': 0.15, 'E1': 0.014, 'E2': 0.007, 'E3': 0.007,
            'D_S01': 0.15, 'D_S02': 0.030, 'D_S03': 0.080, 'D_S04': 0.10, 'D_S05': 0.12,
            'D_S06': 0.080, 'D_S07': 0.040, 'D_S08': 0.12, 'D_S09': 0.10, 'D_S10': 0.12,
-           'D_E01': 0.010, 'D_E02': 0.020, 'D_E03': 0.010, 'D_E04': 0.010, 'D_E05': 0.010,
-           'D_E06': 0.010, 'D_E07': 0.010, 'D_E08': 0.010, 'D_E09': 0.010, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.014, 'D_E03': 0.007, 'D_E04': 0.007, 'D_E05': 0.007,
+           'D_E06': 0.007, 'D_E07': 0.007, 'D_E08': 0.007, 'D_E09': 0.007, 'D_E10': 0.010},
     'S2': {  # Quality Professionals
-           'S1': 0.050, 'S2': 1.00, 'S3': 0.080, 'E1': 0.030, 'E2': 0.15, 'E3': 0.050,
+           'S1': 0.050, 'S2': 1.00, 'S3': 0.080, 'E1': 0.021, 'E2': 0.105, 'E3': 0.035,
            'D_S01': 0.040, 'D_S02': 0.15, 'D_S03': 0.10, 'D_S04': 0.12, 'D_S05': 0.040,
            'D_S06': 0.10, 'D_S07': 0.15, 'D_S08': 0.060, 'D_S09': 0.080, 'D_S10': 0.030,
-           'D_E01': 0.020, 'D_E02': 0.080, 'D_E03': 0.060, 'D_E04': 0.050, 'D_E05': 0.050,
-           'D_E06': 0.020, 'D_E07': 0.030, 'D_E08': 0.030, 'D_E09': 0.040, 'D_E10': 0.020},
+           'D_E01': 0.014, 'D_E02': 0.056, 'D_E03': 0.042, 'D_E04': 0.035, 'D_E05': 0.035,
+           'D_E06': 0.014, 'D_E07': 0.021, 'D_E08': 0.021, 'D_E09': 0.028, 'D_E10': 0.020},
     'S3': {  # Power Users/Tech ★INFLUENCER — 2x outgoing★
-           'S1': 0.40, 'S2': 0.24, 'S3': 1.00, 'E1': 0.50, 'E2': 0.50, 'E3': 0.40,
+           'S1': 0.40, 'S2': 0.24, 'S3': 1.00, 'E1': 0.35, 'E2': 0.35, 'E3': 0.28,
            'D_S01': 0.16, 'D_S02': 0.20, 'D_S03': 0.10, 'D_S04': 0.24, 'D_S05': 0.36,
            'D_S06': 0.10, 'D_S07': 0.30, 'D_S08': 0.12, 'D_S09': 0.20, 'D_S10': 0.10,
-           'D_E01': 0.10, 'D_E02': 0.16, 'D_E03': 0.12, 'D_E04': 0.080, 'D_E05': 0.080,
-           'D_E06': 0.12, 'D_E07': 0.20, 'D_E08': 0.16, 'D_E09': 0.080, 'D_E10': 0.10},
+           'D_E01': 0.07, 'D_E02': 0.112, 'D_E03': 0.084, 'D_E04': 0.056, 'D_E05': 0.056,
+           'D_E06': 0.084, 'D_E07': 0.14, 'D_E08': 0.112, 'D_E09': 0.056, 'D_E10': 0.10},
     'E1': {  # Cost-Cutting Enterprises
-           'S1': 0.020, 'S2': 0.030, 'S3': 0.050, 'E1': 1.00, 'E2': 0.10, 'E3': 0.080,
+           'S1': 0.020, 'S2': 0.030, 'S3': 0.050, 'E1': 0.7, 'E2': 0.07, 'E3': 0.056,
            'D_S01': 0.010, 'D_S02': 0.020, 'D_S03': 0.020, 'D_S04': 0.020, 'D_S05': 0.010,
            'D_S06': 0.010, 'D_S07': 0.030, 'D_S08': 0.010, 'D_S09': 0.010, 'D_S10': 0.010,
-           'D_E01': 0.080, 'D_E02': 0.060, 'D_E03': 0.050, 'D_E04': 0.10, 'D_E05': 0.080,
-           'D_E06': 0.060, 'D_E07': 0.050, 'D_E08': 0.050, 'D_E09': 0.060, 'D_E10': 0.050},
+           'D_E01': 0.056, 'D_E02': 0.042, 'D_E03': 0.035, 'D_E04': 0.07, 'D_E05': 0.056,
+           'D_E06': 0.042, 'D_E07': 0.035, 'D_E08': 0.035, 'D_E09': 0.042, 'D_E10': 0.050},
     'E2': {  # Quality-First Enterprises
-           'S1': 0.020, 'S2': 0.18, 'S3': 0.080, 'E1': 0.15, 'E2': 1.00, 'E3': 0.22,
+           'S1': 0.020, 'S2': 0.18, 'S3': 0.080, 'E1': 0.105, 'E2': 0.7, 'E3': 0.154,
            'D_S01': 0.020, 'D_S02': 0.060, 'D_S03': 0.040, 'D_S04': 0.050, 'D_S05': 0.020,
            'D_S06': 0.030, 'D_S07': 0.080, 'D_S08': 0.020, 'D_S09': 0.040, 'D_S10': 0.020,
-           'D_E01': 0.080, 'D_E02': 0.12, 'D_E03': 0.15, 'D_E04': 0.10, 'D_E05': 0.10,
-           'D_E06': 0.050, 'D_E07': 0.10, 'D_E08': 0.10, 'D_E09': 0.080, 'D_E10': 0.060},
+           'D_E01': 0.056, 'D_E02': 0.084, 'D_E03': 0.105, 'D_E04': 0.07, 'D_E05': 0.07,
+           'D_E06': 0.035, 'D_E07': 0.07, 'D_E08': 0.07, 'D_E09': 0.056, 'D_E10': 0.060},
     'E3': {  # Strategic Partners/Fortune 500 ★INFLUENCER — 2x outgoing★
-           'S1': 0.040, 'S2': 0.10, 'S3': 0.30, 'E1': 0.50, 'E2': 0.50, 'E3': 1.00,
+           'S1': 0.040, 'S2': 0.10, 'S3': 0.30, 'E1': 0.35, 'E2': 0.35, 'E3': 0.7,
            'D_S01': 0.020, 'D_S02': 0.060, 'D_S03': 0.040, 'D_S04': 0.080, 'D_S05': 0.040,
            'D_S06': 0.020, 'D_S07': 0.10, 'D_S08': 0.020, 'D_S09': 0.060, 'D_S10': 0.020,
-           'D_E01': 0.30, 'D_E02': 0.20, 'D_E03': 0.24, 'D_E04': 0.30, 'D_E05': 0.20,
-           'D_E06': 0.16, 'D_E07': 0.30, 'D_E08': 0.30, 'D_E09': 0.20, 'D_E10': 0.20},
+           'D_E01': 0.21, 'D_E02': 0.14, 'D_E03': 0.168, 'D_E04': 0.21, 'D_E05': 0.14,
+           'D_E06': 0.112, 'D_E07': 0.21, 'D_E08': 0.21, 'D_E09': 0.14, 'D_E10': 0.20},
     #
     # --- Discoverable individual groups (D_S01-D_S10) ---
     'D_S01': {  # Niche Creators
-           'S1': 0.15, 'S2': 0.030, 'S3': 0.060, 'E1': 0.010, 'E2': 0.010, 'E3': 0.010,
+           'S1': 0.15, 'S2': 0.030, 'S3': 0.060, 'E1': 0.007, 'E2': 0.007, 'E3': 0.007,
            'D_S01': 1.00, 'D_S02': 0.030, 'D_S03': 0.050, 'D_S04': 0.10, 'D_S05': 0.12,
            'D_S06': 0.060, 'D_S07': 0.030, 'D_S08': 0.10, 'D_S09': 0.15, 'D_S10': 0.18,
-           'D_E01': 0.010, 'D_E02': 0.020, 'D_E03': 0.010, 'D_E04': 0.010, 'D_E05': 0.010,
-           'D_E06': 0.010, 'D_E07': 0.010, 'D_E08': 0.010, 'D_E09': 0.010, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.014, 'D_E03': 0.007, 'D_E04': 0.007, 'D_E05': 0.007,
+           'D_E06': 0.007, 'D_E07': 0.007, 'D_E08': 0.007, 'D_E09': 0.007, 'D_E10': 0.010},
     'D_S02': {  # Academic Researchers
-           'S1': 0.020, 'S2': 0.15, 'S3': 0.080, 'E1': 0.020, 'E2': 0.050, 'E3': 0.020,
+           'S1': 0.020, 'S2': 0.15, 'S3': 0.080, 'E1': 0.014, 'E2': 0.035, 'E3': 0.014,
            'D_S01': 0.030, 'D_S02': 1.00, 'D_S03': 0.10, 'D_S04': 0.040, 'D_S05': 0.050,
            'D_S06': 0.080, 'D_S07': 0.18, 'D_S08': 0.020, 'D_S09': 0.040, 'D_S10': 0.020,
-           'D_E01': 0.030, 'D_E02': 0.15, 'D_E03': 0.080, 'D_E04': 0.020, 'D_E05': 0.020,
-           'D_E06': 0.010, 'D_E07': 0.030, 'D_E08': 0.050, 'D_E09': 0.010, 'D_E10': 0.010},
+           'D_E01': 0.021, 'D_E02': 0.105, 'D_E03': 0.056, 'D_E04': 0.014, 'D_E05': 0.014,
+           'D_E06': 0.007, 'D_E07': 0.021, 'D_E08': 0.035, 'D_E09': 0.007, 'D_E10': 0.010},
     'D_S03': {  # Non-Profit Workers
-           'S1': 0.080, 'S2': 0.060, 'S3': 0.030, 'E1': 0.020, 'E2': 0.020, 'E3': 0.010,
+           'S1': 0.080, 'S2': 0.060, 'S3': 0.030, 'E1': 0.014, 'E2': 0.014, 'E3': 0.007,
            'D_S01': 0.050, 'D_S02': 0.10, 'D_S03': 1.00, 'D_S04': 0.060, 'D_S05': 0.030,
            'D_S06': 0.080, 'D_S07': 0.050, 'D_S08': 0.080, 'D_S09': 0.040, 'D_S10': 0.030,
-           'D_E01': 0.050, 'D_E02': 0.12, 'D_E03': 0.060, 'D_E04': 0.020, 'D_E05': 0.020,
-           'D_E06': 0.010, 'D_E07': 0.010, 'D_E08': 0.030, 'D_E09': 0.010, 'D_E10': 0.010},
+           'D_E01': 0.035, 'D_E02': 0.084, 'D_E03': 0.042, 'D_E04': 0.014, 'D_E05': 0.014,
+           'D_E06': 0.007, 'D_E07': 0.007, 'D_E08': 0.021, 'D_E09': 0.007, 'D_E10': 0.010},
     'D_S04': {  # Small Agency Teams
-           'S1': 0.060, 'S2': 0.12, 'S3': 0.10, 'E1': 0.030, 'E2': 0.050, 'E3': 0.020,
+           'S1': 0.060, 'S2': 0.12, 'S3': 0.10, 'E1': 0.021, 'E2': 0.035, 'E3': 0.014,
            'D_S01': 0.080, 'D_S02': 0.040, 'D_S03': 0.050, 'D_S04': 1.00, 'D_S05': 0.050,
            'D_S06': 0.080, 'D_S07': 0.060, 'D_S08': 0.12, 'D_S09': 0.15, 'D_S10': 0.040,
-           'D_E01': 0.010, 'D_E02': 0.030, 'D_E03': 0.020, 'D_E04': 0.020, 'D_E05': 0.030,
-           'D_E06': 0.030, 'D_E07': 0.020, 'D_E08': 0.020, 'D_E09': 0.040, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.021, 'D_E03': 0.014, 'D_E04': 0.014, 'D_E05': 0.021,
+           'D_E06': 0.021, 'D_E07': 0.014, 'D_E08': 0.014, 'D_E09': 0.028, 'D_E10': 0.010},
     'D_S05': {  # Indie Game Devs
-           'S1': 0.10, 'S2': 0.040, 'S3': 0.18, 'E1': 0.020, 'E2': 0.020, 'E3': 0.010,
+           'S1': 0.10, 'S2': 0.040, 'S3': 0.18, 'E1': 0.014, 'E2': 0.014, 'E3': 0.007,
            'D_S01': 0.12, 'D_S02': 0.040, 'D_S03': 0.030, 'D_S04': 0.060, 'D_S05': 1.00,
            'D_S06': 0.040, 'D_S07': 0.060, 'D_S08': 0.050, 'D_S09': 0.080, 'D_S10': 0.12,
-           'D_E01': 0.010, 'D_E02': 0.030, 'D_E03': 0.010, 'D_E04': 0.010, 'D_E05': 0.010,
-           'D_E06': 0.010, 'D_E07': 0.020, 'D_E08': 0.010, 'D_E09': 0.010, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.021, 'D_E03': 0.007, 'D_E04': 0.007, 'D_E05': 0.007,
+           'D_E06': 0.007, 'D_E07': 0.014, 'D_E08': 0.007, 'D_E09': 0.007, 'D_E10': 0.010},
     'D_S06': {  # Freelance Writers
-           'S1': 0.060, 'S2': 0.10, 'S3': 0.040, 'E1': 0.010, 'E2': 0.030, 'E3': 0.010,
+           'S1': 0.060, 'S2': 0.10, 'S3': 0.040, 'E1': 0.007, 'E2': 0.021, 'E3': 0.007,
            'D_S01': 0.060, 'D_S02': 0.080, 'D_S03': 0.080, 'D_S04': 0.10, 'D_S05': 0.040,
            'D_S06': 1.00, 'D_S07': 0.050, 'D_S08': 0.12, 'D_S09': 0.050, 'D_S10': 0.030,
-           'D_E01': 0.010, 'D_E02': 0.040, 'D_E03': 0.010, 'D_E04': 0.010, 'D_E05': 0.020,
-           'D_E06': 0.010, 'D_E07': 0.010, 'D_E08': 0.010, 'D_E09': 0.020, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.028, 'D_E03': 0.007, 'D_E04': 0.007, 'D_E05': 0.014,
+           'D_E06': 0.007, 'D_E07': 0.007, 'D_E08': 0.007, 'D_E09': 0.014, 'D_E10': 0.010},
     'D_S07': {  # Data Analysts ★INFLUENCER — 2x outgoing★
-           'S1': 0.060, 'S2': 0.30, 'S3': 0.30, 'E1': 0.080, 'E2': 0.16, 'E3': 0.080,
+           'S1': 0.060, 'S2': 0.30, 'S3': 0.30, 'E1': 0.056, 'E2': 0.112, 'E3': 0.056,
            'D_S01': 0.060, 'D_S02': 0.36, 'D_S03': 0.080, 'D_S04': 0.16, 'D_S05': 0.12,
            'D_S06': 0.080, 'D_S07': 1.00, 'D_S08': 0.10, 'D_S09': 0.12, 'D_S10': 0.060,
-           'D_E01': 0.060, 'D_E02': 0.12, 'D_E03': 0.10, 'D_E04': 0.16, 'D_E05': 0.16,
-           'D_E06': 0.040, 'D_E07': 0.10, 'D_E08': 0.12, 'D_E09': 0.060, 'D_E10': 0.080},
+           'D_E01': 0.042, 'D_E02': 0.084, 'D_E03': 0.07, 'D_E04': 0.112, 'D_E05': 0.112,
+           'D_E06': 0.028, 'D_E07': 0.07, 'D_E08': 0.084, 'D_E09': 0.042, 'D_E10': 0.080},
     'D_S08': {  # Social Media Managers ★INFLUENCER — 2x outgoing★
-           'S1': 0.24, 'S2': 0.10, 'S3': 0.080, 'E1': 0.020, 'E2': 0.040, 'E3': 0.020,
+           'S1': 0.24, 'S2': 0.10, 'S3': 0.080, 'E1': 0.014, 'E2': 0.028, 'E3': 0.014,
            'D_S01': 0.20, 'D_S02': 0.040, 'D_S03': 0.12, 'D_S04': 0.30, 'D_S05': 0.10,
            'D_S06': 0.24, 'D_S07': 0.10, 'D_S08': 1.00, 'D_S09': 0.16, 'D_S10': 0.12,
-           'D_E01': 0.020, 'D_E02': 0.040, 'D_E03': 0.020, 'D_E04': 0.020, 'D_E05': 0.020,
-           'D_E06': 0.020, 'D_E07': 0.040, 'D_E08': 0.020, 'D_E09': 0.040, 'D_E10': 0.020},
+           'D_E01': 0.014, 'D_E02': 0.028, 'D_E03': 0.014, 'D_E04': 0.014, 'D_E05': 0.014,
+           'D_E06': 0.014, 'D_E07': 0.028, 'D_E08': 0.014, 'D_E09': 0.028, 'D_E10': 0.020},
     'D_S09': {  # UX Designers
-           'S1': 0.080, 'S2': 0.080, 'S3': 0.12, 'E1': 0.020, 'E2': 0.040, 'E3': 0.020,
+           'S1': 0.080, 'S2': 0.080, 'S3': 0.12, 'E1': 0.014, 'E2': 0.028, 'E3': 0.014,
            'D_S01': 0.12, 'D_S02': 0.040, 'D_S03': 0.040, 'D_S04': 0.18, 'D_S05': 0.10,
            'D_S06': 0.050, 'D_S07': 0.060, 'D_S08': 0.080, 'D_S09': 1.00, 'D_S10': 0.050,
-           'D_E01': 0.010, 'D_E02': 0.030, 'D_E03': 0.020, 'D_E04': 0.020, 'D_E05': 0.010,
-           'D_E06': 0.010, 'D_E07': 0.020, 'D_E08': 0.010, 'D_E09': 0.020, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.021, 'D_E03': 0.014, 'D_E04': 0.014, 'D_E05': 0.007,
+           'D_E06': 0.007, 'D_E07': 0.014, 'D_E08': 0.007, 'D_E09': 0.014, 'D_E10': 0.010},
     'D_S10': {  # Music Producers
-           'S1': 0.12, 'S2': 0.030, 'S3': 0.050, 'E1': 0.010, 'E2': 0.010, 'E3': 0.010,
+           'S1': 0.12, 'S2': 0.030, 'S3': 0.050, 'E1': 0.007, 'E2': 0.007, 'E3': 0.007,
            'D_S01': 0.18, 'D_S02': 0.020, 'D_S03': 0.030, 'D_S04': 0.040, 'D_S05': 0.12,
            'D_S06': 0.030, 'D_S07': 0.030, 'D_S08': 0.060, 'D_S09': 0.050, 'D_S10': 1.00,
-           'D_E01': 0.010, 'D_E02': 0.010, 'D_E03': 0.010, 'D_E04': 0.010, 'D_E05': 0.010,
-           'D_E06': 0.010, 'D_E07': 0.010, 'D_E08': 0.010, 'D_E09': 0.010, 'D_E10': 0.010},
+           'D_E01': 0.007, 'D_E02': 0.007, 'D_E03': 0.007, 'D_E04': 0.007, 'D_E05': 0.007,
+           'D_E06': 0.007, 'D_E07': 0.007, 'D_E08': 0.007, 'D_E09': 0.007, 'D_E10': 0.010},
     #
     # --- Discoverable enterprise groups (D_E01-D_E10) ---
     # Seat-adjusted: each enterprise subscriber has many users (seats) generating referrals.
@@ -2905,65 +2905,65 @@ REPUTATION_INFLUENCE_MATRIX: Dict[str, Dict[str, float]] = {
     # CITATION: ProductLed 2025 — B2B SaaS product-led growth: enterprise internal virality 2-3x SMB
     #   https://productled.com/blog/state-of-b2b-saas-2025-report
     'D_E01': {  # Government Agencies (seat-adjusted: agency-wide users)
-           'S1': 0.020, 'S2': 0.040, 'S3': 0.060, 'E1': 0.16, 'E2': 0.12, 'E3': 0.24,
+           'S1': 0.020, 'S2': 0.040, 'S3': 0.060, 'E1': 0.112, 'E2': 0.084, 'E3': 0.168,
            'D_S01': 0.020, 'D_S02': 0.060, 'D_S03': 0.080, 'D_S04': 0.020, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.060, 'D_S08': 0.020, 'D_S09': 0.020, 'D_S10': 0.020,
-           'D_E01': 2.00, 'D_E02': 0.30, 'D_E03': 0.16, 'D_E04': 0.10, 'D_E05': 0.12,
-           'D_E06': 0.16, 'D_E07': 0.12, 'D_E08': 0.20, 'D_E09': 0.080, 'D_E10': 0.10},
+           'D_E01': 1.40, 'D_E02': 0.21, 'D_E03': 0.112, 'D_E04': 0.07, 'D_E05': 0.084,
+           'D_E06': 0.112, 'D_E07': 0.084, 'D_E08': 0.14, 'D_E09': 0.056, 'D_E10': 0.10},
     'D_E02': {  # Educational Institutions (seat-adjusted: campus-wide users)
-           'S1': 0.020, 'S2': 0.12, 'S3': 0.080, 'E1': 0.10, 'E2': 0.20, 'E3': 0.10,
+           'S1': 0.020, 'S2': 0.12, 'S3': 0.080, 'E1': 0.07, 'E2': 0.14, 'E3': 0.07,
            'D_S01': 0.040, 'D_S02': 0.30, 'D_S03': 0.20, 'D_S04': 0.060, 'D_S05': 0.040,
            'D_S06': 0.080, 'D_S07': 0.12, 'D_S08': 0.040, 'D_S09': 0.060, 'D_S10': 0.020,
-           'D_E01': 0.30, 'D_E02': 2.00, 'D_E03': 0.20, 'D_E04': 0.080, 'D_E05': 0.060,
-           'D_E06': 0.060, 'D_E07': 0.080, 'D_E08': 0.10, 'D_E09': 0.060, 'D_E10': 0.040},
+           'D_E01': 0.21, 'D_E02': 1.40, 'D_E03': 0.14, 'D_E04': 0.056, 'D_E05': 0.042,
+           'D_E06': 0.042, 'D_E07': 0.056, 'D_E08': 0.07, 'D_E09': 0.042, 'D_E10': 0.040},
     'D_E03': {  # Healthcare Networks (seat-adjusted: hospital system users)
-           'S1': 0.020, 'S2': 0.080, 'S3': 0.080, 'E1': 0.080, 'E2': 0.24, 'E3': 0.16,
+           'S1': 0.020, 'S2': 0.080, 'S3': 0.080, 'E1': 0.056, 'E2': 0.168, 'E3': 0.112,
            'D_S01': 0.020, 'D_S02': 0.12, 'D_S03': 0.080, 'D_S04': 0.040, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.10, 'D_S08': 0.020, 'D_S09': 0.040, 'D_S10': 0.020,
-           'D_E01': 0.16, 'D_E02': 0.20, 'D_E03': 2.00, 'D_E04': 0.10, 'D_E05': 0.30,
-           'D_E06': 0.060, 'D_E07': 0.080, 'D_E08': 0.10, 'D_E09': 0.060, 'D_E10': 0.060},
+           'D_E01': 0.112, 'D_E02': 0.14, 'D_E03': 1.40, 'D_E04': 0.07, 'D_E05': 0.21,
+           'D_E06': 0.042, 'D_E07': 0.056, 'D_E08': 0.07, 'D_E09': 0.042, 'D_E10': 0.060},
     'D_E04': {  # Regional Banks (seat-adjusted: branch network users)
-           'S1': 0.020, 'S2': 0.060, 'S3': 0.060, 'E1': 0.20, 'E2': 0.16, 'E3': 0.20,
+           'S1': 0.020, 'S2': 0.060, 'S3': 0.060, 'E1': 0.14, 'E2': 0.112, 'E3': 0.14,
            'D_S01': 0.020, 'D_S02': 0.040, 'D_S03': 0.040, 'D_S04': 0.040, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.12, 'D_S08': 0.020, 'D_S09': 0.020, 'D_S10': 0.020,
-           'D_E01': 0.10, 'D_E02': 0.080, 'D_E03': 0.10, 'D_E04': 2.00, 'D_E05': 0.36,
-           'D_E06': 0.080, 'D_E07': 0.10, 'D_E08': 0.12, 'D_E09': 0.30, 'D_E10': 0.10},
+           'D_E01': 0.07, 'D_E02': 0.056, 'D_E03': 0.07, 'D_E04': 1.40, 'D_E05': 0.252,
+           'D_E06': 0.056, 'D_E07': 0.07, 'D_E08': 0.084, 'D_E09': 0.21, 'D_E10': 0.10},
     'D_E05': {  # Insurance Brokers (seat-adjusted: brokerage-wide users)
-           'S1': 0.020, 'S2': 0.060, 'S3': 0.060, 'E1': 0.16, 'E2': 0.16, 'E3': 0.12,
+           'S1': 0.020, 'S2': 0.060, 'S3': 0.060, 'E1': 0.112, 'E2': 0.112, 'E3': 0.084,
            'D_S01': 0.020, 'D_S02': 0.040, 'D_S03': 0.040, 'D_S04': 0.040, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.12, 'D_S08': 0.020, 'D_S09': 0.020, 'D_S10': 0.020,
-           'D_E01': 0.12, 'D_E02': 0.060, 'D_E03': 0.30, 'D_E04': 0.36, 'D_E05': 2.00,
-           'D_E06': 0.080, 'D_E07': 0.080, 'D_E08': 0.10, 'D_E09': 0.16, 'D_E10': 0.12},
+           'D_E01': 0.084, 'D_E02': 0.042, 'D_E03': 0.21, 'D_E04': 0.252, 'D_E05': 1.40,
+           'D_E06': 0.056, 'D_E07': 0.056, 'D_E08': 0.07, 'D_E09': 0.112, 'D_E10': 0.12},
     'D_E06': {  # Construction Firms (seat-adjusted: firm-wide users)
-           'S1': 0.020, 'S2': 0.040, 'S3': 0.080, 'E1': 0.12, 'E2': 0.080, 'E3': 0.10,
+           'S1': 0.020, 'S2': 0.040, 'S3': 0.080, 'E1': 0.084, 'E2': 0.056, 'E3': 0.07,
            'D_S01': 0.020, 'D_S02': 0.020, 'D_S03': 0.040, 'D_S04': 0.060, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.040, 'D_S08': 0.020, 'D_S09': 0.020, 'D_S10': 0.020,
-           'D_E01': 0.16, 'D_E02': 0.060, 'D_E03': 0.060, 'D_E04': 0.080, 'D_E05': 0.080,
-           'D_E06': 2.00, 'D_E07': 0.10, 'D_E08': 0.24, 'D_E09': 0.30, 'D_E10': 0.16},
+           'D_E01': 0.112, 'D_E02': 0.042, 'D_E03': 0.042, 'D_E04': 0.056, 'D_E05': 0.056,
+           'D_E06': 1.40, 'D_E07': 0.07, 'D_E08': 0.168, 'D_E09': 0.21, 'D_E10': 0.16},
     'D_E07': {  # Telecom Operators ★INFLUENCER — 2x outgoing★ (seat-adjusted: carrier-wide users)
-           'S1': 0.040, 'S2': 0.12, 'S3': 0.32, 'E1': 0.20, 'E2': 0.32, 'E3': 0.48,
+           'S1': 0.040, 'S2': 0.12, 'S3': 0.32, 'E1': 0.14, 'E2': 0.224, 'E3': 0.336,
            'D_S01': 0.040, 'D_S02': 0.080, 'D_S03': 0.040, 'D_S04': 0.080, 'D_S05': 0.080,
            'D_S06': 0.040, 'D_S07': 0.20, 'D_S08': 0.080, 'D_S09': 0.080, 'D_S10': 0.040,
-           'D_E01': 0.24, 'D_E02': 0.16, 'D_E03': 0.16, 'D_E04': 0.20, 'D_E05': 0.16,
-           'D_E06': 0.20, 'D_E07': 2.00, 'D_E08': 0.48, 'D_E09': 0.16, 'D_E10': 0.32},
+           'D_E01': 0.168, 'D_E02': 0.112, 'D_E03': 0.112, 'D_E04': 0.14, 'D_E05': 0.112,
+           'D_E06': 0.14, 'D_E07': 1.40, 'D_E08': 0.336, 'D_E09': 0.112, 'D_E10': 0.32},
     'D_E08': {  # Energy Companies (seat-adjusted: utility-wide users)
-           'S1': 0.020, 'S2': 0.040, 'S3': 0.10, 'E1': 0.10, 'E2': 0.16, 'E3': 0.24,
+           'S1': 0.020, 'S2': 0.040, 'S3': 0.10, 'E1': 0.07, 'E2': 0.112, 'E3': 0.168,
            'D_S01': 0.020, 'D_S02': 0.080, 'D_S03': 0.040, 'D_S04': 0.040, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.10, 'D_S08': 0.020, 'D_S09': 0.020, 'D_S10': 0.020,
-           'D_E01': 0.20, 'D_E02': 0.10, 'D_E03': 0.10, 'D_E04': 0.12, 'D_E05': 0.10,
-           'D_E06': 0.24, 'D_E07': 0.24, 'D_E08': 2.00, 'D_E09': 0.10, 'D_E10': 0.16},
+           'D_E01': 0.14, 'D_E02': 0.07, 'D_E03': 0.07, 'D_E04': 0.084, 'D_E05': 0.07,
+           'D_E06': 0.168, 'D_E07': 0.168, 'D_E08': 1.40, 'D_E09': 0.07, 'D_E10': 0.16},
     'D_E09': {  # Real Estate Groups (seat-adjusted: group-wide users)
-           'S1': 0.020, 'S2': 0.060, 'S3': 0.060, 'E1': 0.12, 'E2': 0.12, 'E3': 0.16,
+           'S1': 0.020, 'S2': 0.060, 'S3': 0.060, 'E1': 0.084, 'E2': 0.084, 'E3': 0.112,
            'D_S01': 0.020, 'D_S02': 0.020, 'D_S03': 0.040, 'D_S04': 0.080, 'D_S05': 0.020,
            'D_S06': 0.040, 'D_S07': 0.060, 'D_S08': 0.040, 'D_S09': 0.040, 'D_S10': 0.020,
-           'D_E01': 0.080, 'D_E02': 0.060, 'D_E03': 0.060, 'D_E04': 0.30, 'D_E05': 0.16,
-           'D_E06': 0.30, 'D_E07': 0.080, 'D_E08': 0.10, 'D_E09': 2.00, 'D_E10': 0.12},
+           'D_E01': 0.056, 'D_E02': 0.042, 'D_E03': 0.042, 'D_E04': 0.21, 'D_E05': 0.112,
+           'D_E06': 0.21, 'D_E07': 0.056, 'D_E08': 0.07, 'D_E09': 1.40, 'D_E10': 0.12},
     'D_E10': {  # Shipping Lines (seat-adjusted: fleet-wide users)
-           'S1': 0.020, 'S2': 0.040, 'S3': 0.060, 'E1': 0.10, 'E2': 0.080, 'E3': 0.16,
+           'S1': 0.020, 'S2': 0.040, 'S3': 0.060, 'E1': 0.07, 'E2': 0.056, 'E3': 0.112,
            'D_S01': 0.020, 'D_S02': 0.020, 'D_S03': 0.020, 'D_S04': 0.020, 'D_S05': 0.020,
            'D_S06': 0.020, 'D_S07': 0.060, 'D_S08': 0.020, 'D_S09': 0.020, 'D_S10': 0.020,
-           'D_E01': 0.10, 'D_E02': 0.040, 'D_E03': 0.040, 'D_E04': 0.10, 'D_E05': 0.12,
-           'D_E06': 0.16, 'D_E07': 0.16, 'D_E08': 0.16, 'D_E09': 0.12, 'D_E10': 2.00},
+           'D_E01': 0.07, 'D_E02': 0.028, 'D_E03': 0.028, 'D_E04': 0.07, 'D_E05': 0.084,
+           'D_E06': 0.112, 'D_E07': 0.112, 'D_E08': 0.112, 'D_E09': 0.084, 'D_E10': 2.00},
 }
 
 
@@ -2995,165 +2995,165 @@ NETWORK_INFLUENCE_MATRIX: Dict[str, Dict[str, float]] = {
     #
     # --- Initial groups (S1-S3, E1-E3) ---
     'S1': {  # Price-Sensitive/Gig — viral in creative/gig circles
-           'S1': 0.0290, 'S2': 0.00087, 'S3': 0.00232, 'E1': 0.00029, 'E2': 0.00029, 'E3': 0.00029,
+           'S1': 0.0290, 'S2': 0.00087, 'S3': 0.00232, 'E1': 0.000203, 'E2': 0.000203, 'E3': 0.000203,
            'D_S01': 0.0029, 'D_S02': 0.00058, 'D_S03': 0.00145, 'D_S04': 0.00174, 'D_S05': 0.00203,
            'D_S06': 0.00145, 'D_S07': 0.00058, 'D_S08': 0.00232, 'D_S09': 0.00174, 'D_S10': 0.00232,
-           'D_E01': 0.00029, 'D_E02': 0.00029, 'D_E03': 0.00029, 'D_E04': 0.00029, 'D_E05': 0.00029,
-           'D_E06': 0.00029, 'D_E07': 0.00029, 'D_E08': 0.00029, 'D_E09': 0.00029, 'D_E10': 0.00029},
+           'D_E01': 0.000203, 'D_E02': 0.000203, 'D_E03': 0.000203, 'D_E04': 0.000203, 'D_E05': 0.000203,
+           'D_E06': 0.000203, 'D_E07': 0.000203, 'D_E08': 0.000203, 'D_E09': 0.000203, 'D_E10': 0.00029},
     'S2': {  # Quality Professionals — strong professional network referrals
-           'S1': 0.00057, 'S2': 0.0190, 'S3': 0.00095, 'E1': 0.00038, 'E2': 0.00152, 'E3': 0.00057,
+           'S1': 0.00057, 'S2': 0.0190, 'S3': 0.00095, 'E1': 0.000266, 'E2': 0.001064, 'E3': 0.000399,
            'D_S01': 0.00038, 'D_S02': 0.0019, 'D_S03': 0.00114, 'D_S04': 0.00133, 'D_S05': 0.00038,
            'D_S06': 0.00114, 'D_S07': 0.0019, 'D_S08': 0.00057, 'D_S09': 0.00095, 'D_S10': 0.00038,
-           'D_E01': 0.00019, 'D_E02': 0.00095, 'D_E03': 0.00076, 'D_E04': 0.00057, 'D_E05': 0.00057,
-           'D_E06': 0.00019, 'D_E07': 0.00038, 'D_E08': 0.00038, 'D_E09': 0.00038, 'D_E10': 0.00019},
+           'D_E01': 0.000133, 'D_E02': 0.000665, 'D_E03': 0.000532, 'D_E04': 0.000399, 'D_E05': 0.000399,
+           'D_E06': 0.000133, 'D_E07': 0.000266, 'D_E08': 0.000266, 'D_E09': 0.000266, 'D_E10': 0.00019},
     'S3': {  # Power Users/Tech ★INFLUENCER — 4x outgoing cross-group★
-           'S1': 0.00624, 'S2': 0.00364, 'S3': 0.0130, 'E1': 0.0078, 'E2': 0.00936, 'E3': 0.00624,
+           'S1': 0.00624, 'S2': 0.00364, 'S3': 0.0130, 'E1': 0.00546, 'E2': 0.006552, 'E3': 0.004368,
            'D_S01': 0.0026, 'D_S02': 0.00312, 'D_S03': 0.00156, 'D_S04': 0.00364, 'D_S05': 0.00624,
            'D_S06': 0.00156, 'D_S07': 0.0052, 'D_S08': 0.00156, 'D_S09': 0.00312, 'D_S10': 0.00156,
-           'D_E01': 0.00156, 'D_E02': 0.0026, 'D_E03': 0.00208, 'D_E04': 0.00104, 'D_E05': 0.00104,
-           'D_E06': 0.00156, 'D_E07': 0.00312, 'D_E08': 0.0026, 'D_E09': 0.00104, 'D_E10': 0.00156},
+           'D_E01': 0.001092, 'D_E02': 0.00182, 'D_E03': 0.001456, 'D_E04': 0.000728, 'D_E05': 0.000728,
+           'D_E06': 0.001092, 'D_E07': 0.002184, 'D_E08': 0.00182, 'D_E09': 0.000728, 'D_E10': 0.00156},
     'E1': {  # Cost-Cutting Enterprises — company-level referrals in enterprise peer network
-           'S1': 0.000037, 'S2': 0.000073, 'S3': 0.00011, 'E1': 0.00367, 'E2': 0.00022, 'E3': 0.000183,
+           'S1': 0.000037, 'S2': 0.000073, 'S3': 0.00011, 'E1': 0.002569, 'E2': 0.000154, 'E3': 0.0001281,
            'D_S01': 0.000037, 'D_S02': 0.000037, 'D_S03': 0.000037, 'D_S04': 0.000037, 'D_S05': 0.000037,
            'D_S06': 0.000037, 'D_S07': 0.000073, 'D_S08': 0.000037, 'D_S09': 0.000037, 'D_S10': 0.000037,
-           'D_E01': 0.000183, 'D_E02': 0.000147, 'D_E03': 0.00011, 'D_E04': 0.00022, 'D_E05': 0.000183,
-           'D_E06': 0.000147, 'D_E07': 0.00011, 'D_E08': 0.00011, 'D_E09': 0.000147, 'D_E10': 0.00011},
+           'D_E01': 0.0001281, 'D_E02': 0.0001029, 'D_E03': 0.000077, 'D_E04': 0.000154, 'D_E05': 0.0001281,
+           'D_E06': 0.0001029, 'D_E07': 0.000077, 'D_E08': 0.000077, 'D_E09': 0.0001029, 'D_E10': 0.00011},
     'E2': {  # Quality-First Enterprises — company-level referrals in quality-conscious network
-           'S1': 0.00003, 'S2': 0.0003, 'S3': 0.00015, 'E1': 0.00024, 'E2': 0.0030, 'E3': 0.00042,
+           'S1': 0.00003, 'S2': 0.0003, 'S3': 0.00015, 'E1': 0.000168, 'E2': 0.0021, 'E3': 0.000294,
            'D_S01': 0.00003, 'D_S02': 0.00012, 'D_S03': 0.00006, 'D_S04': 0.00009, 'D_S05': 0.00003,
            'D_S06': 0.00006, 'D_S07': 0.00015, 'D_S08': 0.00003, 'D_S09': 0.00006, 'D_S10': 0.00003,
-           'D_E01': 0.00015, 'D_E02': 0.00024, 'D_E03': 0.0003, 'D_E04': 0.00018, 'D_E05': 0.00018,
-           'D_E06': 0.00009, 'D_E07': 0.00018, 'D_E08': 0.00018, 'D_E09': 0.00015, 'D_E10': 0.00012},
+           'D_E01': 0.000105, 'D_E02': 0.000168, 'D_E03': 0.00021, 'D_E04': 0.000126, 'D_E05': 0.000126,
+           'D_E06': 0.000063, 'D_E07': 0.000126, 'D_E08': 0.000126, 'D_E09': 0.000105, 'D_E10': 0.00012},
     'E3': {  # Strategic Partners/Fortune 500 ★INFLUENCER — 4x outgoing★ (company-level referrals)
-           'S1': 0.000093, 'S2': 0.00028, 'S3': 0.000933, 'E1': 0.0014, 'E2': 0.0014, 'E3': 0.00233,
+           'S1': 0.000093, 'S2': 0.00028, 'S3': 0.000933, 'E1': 0.00098, 'E2': 0.00098, 'E3': 0.001631,
            'D_S01': 0.000093, 'D_S02': 0.000187, 'D_S03': 0.000093, 'D_S04': 0.000187, 'D_S05': 0.000093,
            'D_S06': 0.000093, 'D_S07': 0.00028, 'D_S08': 0.000093, 'D_S09': 0.000187, 'D_S10': 0.000093,
-           'D_E01': 0.000933, 'D_E02': 0.00056, 'D_E03': 0.000747, 'D_E04': 0.000933, 'D_E05': 0.00056,
-           'D_E06': 0.000467, 'D_E07': 0.000933, 'D_E08': 0.000933, 'D_E09': 0.00056, 'D_E10': 0.00056},
+           'D_E01': 0.0006531, 'D_E02': 0.000392, 'D_E03': 0.0005229, 'D_E04': 0.0006531, 'D_E05': 0.000392,
+           'D_E06': 0.0003269, 'D_E07': 0.0006531, 'D_E08': 0.0006531, 'D_E09': 0.000392, 'D_E10': 0.00056},
     #
     # --- Discoverable individual groups (D_S01-D_S10) ---
     'D_S01': {  # Niche Creators — creative community (Music Producers, Indie Devs, UX)
-           'S1': 0.001733, 'S2': 0.000347, 'S3': 0.000693, 'E1': 0.000173, 'E2': 0.000173, 'E3': 0.000173,
+           'S1': 0.001733, 'S2': 0.000347, 'S3': 0.000693, 'E1': 0.0001211, 'E2': 0.0001211, 'E3': 0.0001211,
            'D_S01': 0.01733, 'D_S02': 0.000347, 'D_S03': 0.00052, 'D_S04': 0.00104, 'D_S05': 0.001387,
            'D_S06': 0.000693, 'D_S07': 0.000347, 'D_S08': 0.00104, 'D_S09': 0.001733, 'D_S10': 0.00208,
-           'D_E01': 0.000173, 'D_E02': 0.000173, 'D_E03': 0.000173, 'D_E04': 0.000173, 'D_E05': 0.000173,
-           'D_E06': 0.000173, 'D_E07': 0.000173, 'D_E08': 0.000173, 'D_E09': 0.000173, 'D_E10': 0.000173},
+           'D_E01': 0.0001211, 'D_E02': 0.0001211, 'D_E03': 0.0001211, 'D_E04': 0.0001211, 'D_E05': 0.0001211,
+           'D_E06': 0.0001211, 'D_E07': 0.0001211, 'D_E08': 0.0001211, 'D_E09': 0.0001211, 'D_E10': 0.000173},
     'D_S02': {  # Academic Researchers — research/data network (Data Analysts, Non-Profits)
-           'S1': 0.00006, 'S2': 0.0006, 'S3': 0.0003, 'E1': 0.00006, 'E2': 0.00018, 'E3': 0.00006,
+           'S1': 0.00006, 'S2': 0.0006, 'S3': 0.0003, 'E1': 0.000042, 'E2': 0.000126, 'E3': 0.000042,
            'D_S01': 0.00012, 'D_S02': 0.0060, 'D_S03': 0.00036, 'D_S04': 0.00012, 'D_S05': 0.00018,
            'D_S06': 0.0003, 'D_S07': 0.00072, 'D_S08': 0.00006, 'D_S09': 0.00012, 'D_S10': 0.00006,
-           'D_E01': 0.00012, 'D_E02': 0.0006, 'D_E03': 0.0003, 'D_E04': 0.00006, 'D_E05': 0.00006,
-           'D_E06': 0.00006, 'D_E07': 0.00012, 'D_E08': 0.00018, 'D_E09': 0.00006, 'D_E10': 0.00006},
+           'D_E01': 0.000084, 'D_E02': 0.00042, 'D_E03': 0.00021, 'D_E04': 0.000042, 'D_E05': 0.000042,
+           'D_E06': 0.000042, 'D_E07': 0.000084, 'D_E08': 0.000126, 'D_E09': 0.000042, 'D_E10': 0.00006},
     'D_S03': {  # Non-Profit Workers — non-profit/education network
-           'S1': 0.000583, 'S2': 0.000467, 'S3': 0.000233, 'E1': 0.000117, 'E2': 0.000117, 'E3': 0.000117,
+           'S1': 0.000583, 'S2': 0.000467, 'S3': 0.000233, 'E1': 0.0000819, 'E2': 0.0000819, 'E3': 0.0000819,
            'D_S01': 0.00035, 'D_S02': 0.0007, 'D_S03': 0.01167, 'D_S04': 0.000467, 'D_S05': 0.000233,
            'D_S06': 0.000583, 'D_S07': 0.00035, 'D_S08': 0.000583, 'D_S09': 0.000233, 'D_S10': 0.000233,
-           'D_E01': 0.00035, 'D_E02': 0.000933, 'D_E03': 0.000467, 'D_E04': 0.000117, 'D_E05': 0.000117,
-           'D_E06': 0.000117, 'D_E07': 0.000117, 'D_E08': 0.000233, 'D_E09': 0.000117, 'D_E10': 0.000117},
+           'D_E01': 0.000245, 'D_E02': 0.0006531, 'D_E03': 0.0003269, 'D_E04': 0.0000819, 'D_E05': 0.0000819,
+           'D_E06': 0.0000819, 'D_E07': 0.0000819, 'D_E08': 0.0001631, 'D_E09': 0.0000819, 'D_E10': 0.000117},
     'D_S04': {  # Small Agency Teams — agency/design/social media network
-           'S1': 0.000427, 'S2': 0.000747, 'S3': 0.00064, 'E1': 0.000213, 'E2': 0.00032, 'E3': 0.000107,
+           'S1': 0.000427, 'S2': 0.000747, 'S3': 0.00064, 'E1': 0.0001491, 'E2': 0.000224, 'E3': 0.0000749,
            'D_S01': 0.000533, 'D_S02': 0.000213, 'D_S03': 0.00032, 'D_S04': 0.01067, 'D_S05': 0.00032,
            'D_S06': 0.000533, 'D_S07': 0.000427, 'D_S08': 0.000853, 'D_S09': 0.001067, 'D_S10': 0.000213,
-           'D_E01': 0.000107, 'D_E02': 0.000213, 'D_E03': 0.000107, 'D_E04': 0.000107, 'D_E05': 0.000213,
-           'D_E06': 0.000213, 'D_E07': 0.000107, 'D_E08': 0.000107, 'D_E09': 0.00032, 'D_E10': 0.000107},
+           'D_E01': 0.0000749, 'D_E02': 0.0001491, 'D_E03': 0.0000749, 'D_E04': 0.0000749, 'D_E05': 0.0001491,
+           'D_E06': 0.0001491, 'D_E07': 0.0000749, 'D_E08': 0.0000749, 'D_E09': 0.000224, 'D_E10': 0.000107},
     'D_S05': {  # Indie Game Devs — tech-creative cluster (S3, Niche Creators, Music)
-           'S1': 0.00084, 'S2': 0.00028, 'S3': 0.00168, 'E1': 0.00014, 'E2': 0.00014, 'E3': 0.00014,
+           'S1': 0.00084, 'S2': 0.00028, 'S3': 0.00168, 'E1': 0.000098, 'E2': 0.000098, 'E3': 0.000098,
            'D_S01': 0.00112, 'D_S02': 0.00028, 'D_S03': 0.00028, 'D_S04': 0.00056, 'D_S05': 0.0140,
            'D_S06': 0.00028, 'D_S07': 0.00056, 'D_S08': 0.00042, 'D_S09': 0.0007, 'D_S10': 0.00112,
-           'D_E01': 0.00014, 'D_E02': 0.00028, 'D_E03': 0.00014, 'D_E04': 0.00014, 'D_E05': 0.00014,
-           'D_E06': 0.00014, 'D_E07': 0.00014, 'D_E08': 0.00014, 'D_E09': 0.00014, 'D_E10': 0.00014},
+           'D_E01': 0.000098, 'D_E02': 0.000196, 'D_E03': 0.000098, 'D_E04': 0.000098, 'D_E05': 0.000098,
+           'D_E06': 0.000098, 'D_E07': 0.000098, 'D_E08': 0.000098, 'D_E09': 0.000098, 'D_E10': 0.00014},
     'D_S06': {  # Freelance Writers — content/writing network (Agencies, Social Media)
-           'S1': 0.00032, 'S2': 0.00048, 'S3': 0.00016, 'E1': 0.00008, 'E2': 0.00016, 'E3': 0.00008,
+           'S1': 0.00032, 'S2': 0.00048, 'S3': 0.00016, 'E1': 0.000056, 'E2': 0.000112, 'E3': 0.000056,
            'D_S01': 0.00032, 'D_S02': 0.0004, 'D_S03': 0.0004, 'D_S04': 0.00048, 'D_S05': 0.00016,
            'D_S06': 0.0080, 'D_S07': 0.00024, 'D_S08': 0.00064, 'D_S09': 0.00024, 'D_S10': 0.00016,
-           'D_E01': 0.00008, 'D_E02': 0.00016, 'D_E03': 0.00008, 'D_E04': 0.00008, 'D_E05': 0.00008,
-           'D_E06': 0.00008, 'D_E07': 0.00008, 'D_E08': 0.00008, 'D_E09': 0.00008, 'D_E10': 0.00008},
+           'D_E01': 0.000056, 'D_E02': 0.000112, 'D_E03': 0.000056, 'D_E04': 0.000056, 'D_E05': 0.000056,
+           'D_E06': 0.000056, 'D_E07': 0.000056, 'D_E08': 0.000056, 'D_E09': 0.000056, 'D_E10': 0.00008},
     'D_S07': {  # Data Analysts ★INFLUENCER — 4x outgoing cross-group★
-           'S1': 0.000533, 'S2': 0.002667, 'S3': 0.002667, 'E1': 0.000533, 'E2': 0.001333, 'E3': 0.000533,
+           'S1': 0.000533, 'S2': 0.002667, 'S3': 0.002667, 'E1': 0.0003731, 'E2': 0.0009331, 'E3': 0.0003731,
            'D_S01': 0.000533, 'D_S02': 0.0032, 'D_S03': 0.000533, 'D_S04': 0.001333, 'D_S05': 0.001067,
            'D_S06': 0.000533, 'D_S07': 0.00667, 'D_S08': 0.0008, 'D_S09': 0.001067, 'D_S10': 0.000533,
-           'D_E01': 0.000533, 'D_E02': 0.001067, 'D_E03': 0.0008, 'D_E04': 0.001333, 'D_E05': 0.001333,
-           'D_E06': 0.000267, 'D_E07': 0.0008, 'D_E08': 0.001067, 'D_E09': 0.000533, 'D_E10': 0.000533},
+           'D_E01': 0.0003731, 'D_E02': 0.0007469, 'D_E03': 0.00056, 'D_E04': 0.0009331, 'D_E05': 0.0009331,
+           'D_E06': 0.0001869, 'D_E07': 0.00056, 'D_E08': 0.0007469, 'D_E09': 0.0003731, 'D_E10': 0.000533},
     'D_S08': {  # Social Media Managers ★INFLUENCER — 4x outgoing cross-group★
-           'S1': 0.006187, 'S2': 0.00232, 'S3': 0.001547, 'E1': 0.000773, 'E2': 0.000773, 'E3': 0.000773,
+           'S1': 0.006187, 'S2': 0.00232, 'S3': 0.001547, 'E1': 0.0005411, 'E2': 0.0005411, 'E3': 0.0005411,
            'D_S01': 0.00464, 'D_S02': 0.000773, 'D_S03': 0.003093, 'D_S04': 0.007733, 'D_S05': 0.00232,
            'D_S06': 0.006187, 'D_S07': 0.00232, 'D_S08': 0.01933, 'D_S09': 0.003867, 'D_S10': 0.003093,
-           'D_E01': 0.000773, 'D_E02': 0.000773, 'D_E03': 0.000773, 'D_E04': 0.000773, 'D_E05': 0.000773,
-           'D_E06': 0.000773, 'D_E07': 0.000773, 'D_E08': 0.000773, 'D_E09': 0.000773, 'D_E10': 0.000773},
+           'D_E01': 0.0005411, 'D_E02': 0.0005411, 'D_E03': 0.0005411, 'D_E04': 0.0005411, 'D_E05': 0.0005411,
+           'D_E06': 0.0005411, 'D_E07': 0.0005411, 'D_E08': 0.0005411, 'D_E09': 0.0005411, 'D_E10': 0.000773},
     'D_S09': {  # UX Designers — design/creative/agency network
-           'S1': 0.000633, 'S2': 0.000633, 'S3': 0.000887, 'E1': 0.000127, 'E2': 0.000253, 'E3': 0.000127,
+           'S1': 0.000633, 'S2': 0.000633, 'S3': 0.000887, 'E1': 0.0000889, 'E2': 0.0001771, 'E3': 0.0000889,
            'D_S01': 0.001013, 'D_S02': 0.000253, 'D_S03': 0.000253, 'D_S04': 0.00152, 'D_S05': 0.00076,
            'D_S06': 0.00038, 'D_S07': 0.000507, 'D_S08': 0.000633, 'D_S09': 0.01267, 'D_S10': 0.00038,
-           'D_E01': 0.000127, 'D_E02': 0.000253, 'D_E03': 0.000127, 'D_E04': 0.000127, 'D_E05': 0.000127,
-           'D_E06': 0.000127, 'D_E07': 0.000127, 'D_E08': 0.000127, 'D_E09': 0.000127, 'D_E10': 0.000127},
+           'D_E01': 0.0000889, 'D_E02': 0.0001771, 'D_E03': 0.0000889, 'D_E04': 0.0000889, 'D_E05': 0.0000889,
+           'D_E06': 0.0000889, 'D_E07': 0.0000889, 'D_E08': 0.0000889, 'D_E09': 0.0000889, 'D_E10': 0.000127},
     'D_S10': {  # Music Producers — creative/entertainment cluster (Niche Creators, Indie Devs)
-           'S1': 0.0012, 'S2': 0.0003, 'S3': 0.00045, 'E1': 0.00015, 'E2': 0.00015, 'E3': 0.00015,
+           'S1': 0.0012, 'S2': 0.0003, 'S3': 0.00045, 'E1': 0.000105, 'E2': 0.000105, 'E3': 0.000105,
            'D_S01': 0.0018, 'D_S02': 0.00015, 'D_S03': 0.0003, 'D_S04': 0.0003, 'D_S05': 0.0012,
            'D_S06': 0.0003, 'D_S07': 0.0003, 'D_S08': 0.0006, 'D_S09': 0.00045, 'D_S10': 0.0150,
-           'D_E01': 0.00015, 'D_E02': 0.00015, 'D_E03': 0.00015, 'D_E04': 0.00015, 'D_E05': 0.00015,
-           'D_E06': 0.00015, 'D_E07': 0.00015, 'D_E08': 0.00015, 'D_E09': 0.00015, 'D_E10': 0.00015},
+           'D_E01': 0.000105, 'D_E02': 0.000105, 'D_E03': 0.000105, 'D_E04': 0.000105, 'D_E05': 0.000105,
+           'D_E06': 0.000105, 'D_E07': 0.000105, 'D_E08': 0.000105, 'D_E09': 0.000105, 'D_E10': 0.00015},
     #
     # --- Discoverable enterprise groups (D_E01-D_E10) ---
     'D_E01': {  # Government Agencies — public sector; company-level referrals rare
-           'S1': 0.000004, 'S2': 0.000004, 'S3': 0.0000083, 'E1': 0.0000207, 'E2': 0.0000167, 'E3': 0.0000333,
+           'S1': 0.000004, 'S2': 0.000004, 'S3': 0.0000083, 'E1': 0.00001449, 'E2': 0.00001169, 'E3': 0.00002331,
            'D_S01': 0.000004, 'D_S02': 0.0000083, 'D_S03': 0.0000083, 'D_S04': 0.000004, 'D_S05': 0.000004,
            'D_S06': 0.000004, 'D_S07': 0.0000083, 'D_S08': 0.000004, 'D_S09': 0.000004, 'D_S10': 0.000004,
-           'D_E01': 0.000417, 'D_E02': 0.0000417, 'D_E03': 0.0000207, 'D_E04': 0.0000123, 'D_E05': 0.0000167,
-           'D_E06': 0.0000207, 'D_E07': 0.0000167, 'D_E08': 0.000025, 'D_E09': 0.0000083, 'D_E10': 0.0000123},
+           'D_E01': 0.0002919, 'D_E02': 0.00002919, 'D_E03': 0.00001449, 'D_E04': 0.00000861, 'D_E05': 0.00001169,
+           'D_E06': 0.00001449, 'D_E07': 0.00001169, 'D_E08': 0.0000175, 'D_E09': 0.00000581, 'D_E10': 0.0000123},
     'D_E02': {  # Educational Institutions — education/research; company-level referrals rare
-           'S1': 0.0000123, 'S2': 0.00005, 'S3': 0.000025, 'E1': 0.0000373, 'E2': 0.000075, 'E3': 0.0000373,
+           'S1': 0.0000123, 'S2': 0.00005, 'S3': 0.000025, 'E1': 0.00002611, 'E2': 0.0000525, 'E3': 0.00002611,
            'D_S01': 0.0000123, 'D_S02': 0.000125, 'D_S03': 0.000075, 'D_S04': 0.000025, 'D_S05': 0.0000123,
            'D_S06': 0.000025, 'D_S07': 0.00005, 'D_S08': 0.0000123, 'D_S09': 0.000025, 'D_S10': 0.0000123,
-           'D_E01': 0.000125, 'D_E02': 0.00125, 'D_E03': 0.000075, 'D_E04': 0.000025, 'D_E05': 0.000025,
-           'D_E06': 0.000025, 'D_E07': 0.000025, 'D_E08': 0.0000373, 'D_E09': 0.000025, 'D_E10': 0.0000123},
+           'D_E01': 0.0000875, 'D_E02': 0.000875, 'D_E03': 0.0000525, 'D_E04': 0.0000175, 'D_E05': 0.0000175,
+           'D_E06': 0.0000175, 'D_E07': 0.0000175, 'D_E08': 0.00002611, 'D_E09': 0.0000175, 'D_E10': 0.0000123},
     'D_E03': {  # Healthcare Networks — healthcare/insurance; company-level referrals rare
-           'S1': 0.0000067, 'S2': 0.0000133, 'S3': 0.0000133, 'E1': 0.0000133, 'E2': 0.0000533, 'E3': 0.0000333,
+           'S1': 0.0000067, 'S2': 0.0000133, 'S3': 0.0000133, 'E1': 0.00000931, 'E2': 0.00003731, 'E3': 0.00002331,
            'D_S01': 0.0000067, 'D_S02': 0.0000267, 'D_S03': 0.0000133, 'D_S04': 0.0000067, 'D_S05': 0.0000067,
            'D_S06': 0.0000067, 'D_S07': 0.00002, 'D_S08': 0.0000067, 'D_S09': 0.0000067, 'D_S10': 0.0000067,
-           'D_E01': 0.0000333, 'D_E02': 0.00004, 'D_E03': 0.000667, 'D_E04': 0.00002, 'D_E05': 0.0000667,
-           'D_E06': 0.0000133, 'D_E07': 0.0000133, 'D_E08': 0.00002, 'D_E09': 0.0000133, 'D_E10': 0.0000133},
+           'D_E01': 0.00002331, 'D_E02': 0.000028, 'D_E03': 0.0004669, 'D_E04': 0.000014, 'D_E05': 0.00004669,
+           'D_E06': 0.00000931, 'D_E07': 0.00000931, 'D_E08': 0.000014, 'D_E09': 0.00000931, 'D_E10': 0.0000133},
     'D_E04': {  # Regional Banks — financial services; company-level referrals rare
-           'S1': 0.0000057, 'S2': 0.0000117, 'S3': 0.0000117, 'E1': 0.000035, 'E2': 0.000029, 'E3': 0.000035,
+           'S1': 0.0000057, 'S2': 0.0000117, 'S3': 0.0000117, 'E1': 0.0000245, 'E2': 0.0000203, 'E3': 0.0000245,
            'D_S01': 0.0000057, 'D_S02': 0.0000057, 'D_S03': 0.0000057, 'D_S04': 0.0000057, 'D_S05': 0.0000057,
            'D_S06': 0.0000057, 'D_S07': 0.0000233, 'D_S08': 0.0000057, 'D_S09': 0.0000057, 'D_S10': 0.0000057,
-           'D_E01': 0.0000173, 'D_E02': 0.0000117, 'D_E03': 0.0000173, 'D_E04': 0.000583, 'D_E05': 0.00007,
-           'D_E06': 0.0000117, 'D_E07': 0.0000173, 'D_E08': 0.0000233, 'D_E09': 0.0000583, 'D_E10': 0.0000173},
+           'D_E01': 0.00001211, 'D_E02': 0.00000819, 'D_E03': 0.00001211, 'D_E04': 0.0004081, 'D_E05': 0.000049,
+           'D_E06': 0.00000819, 'D_E07': 0.00001211, 'D_E08': 0.00001631, 'D_E09': 0.00004081, 'D_E10': 0.0000173},
     'D_E05': {  # Insurance Brokers — financial/healthcare; company-level referrals rare
-           'S1': 0.0000083, 'S2': 0.0000167, 'S3': 0.0000167, 'E1': 0.0000417, 'E2': 0.0000417, 'E3': 0.0000333,
+           'S1': 0.0000083, 'S2': 0.0000167, 'S3': 0.0000167, 'E1': 0.00002919, 'E2': 0.00002919, 'E3': 0.00002331,
            'D_S01': 0.0000083, 'D_S02': 0.0000083, 'D_S03': 0.0000083, 'D_S04': 0.0000083, 'D_S05': 0.0000083,
            'D_S06': 0.0000083, 'D_S07': 0.0000333, 'D_S08': 0.0000083, 'D_S09': 0.0000083, 'D_S10': 0.0000083,
-           'D_E01': 0.0000333, 'D_E02': 0.0000167, 'D_E03': 0.0000833, 'D_E04': 0.0001, 'D_E05': 0.000833,
-           'D_E06': 0.0000167, 'D_E07': 0.0000167, 'D_E08': 0.000025, 'D_E09': 0.0000417, 'D_E10': 0.0000333},
+           'D_E01': 0.00002331, 'D_E02': 0.00001169, 'D_E03': 0.00005831, 'D_E04': 0.00007, 'D_E05': 0.0005831,
+           'D_E06': 0.00001169, 'D_E07': 0.00001169, 'D_E08': 0.0000175, 'D_E09': 0.00002919, 'D_E10': 0.0000333},
     'D_E06': {  # Construction Firms — infrastructure; company-level referrals rare
-           'S1': 0.0000073, 'S2': 0.0000073, 'S3': 0.000015, 'E1': 0.00003, 'E2': 0.000015, 'E3': 0.0000223,
+           'S1': 0.0000073, 'S2': 0.0000073, 'S3': 0.000015, 'E1': 0.000021, 'E2': 0.0000105, 'E3': 0.00001561,
            'D_S01': 0.0000073, 'D_S02': 0.0000073, 'D_S03': 0.0000073, 'D_S04': 0.000015, 'D_S05': 0.0000073,
            'D_S06': 0.0000073, 'D_S07': 0.0000073, 'D_S08': 0.0000073, 'D_S09': 0.0000073, 'D_S10': 0.0000073,
-           'D_E01': 0.0000373, 'D_E02': 0.000015, 'D_E03': 0.000015, 'D_E04': 0.000015, 'D_E05': 0.000015,
-           'D_E06': 0.00075, 'D_E07': 0.0000223, 'D_E08': 0.00006, 'D_E09': 0.000075, 'D_E10': 0.0000373},
+           'D_E01': 0.00002611, 'D_E02': 0.0000105, 'D_E03': 0.0000105, 'D_E04': 0.0000105, 'D_E05': 0.0000105,
+           'D_E06': 0.000525, 'D_E07': 0.00001561, 'D_E08': 0.000042, 'D_E09': 0.0000525, 'D_E10': 0.0000373},
     'D_E07': {  # Telecom Operators ★INFLUENCER — 4x outgoing★ company-level referrals
-           'S1': 0.00004, 'S2': 0.00008, 'S3': 0.0002, 'E1': 0.00012, 'E2': 0.0002, 'E3': 0.00032,
+           'S1': 0.00004, 'S2': 0.00008, 'S3': 0.0002, 'E1': 0.000084, 'E2': 0.00014, 'E3': 0.000224,
            'D_S01': 0.00004, 'D_S02': 0.00004, 'D_S03': 0.00004, 'D_S04': 0.00004, 'D_S05': 0.00004,
            'D_S06': 0.00004, 'D_S07': 0.00012, 'D_S08': 0.00004, 'D_S09': 0.00004, 'D_S10': 0.00004,
-           'D_E01': 0.00016, 'D_E02': 0.00008, 'D_E03': 0.00008, 'D_E04': 0.00012, 'D_E05': 0.00008,
-           'D_E06': 0.00012, 'D_E07': 0.0010, 'D_E08': 0.00032, 'D_E09': 0.00008, 'D_E10': 0.0002},
+           'D_E01': 0.000112, 'D_E02': 0.000056, 'D_E03': 0.000056, 'D_E04': 0.000084, 'D_E05': 0.000056,
+           'D_E06': 0.000084, 'D_E07': 0.0007, 'D_E08': 0.000224, 'D_E09': 0.000056, 'D_E10': 0.0002},
     'D_E08': {  # Energy Companies — infrastructure/strategic; company-level referrals rare
-           'S1': 0.000005, 'S2': 0.000005, 'S3': 0.000015, 'E1': 0.000015, 'E2': 0.000025, 'E3': 0.00004,
+           'S1': 0.000005, 'S2': 0.000005, 'S3': 0.000015, 'E1': 0.0000105, 'E2': 0.0000175, 'E3': 0.000028,
            'D_S01': 0.000005, 'D_S02': 0.00001, 'D_S03': 0.000005, 'D_S04': 0.000005, 'D_S05': 0.000005,
            'D_S06': 0.000005, 'D_S07': 0.000015, 'D_S08': 0.000005, 'D_S09': 0.000005, 'D_S10': 0.000005,
-           'D_E01': 0.00003, 'D_E02': 0.000015, 'D_E03': 0.000015, 'D_E04': 0.00002, 'D_E05': 0.000015,
-           'D_E06': 0.00004, 'D_E07': 0.00004, 'D_E08': 0.0005, 'D_E09': 0.000015, 'D_E10': 0.000025},
+           'D_E01': 0.000021, 'D_E02': 0.0000105, 'D_E03': 0.0000105, 'D_E04': 0.000014, 'D_E05': 0.0000105,
+           'D_E06': 0.000028, 'D_E07': 0.000028, 'D_E08': 0.00035, 'D_E09': 0.0000105, 'D_E10': 0.000025},
     'D_E09': {  # Real Estate Groups — property/financial; company-level referrals rare
-           'S1': 0.0000117, 'S2': 0.0000233, 'S3': 0.0000233, 'E1': 0.0000467, 'E2': 0.0000467, 'E3': 0.0000583,
+           'S1': 0.0000117, 'S2': 0.0000233, 'S3': 0.0000233, 'E1': 0.00003269, 'E2': 0.00003269, 'E3': 0.00004081,
            'D_S01': 0.0000117, 'D_S02': 0.0000117, 'D_S03': 0.0000117, 'D_S04': 0.0000233, 'D_S05': 0.0000117,
            'D_S06': 0.0000117, 'D_S07': 0.0000233, 'D_S08': 0.0000117, 'D_S09': 0.0000117, 'D_S10': 0.0000117,
-           'D_E01': 0.0000233, 'D_E02': 0.0000233, 'D_E03': 0.0000233, 'D_E04': 0.0001167, 'D_E05': 0.0000583,
-           'D_E06': 0.0001167, 'D_E07': 0.0000233, 'D_E08': 0.000035, 'D_E09': 0.001167, 'D_E10': 0.0000467},
+           'D_E01': 0.00001631, 'D_E02': 0.00001631, 'D_E03': 0.00001631, 'D_E04': 0.00008169, 'D_E05': 0.00004081,
+           'D_E06': 0.00008169, 'D_E07': 0.00001631, 'D_E08': 0.0000245, 'D_E09': 0.0008169, 'D_E10': 0.0000467},
     'D_E10': {  # Shipping Lines — logistics/infrastructure; company-level referrals rare
-           'S1': 0.0000033, 'S2': 0.0000033, 'S3': 0.0000067, 'E1': 0.00001, 'E2': 0.0000067, 'E3': 0.0000167,
+           'S1': 0.0000033, 'S2': 0.0000033, 'S3': 0.0000067, 'E1': 0.000007, 'E2': 0.00000469, 'E3': 0.00001169,
            'D_S01': 0.0000033, 'D_S02': 0.0000033, 'D_S03': 0.0000033, 'D_S04': 0.0000033, 'D_S05': 0.0000033,
            'D_S06': 0.0000033, 'D_S07': 0.0000067, 'D_S08': 0.0000033, 'D_S09': 0.0000033, 'D_S10': 0.0000033,
-           'D_E01': 0.00001, 'D_E02': 0.0000033, 'D_E03': 0.0000033, 'D_E04': 0.00001, 'D_E05': 0.0000133,
-           'D_E06': 0.0000167, 'D_E07': 0.0000167, 'D_E08': 0.0000167, 'D_E09': 0.0000133, 'D_E10': 0.000333},
+           'D_E01': 0.000007, 'D_E02': 0.00000231, 'D_E03': 0.00000231, 'D_E04': 0.000007, 'D_E05': 0.00000931,
+           'D_E06': 0.00001169, 'D_E07': 0.00001169, 'D_E08': 0.00001169, 'D_E09': 0.00000931, 'D_E10': 0.000333},
 }
 
 

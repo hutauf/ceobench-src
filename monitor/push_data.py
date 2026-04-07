@@ -35,7 +35,12 @@ def _open_run_db(run_dir: Path) -> sqlite3.Connection | None:
     """
     nmdb_path = run_dir / "world.nmdb"
     if not nmdb_path.exists():
-        return None
+        # --workspace creates nested subdirs; search recursively
+        candidates = list(run_dir.rglob("world.nmdb"))
+        if candidates:
+            nmdb_path = candidates[0]
+        else:
+            return None
     try:
         from saas_bench.db_protection import load_session_db
         return load_session_db(nmdb_path)
@@ -44,11 +49,11 @@ def _open_run_db(run_dir: Path) -> sqlite3.Connection | None:
 
 # Run registry
 RUN_REGISTRY = {
-    "01ffbf46": {"label": "GLM-5 v3.2r run 1", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "8f02ee5f": {"label": "GLM-5 v3.2r run 2", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "a7845d76": {"label": "GLM-5 v3.2r run 3", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "ad005d5c": {"label": "GLM-5 v3.2r run 4", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
-    "eb53faf1": {"label": "GLM-5 v3.2r run 5", "model": "GLM-5-FP8", "seed": 42, "days": 1095},
+    "e9f396b5": {"label": "GLM-5 v3.2u run 1", "model": "GLM-5-FP8", "seed": 42, "days": 500},
+    "fa20a32e": {"label": "GLM-5 v3.2u run 2", "model": "GLM-5-FP8", "seed": 42, "days": 500},
+    "eea59420": {"label": "GLM-5 v3.2u run 3", "model": "GLM-5-FP8", "seed": 42, "days": 500},
+    "10d45726": {"label": "GLM-5 v3.2u run 4", "model": "GLM-5-FP8", "seed": 42, "days": 500},
+    "0b13b588": {"label": "GLM-5 v3.2u run 5", "model": "GLM-5-FP8", "seed": 42, "days": 500},
 }
 
 
@@ -98,6 +103,30 @@ def get_dividend_series_from_db(run_dir: Path, max_points: int = 200) -> list:
         if len(series) > max_points:
             step = len(series) // max_points
             series = [s for i, s in enumerate(series) if i % step == 0 or i == len(series) - 1]
+        return series
+    except Exception:
+        return []
+
+
+def get_ads_revenue_series_from_db(run_dir: Path, max_points: int = 200) -> list:
+    """Daily ads revenue per active customer group. Returns list of {day, group_id, revenue}."""
+    conn = _open_run_db(run_dir)
+    if not conn:
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT day, group_id, SUM(revenue) as total_revenue "
+            "FROM ads_revenue GROUP BY day, group_id ORDER BY day, group_id"
+        ).fetchall()
+        conn.close()
+        if not rows:
+            return []
+        series = [{"day": r[0], "group_id": r[1], "revenue": round(r[2], 2)} for r in rows]
+        unique_days = sorted(set(r[0] for r in rows))
+        if len(unique_days) > max_points:
+            step = len(unique_days) // max_points
+            keep_days = set(d for i, d in enumerate(unique_days) if i % step == 0 or i == len(unique_days) - 1)
+            series = [s for s in series if s["day"] in keep_days]
         return series
     except Exception:
         return []
@@ -389,8 +418,22 @@ def _brief_args(args):
         return ""
 
 
+def _resolve_inner_run_dir(run_dir: Path) -> Path:
+    """Resolve the actual inner run directory created by --workspace.
+
+    --workspace creates: run_<outer>/run_<inner>/config.json, logs/, agent_workspace/...
+    Returns the inner dir if it exists, otherwise the original run_dir.
+    """
+    # Look for config.json recursively — it's always at the inner run root
+    candidates = list(run_dir.glob("run_*/config.json"))
+    if candidates:
+        return candidates[0].parent
+    return run_dir
+
+
 def get_run_data(run_id: str) -> dict:
     run_dir = RUNS_DIR / f"run_{run_id}"
+    inner_dir = _resolve_inner_run_dir(run_dir)
     reg = RUN_REGISTRY.get(run_id, {})
     data = {
         "run_id": run_id,
@@ -414,7 +457,7 @@ def get_run_data(run_id: str) -> dict:
         data["last_heartbeat"] = None
 
     # Config
-    config_path = run_dir / "config.json"
+    config_path = inner_dir / "config.json"
     if config_path.exists():
         with open(config_path) as f:
             cfg = json.load(f)
@@ -424,7 +467,7 @@ def get_run_data(run_id: str) -> dict:
                 data["total_days"] = cfg.get("total_days")
 
     # Checkpoint
-    cp_path = run_dir / "checkpoint.json"
+    cp_path = inner_dir / "checkpoint.json"
     if cp_path.exists():
         try:
             with open(cp_path) as f:
@@ -439,7 +482,12 @@ def get_run_data(run_id: str) -> dict:
         data["agent_turns"] = None
 
     # Stats: try JSONL run log first, fall back to DB
-    run_jsonl = run_dir / "logs" / f"run_{run_id}.jsonl"
+    # Search for run_*.jsonl recursively (--workspace nests it deeply)
+    run_jsonl = inner_dir / "logs" / f"run_{run_id}.jsonl"
+    if not run_jsonl.exists():
+        jsonl_candidates = list(run_dir.rglob("run_*.jsonl"))
+        if jsonl_candidates:
+            run_jsonl = jsonl_candidates[0]
     got_stats_from_jsonl = False
     if run_jsonl.exists():
         try:
@@ -559,6 +607,9 @@ def get_run_data(run_id: str) -> dict:
     # Q_min per group over time (discovered only)
     data["qmin_series"] = [s for s in get_qmin_series_from_db(run_dir) if s["group_id"] in discovered]
 
+    # Ads revenue per group over time (discovered only)
+    data["ads_revenue_series"] = [s for s in get_ads_revenue_series_from_db(run_dir) if s["group_id"] in discovered]
+
     # Seat series (individual + enterprise)
     data["seat_series"] = get_seat_series_from_db(run_dir)
 
@@ -586,7 +637,8 @@ def get_run_data(run_id: str) -> dict:
         pass
 
     # Recent actions (last 100)
-    tr_path = run_dir / "logs" / f"tool_results_{run_id}.jsonl"
+    inner_id = inner_dir.name.replace("run_", "") if inner_dir != run_dir else run_id
+    tr_path = inner_dir / "logs" / f"tool_results_{inner_id}.jsonl"
     actions = []
     if tr_path.exists():
         with open(tr_path) as f:
@@ -601,8 +653,76 @@ def get_run_data(run_id: str) -> dict:
         actions.reverse()
     data["recent_actions"] = actions
 
+    # Daily rationales (extract from tool_results — log_rationale calls)
+    import re
+    rationales = []
+    if tr_path.exists():
+        # First pass: collect write_file entries for script-based rationales
+        script_contents = {}  # filename -> content
+        entries = []
+        with open(tr_path) as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    entries.append(entry)
+                    if entry.get("tool") == "write_file":
+                        path = entry.get("arguments", {}).get("path", "")
+                        if "log_rationale" in path and path.endswith(".py"):
+                            fname = path.rsplit("/", 1)[-1] if "/" in path else path
+                            script_contents[fname] = entry.get("arguments", {}).get("content", "")
+                except (json.JSONDecodeError, Exception):
+                    continue
+        # Second pass: extract rationales
+        for entry in entries:
+            try:
+                tool = entry.get("tool", "")
+                cmd = entry.get("arguments", {}).get("command", "")
+                result = str(entry.get("result", ""))
+                if tool != "bash" or "log_rationale" not in cmd:
+                    continue
+                text = ""
+                # Case 1: inline log_rationale('''...''') or similar
+                for pattern in [r"log_rationale\('''(.*?)'''\)", r'log_rationale\("""(.*?)"""\)', r"log_rationale\('(.*?)'\)", r'log_rationale\("(.*?)"\)']:
+                    m = re.search(pattern, cmd, re.DOTALL)
+                    if m:
+                        text = m.group(1)
+                        break
+                # Case 2: log_rationale(\n    rationale='...' or keyword arg
+                if not text:
+                    m = re.search(r"log_rationale\(\s*(?:rationale=)?['\"](.+?)['\"]", cmd, re.DOTALL)
+                    if m:
+                        text = m.group(1)
+                # Case 3: script-based (e.g. ./novamind-operation python log_rationale_d46.py)
+                if not text:
+                    m = re.search(r"(log_rationale\w*\.py)", cmd)
+                    if m:
+                        fname = m.group(1)
+                        script = script_contents.get(fname, "")
+                        if script:
+                            # Extract from script content
+                            for sp in [r"log_rationale\('''(.*?)'''\)", r'log_rationale\("""(.*?)"""\)', r"log_rationale\('(.*?)'\)", r'log_rationale\("(.*?)"\)']:
+                                sm = re.search(sp, script, re.DOTALL)
+                                if sm:
+                                    text = sm.group(1)
+                                    break
+                            if not text:
+                                sm = re.search(r"log_rationale\(\s*(?:rationale=)?['\"](.+?)['\"]", script, re.DOTALL)
+                                if sm:
+                                    text = sm.group(1)
+                # Only include if we got real text (not raw commands)
+                if text and not text.startswith("./novamind"):
+                    rationales.append({
+                        "day": entry.get("day"),
+                        "turn": entry.get("turn"),
+                        "timestamp": entry.get("timestamp"),
+                        "text": text[:3000],
+                    })
+            except Exception:
+                continue
+    data["daily_rationales"] = rationales
+
     # Recent raw responses (last 30)
-    rr_path = run_dir / "logs" / f"raw_responses_{run_id}.jsonl"
+    rr_path = inner_dir / "logs" / f"raw_responses_{inner_id}.jsonl"
     responses = []
     if rr_path.exists():
         with open(rr_path) as f:
@@ -616,7 +736,7 @@ def get_run_data(run_id: str) -> dict:
     data["recent_responses"] = responses
 
     # Timing data (from timing_<run_id>.jsonl)
-    timing_path = run_dir / "logs" / f"timing_{run_id}.jsonl"
+    timing_path = inner_dir / "logs" / f"timing_{inner_id}.jsonl"
     recent_turns = []
     if timing_path.exists():
         day_summaries = []

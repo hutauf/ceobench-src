@@ -274,7 +274,7 @@
     "impact": {
       "advertising": "Generates new leads. Each channel has a fixed leads-per-$1000 rate per customer group. Use set_ad_channel_spend for channel allocation, set_targeted_ad_spend for per-group targeting.",
       "operations": "CRITICAL: (1) REDUCES OUTAGE PROBABILITY - At $0: ~3% daily outage risk (~1/month). At $500: ~1.1% daily (~3/year). (2) Speeds up issue resolution: mean resolved/day = 1 + 0.01 \u00d7 spend. WARNING: Without ops spending, frequent outages damage reputation and cause churn!",
-      "development": "Dev spending improves product quality (amplified by model tier). Global improvement = 0.001 \u00d7 ln(1 + global_spend/1000) per day (applies to all groups). Targeted per-group improvement = 0.005 \u00d7 ln(1 + targeted_spend/1000) per day (5\u00d7 coefficient, applies to that group only, stacks with global). delivered_quality = (base_product_quality + q_shared_bonus + q_group_bonus) \u00d7 tier_multiplier."
+      "development": "Dev spending improves product quality (amplified by model tier). Global improvement = 0.0045 \u00d7 ln(1 + global_spend/5000) per day (applies to all groups). Targeted per-group improvement = 0.0225 \u00d7 ln(1 + targeted_spend/5000) per day (5\u00d7 coefficient, applies to that group only, stacks with global). delivered_quality = (base_product_quality + q_shared_bonus + q_group_bonus) \u00d7 tier_multiplier."
     },
     "example_call": {
       "tool": "set_daily_spend",
@@ -284,7 +284,7 @@
         "development": 600
       }
     },
-    "internal_notes": "Ops: outage_prob = 0.03 * exp(-0.002 * ops_spend). Issue resolution: mean_resolved/day = 1 + 0.01 * spend. Dev: quality_improvement = 0.001 * ln(1 + spend/1000). Advertising: each channel has fixed leads_per_1000_dollars per group.",
+    "internal_notes": "Ops: outage_prob = 0.03 * exp(-0.002 * ops_spend). Issue resolution: mean_resolved/day = 1 + 0.01 * spend. Dev (global): quality_improvement = 0.0045 * ln(1 + spend/5000). Dev (targeted per-group): group_improvement = 0.0225 * ln(1 + spend/5000). Advertising: each channel has fixed leads_per_1000_dollars per group.",
     "sample_io": {
       "success": [
         {
@@ -952,13 +952,13 @@
   "send_enterprise_deal": {
     "name": "send_enterprise_deal",
     "category": "Customer Communication",
-    "description": "Send enterprise deal offerings. Compact tuple format: each deal = [customer_id, [[plan, price_per_seat, contract_months], ...]]. If the customer has an open negotiation thread, replies to it. If no open thread, initiates renegotiation. Up to 3 offerings per deal. Customer picks the best. Late replies damage relationship (-0.02/day after 1 day grace). No response within 3 days = customer LOST FOREVER.",
+    "description": "Send enterprise deal offerings. Compact tuple format: each deal = [customer_id, [[plan, price_per_seat], ...]]. All contracts are month-to-month (1 month). If the customer has an open negotiation thread, replies to it. If no open thread, initiates renegotiation. Up to 3 offerings per deal. Customer picks the best. Late replies damage relationship (-0.02/day after 1 day grace). No response within 3 days = customer LOST FOREVER.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "deals": {
           "type": "array",
-          "description": "List of deals. Each deal = [customer_id, [[plan, price_per_seat, contract_months], ...]]",
+          "description": "List of deals. Each deal = [customer_id, [[plan, price_per_seat], ...]]",
           "items": {
             "type": "array",
             "description": "[customer_id, offerings] where offerings = [[plan, price, months], ...]"
@@ -972,20 +972,18 @@
     "parameters": {
       "deals": {
         "type": "list[list]",
-        "description": "List of [customer_id, offerings] tuples. offerings = list of [plan, price_per_seat, contract_months] tuples (contract_months defaults to 1 if omitted). If customer has an open thread, replies to it; otherwise initiates renegotiation.",
+        "description": "List of [customer_id, offerings] tuples. offerings = list of [plan, price_per_seat] tuples. All contracts are month-to-month (1 month). If customer has an open thread, replies to it; otherwise initiates renegotiation.",
         "example": [
           [
             312,
             [
               [
                 "A",
-                9.0,
-                6
+                9.0
               ],
               [
                 "B",
-                14.0,
-                12
+                14.0
               ]
             ]
           ],
@@ -994,8 +992,7 @@
             [
               [
                 "B",
-                12.0,
-                6
+                12.0
               ]
             ]
           ]
@@ -1006,7 +1003,7 @@
       "success": "Processed 2/2 deals:\n  Customer #312: reply sent with 2 offering(s)\n  Customer #88: renegotiation initiated, 2 offering(s) sent",
       "failure": "Customer #312: not found / Customer #88: already has an active thread / offerings required"
     },
-    "impact": "Customer evaluates ALL offerings and picks the one with highest satisfaction. Satisfaction = quality_perceived - quality_required(price) - contract_penalty. Contract lock-in penalty varies per customer group (e.g. price-sensitive individuals ~0.8%/month, strategic enterprises ~0.2%/month \u2014 longer contracts penalize satisfaction, offset with lower prices). Customer accepts if best satisfaction > 0, counter-offers otherwise. Max negotiation turns = customer ghosts. Late replies (>1 day) damage relationship -0.02/day. No response within 3 days = customer permanently lost. Renegotiation (no open thread): creates new thread. WARNING: if the customer rejects all offerings OR the thread times out, the customer CHURNS (cancels subscription).",
+    "impact": "Customer evaluates ALL offerings and picks the one with highest satisfaction. Satisfaction = quality_perceived - quality_required(price). All contracts are month-to-month (1 month). Customer accepts if best satisfaction > 0, counter-offers otherwise. Max negotiation turns = customer ghosts. Late replies (>1 day) damage relationship -0.02/day. No response within 3 days = customer permanently lost. Renegotiation (no open thread): creates new thread. WARNING: if the customer rejects all offerings OR the thread times out, the customer CHURNS (cancels subscription).",
     "example_call": {
       "tool": "send_enterprise_deal",
       "arguments": {
@@ -1016,13 +1013,11 @@
             [
               [
                 "A",
-                9.0,
-                6
+                9.0
               ],
               [
                 "B",
-                14.0,
-                12
+                14.0
               ]
             ]
           ],
@@ -1031,15 +1026,14 @@
             [
               [
                 "B",
-                12.0,
-                6
+                12.0
               ]
             ]
           ]
         ]
       }
     },
-    "internal_notes": "Accepts tuple format [cid, [[plan,price,months],...]] or legacy dict format. If customer has open thread, replies (with late-reply penalty). If no open thread, initiates renegotiation (requires active subscription). Satisfaction = Q_perceived - Q_required(price) - contract_lockin_penalty * (months-1). Lock-in penalty is per-customer (sampled from group distribution at creation: S1=0.008, S2=0.005, S3=0.006, E1=0.005, E2=0.003, E3=0.002). Late penalty = -0.02 * max(0, days_since_msg - 1). Max offerings = 3.",
+    "internal_notes": "Accepts tuple format [cid, [[plan,price],...]] or legacy dict format. If customer has open thread, replies (with late-reply penalty). If no open thread, initiates renegotiation (requires active subscription). Satisfaction = Q_perceived - Q_required(price). All contracts are month-to-month (1 month). Late penalty = -0.02 * max(0, days_since_msg - 1). Max offerings = 3.",
     "sample_io": {
       "success": [
         {
@@ -1051,18 +1045,15 @@
                 [
                   [
                     "A",
-                    9.0,
-                    6
+                    9.0
                   ],
                   [
                     "B",
-                    14.0,
-                    12
+                    14.0
                   ],
                   [
                     "C",
-                    22.0,
-                    12
+                    22.0
                   ]
                 ]
               ]
@@ -1079,13 +1070,11 @@
                 [
                   [
                     "B",
-                    12.0,
-                    6
+                    12.0
                   ],
                   [
                     "B",
-                    11.0,
-                    12
+                    11.0
                   ]
                 ]
               ]
@@ -1102,8 +1091,7 @@
                 [
                   [
                     "A",
-                    9.0,
-                    6
+                    9.0
                   ]
                 ]
               ],
@@ -1112,8 +1100,7 @@
                 [
                   [
                     "B",
-                    12.0,
-                    6
+                    12.0
                   ]
                 ]
               ]
@@ -1132,8 +1119,7 @@
                 [
                   [
                     "A",
-                    9.0,
-                    6
+                    9.0
                   ]
                 ]
               ]
@@ -1162,8 +1148,7 @@
                 [
                   [
                     "B",
-                    11.0,
-                    6
+                    11.0
                   ]
                 ]
               ]
@@ -2150,7 +2135,7 @@
   "get_group_insights": {
     "name": "get_group_insights",
     "category": "Market Discovery",
-    "description": "Get estimated parameters for a discovered customer group based on current info level. Returns noisy estimates that improve with higher info levels. Attributes returned: (1) willingness_to_pay \u2014 max monthly budget, (2) usage_volume \u2014 daily compute usage, (3) quality_expectations \u2014 expected quality level, (4) contract_lockin_aversion \u2014 satisfaction penalty per extra contract month (higher = hates lock-in more), (5) market_cap \u2014 total addressable customers, (6) market_cap_growth \u2014 annual TAM expansion rate. Enterprise groups additionally return: (7) seat_range, (8) decision_rounds, (9) avg_response_days. Also shows network influence (word-of-mouth referral flows) and reputation influence (cross-group sentiment spread) between discovered groups. Estimates are deterministic (same query = same result).",
+    "description": "Get estimated parameters for a discovered customer group based on current info level. Returns noisy estimates that improve with higher info levels. Attributes returned: (1) willingness_to_pay \u2014 max monthly budget, (2) usage_volume \u2014 daily compute usage, (3) quality_expectations \u2014 expected quality level, (4) market_cap \u2014 total addressable customers, (5) market_cap_growth \u2014 annual TAM expansion rate. Enterprise groups additionally return: (6) seat_range, (7) decision_rounds, (8) avg_response_days. Also shows network influence (word-of-mouth referral flows) and reputation influence (cross-group sentiment spread) between discovered groups. Estimates are deterministic (same query = same result).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2175,7 +2160,7 @@
       }
     },
     "returns": {
-      "example": "=== Group Insights: Niche Creators (D_S01) ===\nSegment: Individual\nInfo Level: 2 (estimates accurate to \u00b140%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$92/mo (max monthly budget)\n  Usage volume:          ~38 units/day\n  Quality expectations:  ~0.61 (expected quality level)\n  Contract lock-in aversion: ~0.0072/month (satisfaction penalty per extra contract month)\n  Market cap:            ~185,000 (total addressable customers)\n  Market cap growth:     ~9.2%/year (annual market expansion)\n\n--- Network Influence (word-of-mouth referrals) ---\nUnit: leads per 1000 subscribers per day (at neutral reputation)\n  Self-referral rate: ~4.2 leads per 1000 subs/day\n\nOutgoing (this group's subs \u2192 leads in other groups):\n  \u2192 Music Producers (D_S10): ~1.8 leads per 1000 subs/day\n  \u2192 Indie Game Devs (D_S05): ~1.2 leads per 1000 subs/day\n  \u2192 S1: ~0.9 leads per 1000 subs/day\n\nIncoming (other groups' subs \u2192 leads in this group):\n  \u2190 S1: ~1.3 leads per 1000 subs/day\n  \u2190 Music Producers (D_S10): ~0.8 leads per 1000 subs/day\n\n--- Reputation Influence (cross-group sentiment spread) ---\nUnit: dimensionless weight (0-1, higher = stronger influence)\n\nOutgoing (this group's reputation events \u2192 other groups):\n  \u2192 S1: ~0.150\n  \u2192 Indie Game Devs (D_S05): ~0.120\n\nIncoming (other groups' events \u2192 this group):\n  \u2190 S1: ~0.150\n  \u2190 S3: ~0.120\n\nNote: All estimates have \u00b140% uncertainty at Level 2.\nUse research_group('D_S01') to upgrade to Level 3 (\u00b125%).",
+      "example": "=== Group Insights: Niche Creators (D_S01) ===\nSegment: Individual\nInfo Level: 2 (estimates accurate to \u00b140%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$92/mo (max monthly budget)\n  Usage volume:          ~38 units/day\n  Quality expectations:  ~0.61 (expected quality level)\n  Market cap:            ~185,000 (total addressable customers)\n  Market cap growth:     ~9.2%/year (annual market expansion)\n\n--- Network Influence (word-of-mouth referrals) ---\nUnit: leads per 1000 subscribers per day (at neutral reputation)\n  Self-referral rate: ~4.2 leads per 1000 subs/day\n\nOutgoing (this group's subs \u2192 leads in other groups):\n  \u2192 Music Producers (D_S10): ~1.8 leads per 1000 subs/day\n  \u2192 Indie Game Devs (D_S05): ~1.2 leads per 1000 subs/day\n  \u2192 S1: ~0.9 leads per 1000 subs/day\n\nIncoming (other groups' subs \u2192 leads in this group):\n  \u2190 S1: ~1.3 leads per 1000 subs/day\n  \u2190 Music Producers (D_S10): ~0.8 leads per 1000 subs/day\n\n--- Reputation Influence (cross-group sentiment spread) ---\nUnit: dimensionless weight (0-1, higher = stronger influence)\n\nOutgoing (this group's reputation events \u2192 other groups):\n  \u2192 S1: ~0.150\n  \u2192 Indie Game Devs (D_S05): ~0.120\n\nIncoming (other groups' events \u2192 this group):\n  \u2190 S1: ~0.150\n  \u2190 S3: ~0.120\n\nNote: All estimates have \u00b140% uncertainty at Level 2.\nUse research_group('D_S01') to upgrade to Level 3 (\u00b125%).",
       "data": {
         "group_id": "S1",
         "group_name": "Price-Sensitive Individuals",
@@ -2219,7 +2204,7 @@
       "willingness_to_pay": "Maximum the customer group will pay per month. For enterprise, this is per-seat.",
       "usage_volume": "Expected daily usage in compute units per customer.",
       "quality_expectations": "The quality level customers expect from the service. Higher = more demanding.",
-      "contract_lockin_aversion": "Per-customer satisfaction penalty per additional contract month beyond 1. Higher = group strongly dislikes long contracts (e.g., freelancers ~0.008), lower = accepts multi-year deals (e.g., government ~0.001). Formula: satisfaction -= lockin_aversion \u00d7 (contract_months - 1). Offset long contracts with lower prices.",
+      "contract_lockin_aversion": "Legacy field — all contracts are now month-to-month (1 month). This parameter is no longer actionable.",
       "market_cap": "Total addressable customers (base market cap). Growth slows as current subscribers approach this cap.",
       "annual_market_cap_growth_rate": "Annual growth rate of the market cap. The cap expands over time: cap(t) = market_cap * (1 + growth_rate * t/365).",
       "seat_range": "(Enterprise only) Estimated team size range.",
@@ -2244,21 +2229,21 @@
           "input": {
             "group_id": "D_S01"
           },
-          "output": "=== Group Insights: Niche Creators (D_S01) ===\nSegment: Individual\nInfo Level: 2 (\u00b140%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$92/mo\n  Usage volume:          ~38 units/day\n  Quality expectations:  ~0.61\n  Contract lock-in aversion: ~0.0072/month\n  Market cap:            ~185,000\n  Growth:                ~9.2%/year\n\nNetwork Influence:\n  Self-referral: ~4.2 leads/1000 subs/day\n  Outgoing: \u2192 D_S10: ~1.8, \u2192 S1: ~0.9\n  Incoming: \u2190 S1: ~1.3"
+          "output": "=== Group Insights: Niche Creators (D_S01) ===\nSegment: Individual\nInfo Level: 2 (\u00b140%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$92/mo\n  Usage volume:          ~38 units/day\n  Quality expectations:  ~0.61\n  Market cap:            ~185,000\n  Growth:                ~9.2%/year\n\nNetwork Influence:\n  Self-referral: ~4.2 leads/1000 subs/day\n  Outgoing: \u2192 D_S10: ~1.8, \u2192 S1: ~0.9\n  Incoming: \u2190 S1: ~1.3"
         },
         {
           "label": "Enterprise group",
           "input": {
             "group_id": "E1"
           },
-          "output": "=== Group Insights: Small Enterprise (E1) ===\nSegment: Enterprise\nInfo Level: 5 (\u00b15%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$22/seat/mo\n  Seat range:            10-50 seats\n  Usage volume:          ~25 units/day/seat\n  Quality expectations:  ~0.65\n  Contract lock-in aversion: ~0.0048/month\n  Market cap:            ~45,000\n  Decision rounds:       ~3\n  Avg response days:     ~2.5\n\nNetwork Influence:\n  Self-referral: ~2.1 leads/1000 subs/day\n  Outgoing: \u2192 E2: ~1.2, \u2192 S1: ~0.5"
+          "output": "=== Group Insights: Small Enterprise (E1) ===\nSegment: Enterprise\nInfo Level: 5 (\u00b15%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$22/seat/mo\n  Seat range:            10-50 seats\n  Usage volume:          ~25 units/day/seat\n  Quality expectations:  ~0.65\n  Market cap:            ~45,000\n  Decision rounds:       ~3\n  Avg response days:     ~2.5\n\nNetwork Influence:\n  Self-referral: ~2.1 leads/1000 subs/day\n  Outgoing: \u2192 E2: ~1.2, \u2192 S1: ~0.5"
         },
         {
           "label": "Initial group at full accuracy",
           "input": {
             "group_id": "S1"
           },
-          "output": "=== Group Insights: Price-Sensitive Individuals (S1) ===\nSegment: Individual\nInfo Level: 5 (\u00b15%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$45/mo\n  Usage volume:          ~20 units/day\n  Quality expectations:  ~0.50\n  Contract lock-in aversion: ~0.0078/month\n  Market cap:            ~500,000\n  Growth:                ~5.0%/year"
+          "output": "=== Group Insights: Price-Sensitive Individuals (S1) ===\nSegment: Individual\nInfo Level: 5 (\u00b15%)\n\nEstimated Parameters:\n  Willingness to pay:    ~$45/mo\n  Usage volume:          ~20 units/day\n  Quality expectations:  ~0.50\n  Market cap:            ~500,000\n  Growth:                ~5.0%/year"
         }
       ],
       "failure": [
@@ -2328,14 +2313,14 @@
           "input": {
             "tier": 1
           },
-          "output": "=== R&D Tier Started ===\nTier 1: Prompt Engineering Optimization (invocation t1_1)\nCost: $250,000 (deducted)\nExpected completion: ~day 42 (42 days)\nExpected quality boost: +0.048\nDescription: Systematic prompt tuning and output consistency improvements"
+          "output": "=== R&D Tier Started ===\nTier 1: Prompt Engineering Optimization (invocation t1_1)\nCost: $166,667 (deducted)\nExpected completion: ~day 12 (12 days)\nExpected quality boost: +0.048\nDescription: Systematic prompt tuning and output consistency improvements"
         },
         {
           "label": "Repeat tier 1",
           "input": {
             "tier": 1
           },
-          "output": "=== R&D Tier Started ===\nTier 1: Prompt Engineering Optimization (invocation t1_2)\nCost: $250,000 (deducted)\nExpected completion: ~day 185 (33 days)\nExpected quality boost: +0.029\nDescription: Systematic prompt tuning and output consistency improvements"
+          "output": "=== R&D Tier Started ===\nTier 1: Prompt Engineering Optimization (invocation t1_2)\nCost: $166,667 (deducted)\nExpected completion: ~day 185 (12 days)\nExpected quality boost: +0.029\nDescription: Systematic prompt tuning and output consistency improvements"
         }
       ],
       "failure": [
@@ -2351,7 +2336,7 @@
           "input": {
             "tier": 5
           },
-          "output": "Insufficient funds. Tier 5 costs $1,250,000. Available: $18,000"
+          "output": "Insufficient funds. Tier 5 costs $625,000. Available: $18,000"
         }
       ]
     }

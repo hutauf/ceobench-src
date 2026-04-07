@@ -80,9 +80,9 @@ Each customer has a personal quality-price curve:
 - Per-group quality bonus: CUMULATIVE from targeted dev spend (persists after spending stops)
 
 ### Quality Dynamics
-- Development spending improves quality: global improvement = 0.001 × ln(1 + global_spend/1000), targeted per-group improvement = 0.005 × ln(1 + targeted_spend/1000) (5× coefficient, stacks with global)
+- Development spending improves quality: global improvement = 0.0045 × ln(1 + global_spend/5000), targeted per-group improvement = 0.0225 × ln(1 + targeted_spend/5000) (5× coefficient, stacks with global)
 - Customer expected quality drifts upward over time (global drift + per-group drift)
-- Competitor events occur randomly and raise customer quality expectations across all groups — these are permanent upward shifts that cannot be reversed, only offset via dev spending or R&D breakthroughs
+- Competitor events occur randomly and raise customer quality expectations across all groups — these are permanent upward shifts that cannot be reversed, only offset via dev spending or R&D breakthroughs. Competitor magnitude scales linearly from 1× to 4× over the simulation duration.
 - R&D research tiers provide permanent quality boosts (10 independent tiers)
 
 ### Churn & Plan Changes
@@ -97,7 +97,7 @@ Each customer has a personal quality-price curve:
 ### Negotiation Flow
 - Enterprise customers arrive as negotiation threads (stored in the `enterprise_turns` table)
 - Thread types: `new_lead` (inbound), `renegotiation` (you initiate), `churn_prevention`, `plan_change`
-- You MUST respond with `send_enterprise_deal` using compact tuple format: `deals=[[customer_id, [["plan", price_per_seat, contract_months], ...]]]`
+- You MUST respond with `send_enterprise_deal` using compact tuple format: `deals=[[customer_id, [["plan", price_per_seat], ...]]]` — all contracts are month-to-month (1 month)
 - Grace period: 1 day to reply with no penalty
 - Late reply: -0.02 relationship/day after grace period
 - 3-day timeout: if YOU (the agent) do not reply within 3 days, the lead is PERMANENTLY LOST (or existing customer cancels). The clock starts when the customer message arrives — you must call `send_enterprise_deal` within 3 simulation days.
@@ -105,11 +105,11 @@ Each customer has a personal quality-price curve:
 
 ### Proactive Renegotiation
 - `send_enterprise_deal` auto-detects: if a customer has an open thread, it replies; if no open thread, it initiates a renegotiation
-- No separate tool needed — just call `send_enterprise_deal` with `deals=[[customer_id, [offerings]]]` for any active enterprise subscriber
+- No separate tool needed — just call `send_enterprise_deal` with `deals=[[customer_id, [["plan", price_per_seat], ...]]]` for any active enterprise subscriber
 - Use `reject_enterprise_deal` to explicitly reject threads — WARNING: rejecting renegotiation/renewal/churn_prevention threads causes the customer to CHURN
 
 ### Batch Operations (Efficiency)
-- `send_enterprise_deal(deals=[[cid1, [offerings]], [cid2, [offerings]]])` — send offerings to multiple enterprise customers in one call
+- `send_enterprise_deal(deals=[[cid1, [["plan", price]], [cid2, [["plan", price]]]])` — send offerings to multiple enterprise customers in one call
 - `reject_enterprise_deal(deals=[...])` — reject multiple threads in one call
 - Query the `enterprise_turns` table to read negotiation data (each row is a message identified by `message_id`)
 
@@ -143,20 +143,20 @@ Daily costs: capacity tier + compute (usage × tier cost) + advertising + operat
 
 ### Development
 - Customer expected quality changes over time
-- Global quality improvement: 0.001 × ln(1 + spend/1000) per day (applies to all groups)
-- Per-group targeting via `set_targeted_dev_spend`: 0.005 × ln(1 + spend/1000) per day (5× coefficient, ACCUMULATES group-specific quality bonus; persists after spending stops)
+- Global quality improvement: 0.006 × ln(1 + spend/5000) per day (applies to all groups)
+- Per-group targeting via `set_targeted_dev_spend`: 0.030 × ln(1 + spend/5000) per day (5× coefficient, ACCUMULATES group-specific quality bonus; persists after spending stops)
 
 ## R&D Research Tiers
 
 - 10 independent tiers — no dependencies, any tier can be started at any time
 - *Repeatable:* each tier can be started multiple times (one in-progress invocation per tier at a time)
-- Cost grows linearly ($100K per tier): Tier 1 = $100K, Tier 10 = $1M
+- Cost grows with tier (use `list_research_projects` to see exact costs per tier)
 - Duration grows non-linearly (35–380 days mean) with high variance (~40-50% CV)
 - Quality boost grows non-linearly (+0.04 to +0.85 mean) with high variance (~50% CV)
 - Both duration and quality are sampled from Normal distributions when you start — results vary!
 - R&D provides quality jumps that are *impossible* to achieve through dev spending alone (log saturation)
 - Use `start_research_project(tier=N)` to begin, `list_research_projects` to see all tiers and status
-- Strategic insight: competitor events average ~+0.35/year quality pressure; dev spending covers ~+0.25/year at $1K/day; you need R&D to close the gap
+- Strategic insight: competitor events create increasing quality pressure over time; dev spending alone may not keep up — you need R&D to close the gap
 
 ## Customer Issues
 

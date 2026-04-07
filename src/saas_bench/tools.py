@@ -195,13 +195,13 @@ TOOL_DOCS = {
         "impact": {
             "advertising": "Generates new leads. Each channel has a fixed leads-per-$1000 rate per customer group. Use set_ad_channel_spend for channel allocation, set_targeted_ad_spend for per-group targeting.",
             "operations": "CRITICAL: (1) REDUCES OUTAGE PROBABILITY - At $0: ~3% daily outage risk (~1/month). At $500: ~1.1% daily (~3/year). (2) Speeds up issue resolution: mean resolved/day = 1 + 0.01 × spend. WARNING: Without ops spending, frequent outages damage reputation and cause churn!",
-            "development": "Dev spending improves product quality (amplified by model tier). Global improvement = 0.001 × ln(1 + global_spend/1000) per day (applies to all groups). Targeted per-group improvement = 0.005 × ln(1 + targeted_spend/1000) per day (5× coefficient, applies to that group only, stacks with global). delivered_quality = (base_product_quality + q_shared_bonus + q_group_bonus) × tier_multiplier."
+            "development": "Dev spending improves product quality (amplified by model tier). Global improvement = 0.006 × ln(1 + global_spend/5000) per day (applies to all groups). Targeted per-group improvement = 0.030 × ln(1 + targeted_spend/5000) per day (5× coefficient, applies to that group only, stacks with global). delivered_quality = (base_product_quality + q_shared_bonus + q_group_bonus) × tier_multiplier."
         },
         "example_call": {
             "tool": "set_daily_spend",
             "arguments": {"advertising": 800, "operations": 1200, "development": 600}
         },
-        "internal_notes": "Ops: outage_prob = 0.03 * exp(-0.002 * ops_spend). Issue resolution: mean_resolved/day = 1 + 0.01 * spend. Dev (global): quality_improvement = 0.001 * ln(1 + spend/1000). Dev (targeted per-group): group_improvement = 0.005 * ln(1 + spend/1000). Advertising: each channel has fixed leads_per_1000_dollars per group.",
+        "internal_notes": "Ops: outage_prob = 0.03 * exp(-0.002 * ops_spend). Issue resolution: mean_resolved/day = 1 + 0.01 * spend. Dev (global): quality_improvement = 0.006 * ln(1 + spend/5000). Dev (targeted per-group): group_improvement = 0.030 * ln(1 + spend/5000). Advertising: each channel has fixed leads_per_1000_dollars per group.",
         "sample_io": {
             "success": [
                 {"label": "Set all three budgets", "input": {"advertising": 800, "operations": 1200, "development": 600}, "output": "Daily spend updated: advertising=$800, operations=$1200, development=$600"},
@@ -532,16 +532,17 @@ TOOL_DOCS = {
     "send_enterprise_deal": {
         "name": "send_enterprise_deal",
         "category": "Customer Communication",
-        "description": "Send enterprise deal offerings. Compact tuple format: each deal = [customer_id, [[plan, price_per_seat, contract_months], ...]]. If the customer has an open negotiation thread, replies to it. If no open thread, initiates renegotiation. Up to 3 offerings per deal. Customer picks the best. Late replies damage relationship (-0.02/day after 1 day grace). No response within 3 days = customer LOST FOREVER.",
+        "description": "Send enterprise deal offerings. Compact tuple format: each deal = [customer_id, [[plan, price_per_seat], ...]]. All contracts are month-to-month (1 month). If the customer has an open negotiation thread, replies to it. If no open thread, initiates renegotiation. Up to 3 offerings per deal. Customer picks the best. Late replies damage relationship (-0.02/day after 1 day grace). No response within 3 days = customer LOST FOREVER.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "deals": {
                     "type": "array",
-                    "description": "List of deals. Each deal = [customer_id, [[plan, price_per_seat, contract_months], ...]]",
+                    "description": "List of deals. Each deal = [customer_id, [[plan, price_per_seat], ...]]",
                     "items": {
                         "type": "array",
-                        "description": "[customer_id, offerings] where offerings = [[plan, price, months], ...]"
+                        "description": "[customer_id, offerings] where offerings = [[plan, price], ...]",
+                        "items": {}
                     }
                 }
             },
@@ -550,8 +551,8 @@ TOOL_DOCS = {
         "parameters": {
             "deals": {
                 "type": "list[list]",
-                "description": "List of [customer_id, offerings] tuples. offerings = list of [plan, price_per_seat, contract_months] tuples (contract_months defaults to 1 if omitted). If customer has an open thread, replies to it; otherwise initiates renegotiation.",
-                "example": [[312, [["A", 9.00, 6], ["B", 14.00, 12]]], [88, [["B", 12.00, 6]]]]
+                "description": "List of [customer_id, offerings] tuples. offerings = list of [plan, price_per_seat] tuples. All contracts are month-to-month. If customer has an open thread, replies to it; otherwise initiates renegotiation.",
+                "example": [[312, [["A", 9.00], ["B", 14.00]]], [88, [["B", 12.00]]]]
             }
         },
         "returns": {
@@ -2096,6 +2097,34 @@ class AgentTools:
             new_ops = spend.get('operations', current['spend_operations'])
             new_dev = spend.get('development', current['spend_development'])
 
+            # Auto-distribute advertising budget across channels
+            # If advertising budget changed, redistribute to channels using current ratios
+            # (or equal weight if no prior allocation)
+            if 'advertising' in spend:
+                old_channels = {
+                    'social_media': current['ad_spend_social_media'],
+                    'search_ads': current['ad_spend_search_ads'],
+                    'linkedin': current['ad_spend_linkedin'],
+                    'content_marketing': current['ad_spend_content_marketing'],
+                    'referral_program': current['ad_spend_referral_program'],
+                }
+                old_total = sum(old_channels.values())
+                if old_total > 0:
+                    # Preserve current ratios
+                    ratios = {k: v / old_total for k, v in old_channels.items()}
+                else:
+                    # Equal weight across all 5 channels
+                    ratios = {k: 0.2 for k in old_channels}
+                new_channel_spend = {k: ratios[k] * new_adv for k in old_channels}
+            else:
+                new_channel_spend = {
+                    'social_media': current['ad_spend_social_media'],
+                    'search_ads': current['ad_spend_search_ads'],
+                    'linkedin': current['ad_spend_linkedin'],
+                    'content_marketing': current['ad_spend_content_marketing'],
+                    'referral_program': current['ad_spend_referral_program'],
+                }
+
             self.conn.execute("""
                 INSERT OR REPLACE INTO config_history (
                     day, price_A, price_B, price_C,
@@ -2112,9 +2141,9 @@ class AgentTools:
                 current['tier_A'], current['tier_B'], current['tier_C'],
                 new_adv, new_ops, new_dev,
                 current['capacity_tier'],
-                current['ad_spend_social_media'], current['ad_spend_search_ads'],
-                current['ad_spend_linkedin'], current['ad_spend_content_marketing'],
-                current['ad_spend_referral_program'],
+                new_channel_spend['social_media'], new_channel_spend['search_ads'],
+                new_channel_spend['linkedin'], new_channel_spend['content_marketing'],
+                new_channel_spend['referral_program'],
                 current['quota_A'], current['quota_B'], current['quota_C']
             ))
             self.conn.commit()
@@ -2812,7 +2841,7 @@ class AgentTools:
                     deal_offerings.append({
                         'plan': str(off[0]),
                         'price_per_seat': float(off[1]),
-                        'contract_months': int(off[2]) if len(off) > 2 else 1,
+                        'contract_months': 1,  # All contracts are 1 month (agent cannot set duration)
                     })
                 elif isinstance(off, dict):
                     if 'price_per_seat' not in off and 'price' not in off:
@@ -2820,8 +2849,7 @@ class AgentTools:
                         results.append({'customer_id': customer_id, 'error': f'offering {i} missing price'})
                         valid = False
                         break
-                    if 'contract_months' not in off:
-                        off['contract_months'] = 1
+                    off['contract_months'] = 1  # All contracts are 1 month (agent cannot set duration)
                     deal_offerings.append(off)
                 else:
                     summaries.append(f"Customer #{customer_id}: offering {i} invalid")
@@ -3255,6 +3283,7 @@ _HIDDEN_TABLES = {{
     '_hidden_group_params_history',  # Post-run analysis: daily group parameter snapshots
     '_hidden_quality_snapshot',      # Post-run analysis: daily quality components per group×plan
     '_hidden_satisfaction_snapshot', # Post-run analysis: daily avg satisfaction per group
+    'global_drift_state',           # Internal: global quality drift accumulator
 }}
 
 # Hidden columns that agent should not see (latent customer attributes, internal simulation params)

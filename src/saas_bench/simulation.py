@@ -1194,7 +1194,7 @@ class Simulator:
         max_negotiation_turns = params.get('max_negotiation_turns')
 
         # Get per-customer contract lock-in penalty
-        contract_lockin_penalty = params.get('contract_lockin_penalty', 0.005)
+        contract_lockin_penalty = params.get('contract_lockin_penalty', 0.100)
 
         # Get ads sensitivity parameters
         ads_quality_sensitivity = params.get('ads_quality_sensitivity', 0.1)
@@ -1928,7 +1928,7 @@ class Simulator:
                     params.get('negotiation_rate'),
                     params.get('initial_offer_factor'),
                     params.get('max_negotiation_turns'),
-                    params.get('contract_lockin_penalty', 0.005),
+                    params.get('contract_lockin_penalty', 0.100),
                     params['quality_sensitivity'],
                     params['price_sensitivity'],
                     params['willingness_to_pay'],
@@ -2646,12 +2646,12 @@ class Simulator:
         global_mean_issues_per_day = self.config.issue_resolution_base_rate + self.config.issue_resolution_ops_scale * spend_ops
 
         # L5: Use cached subscribers from _update_customer_satisfaction instead of 2 more full scans
-        # _cached_all_subscribers has: customer_id, satisfaction (old), open_issue_days, relationship, group_id
+        # _cached_all_subscribers has: customer_id, satisfaction (old), open_issue_days, relationship, group_id, seat_count
         all_subscribers = getattr(self, '_cached_all_subscribers', None)
         if all_subscribers is None:
             # Fallback if cache not populated (shouldn't happen in normal step_day flow)
             all_subscribers = self.conn.execute("""
-                SELECT cs.customer_id, cs.satisfaction, cs.open_issue_days, cs.relationship, c.group_id
+                SELECT cs.customer_id, cs.satisfaction, cs.open_issue_days, cs.relationship, c.group_id, c.seat_count
                 FROM customer_state cs
                 JOIN subscriptions s ON cs.customer_id = s.customer_id
                 JOIN customers c ON cs.customer_id = c.customer_id
@@ -2765,15 +2765,18 @@ class Simulator:
             increment_issue_days(self.conn)
 
         # Generate new issues for subscribers without current issues — L4 batch writes
+        # Issue probability scales linearly with seat_count — more seats = more users = more tickets
         new_issue_cs_updates = []  # (customer_id,)
         new_issue_inserts = []     # (customer_id, group_id, open_day, resolution_type)
         for sub in all_subscribers:
             if sub['open_issue_days'] == 0:
                 q = sub['satisfaction']  # Approximation
+                seat_count = int(sub['seat_count'] or 1)
                 p_issue = clamp(
-                    self.config.base_issue_rate
-                    + self.config.issue_quality_factor * (1 - q)
-                    + self.config.issue_outage_factor * (1.0 if outage else 0.0),
+                    (self.config.base_issue_rate
+                     + self.config.issue_quality_factor * (1 - q)
+                     + self.config.issue_outage_factor * (1.0 if outage else 0.0)
+                    ) * seat_count,
                     0.0, 0.4
                 )
 
@@ -4194,7 +4197,7 @@ class Simulator:
 
         # Dev spending improvement (logarithmic, always applied if spending)
         # 5× cost scaling: same quality boost as original but requires 5× more dollars
-        improvement = 0.003 * math.log(1 + spend_dev / 5000) if spend_dev > 0 else 0.0
+        improvement = 0.0045 * math.log(1 + spend_dev / 5000) if spend_dev > 0 else 0.0
 
         new_q_shared = (
             q_shared + improvement
@@ -4208,7 +4211,7 @@ class Simulator:
             if spend > 0:
                 key = f'q_group_bonus_{group_id}'
                 current = get_global_state(self.conn, key, 0.0)
-                group_improvement = 0.015 * math.log(1 + spend / 5000)  # 3× boost, 5× cost scaling
+                group_improvement = 0.0225 * math.log(1 + spend / 5000)
                 set_global_state(self.conn, key, current + group_improvement)
 
     # =========================================================================

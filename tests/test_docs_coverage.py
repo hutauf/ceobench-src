@@ -21,6 +21,7 @@ _HIDDEN_TABLES = {
     'group_insight_snapshots',
     '_hidden_group_params_history', '_hidden_quality_snapshot',
     '_hidden_satisfaction_snapshot', '_hidden_lead_multiplier_snapshot',
+    'global_drift_state',
 }
 
 

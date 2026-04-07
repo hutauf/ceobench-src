@@ -348,7 +348,7 @@ def init_database(db_path: Path) -> sqlite3.Connection:
             max_negotiation_turns INTEGER,  -- Max turns before final decision
             -- Contract lock-in penalty (per-customer, sampled from group distribution)
             -- Satisfaction penalty per additional contract month beyond 1
-            contract_lockin_penalty REAL NOT NULL DEFAULT 0.005,
+            contract_lockin_penalty REAL NOT NULL DEFAULT 0.100,
             -- Persona fields (pre-generated qualitative attributes for realistic analytics)
             persona_industry TEXT,        -- Industry/domain (e.g., 'creative', 'legal', 'manufacturing')
             persona_role TEXT,            -- Role/position (e.g., 'freelancer', 'managing-partner')

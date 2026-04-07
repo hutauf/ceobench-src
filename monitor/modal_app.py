@@ -184,6 +184,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="charts">
       <div class="chart-box" style="grid-column:1/-1"><h3>Delivered Quality by Group × Plan</h3><canvas id="qualityChart" style="max-height:280px"></canvas></div>
     </div>
+    <!-- Ads Revenue -->
+    <div class="charts">
+      <div class="chart-box" style="grid-column:1/-1"><h3>Ads Revenue per Active Customer Group</h3><canvas id="adsRevenueChart" style="max-height:280px"></canvas></div>
+    </div>
     <!-- Time breakdown bars -->
     <div class="charts">
       <div class="chart-box"><h3>Time Breakdown</h3><div id="timingBars" style="padding:8px 0"></div></div>
@@ -193,12 +197,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tabs">
       <div class="tab active" onclick="switchTab('actions')">Tool Calls</div>
       <div class="tab" onclick="switchTab('responses')">LLM Responses</div>
+      <div class="tab" onclick="switchTab('rationales')">Rationales</div>
       <div class="tab" onclick="switchTab('timing')">Timing</div>
       <div class="tab" onclick="switchTab('agentPosts')">Agent Posts</div>
       <div class="tab" onclick="switchTab('customerPosts')">Customer Posts</div>
     </div>
     <div id="actionsTab" class="tab-content active"><div class="action-list" id="actionList"><div class="loading">Loading...</div></div></div>
     <div id="responsesTab" class="tab-content"><div class="action-list" id="responseList"><div class="loading">Loading...</div></div></div>
+    <div id="rationalesTab" class="tab-content"><div class="action-list" id="rationaleList"><div class="loading">Loading...</div></div></div>
     <div id="timingTab" class="tab-content"><div class="action-list" id="timingList"><div class="loading">Loading...</div></div></div>
     <div id="agentPostsTab" class="tab-content"><div class="action-list" id="agentPostList"><div class="loading">Loading...</div></div></div>
     <div id="customerPostsTab" class="tab-content"><div class="action-list" id="customerPostList"><div class="loading">Loading...</div></div></div>
@@ -207,7 +213,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 let allData={runs:[]},currentRun=null,charts={};
-const GROUP_COLORS={'S1':'#58a6ff','S2':'#3fb950','S3':'#bc8cff','E1':'#f0883e','E2':'#f85149','E3':'#d29922','S4':'#a5d6ff','E4':'#ff9bce'};
+const GROUP_COLORS={'S1':'#58a6ff','S2':'#3fb950','S3':'#bc8cff','E1':'#f0883e','E2':'#f85149','E3':'#d29922','S4':'#a5d6ff','E4':'#ff9bce','D_S01':'#00d4aa','D_S02':'#00b4d8','D_S03':'#48bfe3','D_S04':'#90e0ef','D_S05':'#caf0f8','D_S06':'#06d6a0','D_S07':'#1b9aaa','D_S08':'#05668d','D_S09':'#028090','D_S10':'#00a896','D_E01':'#e76f51','D_E02':'#f4a261','D_E03':'#e9c46a','D_E04':'#2a9d8f','D_E05':'#264653','D_E06':'#e63946','D_E07':'#a8dadc','D_E08':'#457b9d','D_E09':'#1d3557','D_E10':'#fca311'};
 
 function fmt(n,p){p=p||'';if(n==null)return'\u2014';if(Math.abs(n)>=1e6)return p+(n/1e6).toFixed(2)+'M';if(Math.abs(n)>=1e3)return p+(n/1e3).toFixed(1)+'K';return p+n.toLocaleString()}
 function fmtCash(n){return n==null?'\u2014':'$'+fmt(n)}
@@ -221,16 +227,23 @@ function briefArgs(args){if(!args)return'';if(typeof args==='string')return args
 function scoreBadge(v){if(v==null)return'';var cls=v>0.1?'score-positive':v<-0.1?'score-negative':'score-neutral';return'<span class="score-badge '+cls+'">'+v.toFixed(2)+'</span>'}
 
 // --- UI state preservation across auto-refresh ---
+// Track user interaction to pause refresh while reading
+var _userInteracting=false,_interactTimer=null;
+function _markInteraction(){_userInteracting=true;clearTimeout(_interactTimer);_interactTimer=setTimeout(function(){_userInteracting=false},60000)}
+document.addEventListener('click',function(e){if(e.target.closest('.result-toggle')||e.target.closest('.action-item'))_markInteraction()});
+
+function _actionId(a,i){return'd'+a.day+'t'+a.turn+'_'+a.tool+'_'+i}
+
 function saveUIState(){
-  var state={scrollY:window.scrollY,activeTab:null,expandedActions:[],expandedResponses:[],listScrolls:{}};
-  // Active tab
+  var state={scrollY:window.scrollY,activeTab:null,expandedActions:[],listScrolls:{}};
   var at=document.querySelector('.tab.active');if(at)state.activeTab=at.textContent.trim();
-  // Expanded action results (by index)
-  document.querySelectorAll('#actionList .result-content.visible').forEach(function(el){
-    var items=document.querySelectorAll('#actionList .action-item');
-    for(var i=0;i<items.length;i++){if(items[i].contains(el)){state.expandedActions.push(i);break}}
+  // Expanded action results by stable data-action-id
+  document.querySelectorAll('#actionList .action-item').forEach(function(el){
+    var rc=el.querySelector('.result-content');
+    if(rc&&rc.classList.contains('visible')){
+      var aid=el.getAttribute('data-action-id');if(aid)state.expandedActions.push(aid);
+    }
   });
-  // Expanded response content blocks don't toggle, but save scroll of each scrollable list
   ['actionList','responseList','timingList','agentPostList','customerPostList'].forEach(function(id){
     var el=document.getElementById(id);if(el)state.listScrolls[id]=el.scrollTop;
   });
@@ -238,33 +251,39 @@ function saveUIState(){
 }
 function restoreUIState(state){
   if(!state)return;
-  // Restore expanded action results
+  // Restore expanded action results by stable ID
   if(state.expandedActions.length){
-    var items=document.querySelectorAll('#actionList .action-item');
-    state.expandedActions.forEach(function(idx){
-      if(items[idx]){
-        var rc=items[idx].querySelector('.result-content');
-        var tog=items[idx].querySelector('.result-toggle');
-        if(rc){rc.classList.add('visible')}
-        if(tog){tog.textContent='\u25bc Hide result'}
+    var idSet={};state.expandedActions.forEach(function(id){idSet[id]=true});
+    document.querySelectorAll('#actionList .action-item').forEach(function(el){
+      var aid=el.getAttribute('data-action-id');
+      if(aid&&idSet[aid]){
+        var rc=el.querySelector('.result-content');
+        var tog=el.querySelector('.result-toggle');
+        if(rc)rc.classList.add('visible');
+        if(tog)tog.textContent='\u25bc Hide result';
       }
     });
   }
-  // Restore active tab
   if(state.activeTab){
-    var tabMap={'Tool Calls':'actions','LLM Responses':'responses','Timing':'timing','Agent Posts':'agentPosts','Customer Posts':'customerPosts'};
+    var tabMap={'Tool Calls':'actions','LLM Responses':'responses','Rationales':'rationales','Timing':'timing','Agent Posts':'agentPosts','Customer Posts':'customerPosts'};
     var t=tabMap[state.activeTab];if(t)switchTab(t);
   }
-  // Restore list scroll positions
   Object.keys(state.listScrolls).forEach(function(id){
     var el=document.getElementById(id);if(el)el.scrollTop=state.listScrolls[id];
   });
-  // Restore page scroll position
   window.scrollTo(0,state.scrollY);
 }
 
-async function fetchData(){
-  try{var uiState=saveUIState();var r=await fetch('/api/data');var d=await r.json();if(d.runs)allData=d;renderOverview();if(currentRun)renderDetail();restoreUIState(uiState);$('#lastUpdate').textContent=new Date().toLocaleTimeString();if(d.timestamp){var age=Math.floor((Date.now()-new Date(d.timestamp))/1000);$('#dataAge').textContent=age>60?'(data '+Math.floor(age/60)+'m old)':''}}catch(e){console.error(e)}}
+async function fetchData(force){
+  // Skip DOM re-render if user is actively reading (still fetch data silently)
+  try{var r=await fetch('/api/data');var d=await r.json();
+    if(d.runs)allData=d;
+    $('#lastUpdate').textContent=new Date().toLocaleTimeString();
+    if(d.timestamp){var age=Math.floor((Date.now()-new Date(d.timestamp))/1000);$('#dataAge').textContent=age>60?'(data '+Math.floor(age/60)+'m old)':''}
+    // If user has expanded items and this isn't forced, skip re-render
+    if(_userInteracting&&!force){$('#lastUpdate').textContent+=' (paused)';return}
+    var uiState=saveUIState();renderOverview();if(currentRun)renderDetail();restoreUIState(uiState);
+  }catch(e){console.error(e)}}
 
 function renderOverview(){
   var runs=allData.runs||[];var tbody='';
@@ -291,7 +310,7 @@ function renderDetail(){
   $('#detailTitle').textContent=r.label+' \u2014 '+r.model+' ('+r.run_id+')';
   var stats=[{l:'Day',v:(r.current_day||'?')+' / '+(r.total_days||'?')+' ('+p+'%)'},{l:'Cash',v:fmtCash(r.cash),c:(r.cash||0)<0?'color:var(--red)':'color:var(--green)'},{l:'Subscribers',v:fmt(r.subscribers)},{l:'MRR',v:fmtCash(r.mrr)},{l:'F. Dividends',v:fmtCash(r.founder_dividends),c:'color:var(--yellow)'},{l:'Agent Turns',v:fmt(r.agent_turns||r.tool_calls_count)},{l:'Avg Day Time',v:r.timing_avg_day?r.timing_avg_day+'s':'\u2014',c:'color:var(--accent)'}];
   $('#detailStats').innerHTML=stats.map(function(s){return'<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px"><div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">'+s.l+'</div><div style="font-size:18px;font-weight:700;margin-top:2px;'+(s.c||'')+'">'+s.v+'</div></div>'}).join('');
-  renderDiscovery(r);renderCharts(r);renderNewCharts(r);renderActions(r);renderResponses(r);renderTiming(r);renderAgentPosts(r);renderCustomerPosts(r);
+  renderDiscovery(r);renderCharts(r);renderNewCharts(r);renderActions(r);renderResponses(r);renderRationales(r);renderTiming(r);renderAgentPosts(r);renderCustomerPosts(r);
 }
 
 function renderDiscovery(r){
@@ -360,6 +379,19 @@ function renderNewCharts(r){
     charts.quality=new Chart($('#qualityChart').getContext('2d'),{type:'line',options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:9}},position:'right'}},scales:{x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',font:{size:10}}},y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',font:{size:10}}}},elements:{point:{radius:0},line:{borderWidth:1.5}}},data:{labels:qualDays,datasets:qualDatasets}});
   }
 
+  // Ads Revenue per group chart
+  var adsData=r.ads_revenue_series||[];
+  if(charts.adsRevenue)charts.adsRevenue.destroy();
+  if(adsData.length){
+    var adsGroups=[...new Set(adsData.map(function(d){return d.group_id}))];
+    var adsDays=[...new Set(adsData.map(function(d){return d.day}))].sort(function(a,b){return a-b});
+    var adsDatasets=adsGroups.map(function(gid){
+      var gdata=adsData.filter(function(d){return d.group_id===gid});
+      var byDay={};gdata.forEach(function(d){byDay[d.day]=d.revenue});
+      return{label:gid,data:adsDays.map(function(d){return byDay[d]||null}),borderColor:GROUP_COLORS[gid]||'#888',borderWidth:1.5,fill:false,pointRadius:0}});
+    charts.adsRevenue=new Chart($('#adsRevenueChart').getContext('2d'),{type:'line',options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:9}},position:'right'}},scales:{x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',font:{size:10}}},y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',font:{size:10},callback:function(v){return '$'+v.toLocaleString()}}}},elements:{point:{radius:0},line:{borderWidth:1.5}}},data:{labels:adsDays,datasets:adsDatasets}});
+  }
+
   // Timing chart (stacked bar)
   var ds=r.timing_day_summaries||[];
   if(charts.timing)charts.timing.destroy();
@@ -382,8 +414,8 @@ function renderNewCharts(r){
 function renderActions(r){
   var actions=r.recent_actions||[];if(!actions.length){$('#actionList').innerHTML='<div class="loading">No actions yet</div>';return}
   var emojis={'bash':'\ud83d\udd27','read_file':'\ud83d\udcc2','write_file':'\u270d\ufe0f','edit_file':'\u270f\ufe0f','search_files':'\ud83d\udd0d','glob_files':'\ud83d\udd0d','_dashboard':'\ud83d\udcca','_reasoning':'\ud83d\udcad'};
-  var h='';for(var i=0;i<actions.length;i++){var a=actions[i];var em=emojis[a.tool]||'\u2699\ufe0f';
-    h+='<div class="action-item"><div class="action-header"><span class="day-badge">Day '+a.day+'</span><span class="turn-badge">Turn '+a.turn+'</span><span class="tool-name">'+em+' '+esc(a.tool)+'</span><span class="timestamp">'+timeAgo(a.timestamp)+'</span></div>'+(fmtArgs(a.arguments)?'<div class="args">'+fmtArgs(a.arguments)+'</div>':'')+'<span class="result-toggle" onclick="this.nextElementSibling.classList.toggle(\'visible\');this.textContent=this.textContent===\'\u25b6 Show result\'?\'\u25bc Hide result\':\'\u25b6 Show result\'">\u25b6 Show result</span><div class="result-content">'+fmtResult(a.result)+'</div></div>'}
+  var h='';for(var i=0;i<actions.length;i++){var a=actions[i];var em=emojis[a.tool]||'\u2699\ufe0f';var aid=_actionId(a,i);
+    h+='<div class="action-item" data-action-id="'+aid+'"><div class="action-header"><span class="day-badge">Day '+a.day+'</span><span class="turn-badge">Turn '+a.turn+'</span><span class="tool-name">'+em+' '+esc(a.tool)+'</span><span class="timestamp">'+timeAgo(a.timestamp)+'</span></div>'+(fmtArgs(a.arguments)?'<div class="args">'+fmtArgs(a.arguments)+'</div>':'')+'<span class="result-toggle" onclick="_markInteraction();this.nextElementSibling.classList.toggle(\'visible\');this.textContent=this.textContent===\'\u25b6 Show result\'?\'\u25bc Hide result\':\'\u25b6 Show result\'">\u25b6 Show result</span><div class="result-content">'+fmtResult(a.result)+'</div></div>'}
   $('#actionList').innerHTML=h;
 }
 
@@ -445,7 +477,14 @@ function renderCustomerPosts(r){
   $('#customerPostList').innerHTML=h;
 }
 
-function switchTab(t){$$('.tab').forEach(function(x){x.classList.remove('active')});$$('.tab-content').forEach(function(x){x.classList.remove('active')});var tabs=$$('.tab');var tabMap={'actions':0,'responses':1,'timing':2,'agentPosts':3,'customerPosts':4};var idx=tabMap[t]||0;if(tabs[idx])tabs[idx].classList.add('active');var el=$('#'+t+'Tab');if(el)el.classList.add('active')}
+function switchTab(t){$$('.tab').forEach(function(x){x.classList.remove('active')});$$('.tab-content').forEach(function(x){x.classList.remove('active')});var tabs=$$('.tab');var tabMap={'actions':0,'responses':1,'rationales':2,'timing':3,'agentPosts':4,'customerPosts':5};var idx=tabMap[t]||0;if(tabs[idx])tabs[idx].classList.add('active');var el=$('#'+t+'Tab');if(el)el.classList.add('active')}
+
+function renderRationales(r){
+  var rats=r.daily_rationales||[];if(!rats.length){$('#rationaleList').innerHTML='<div class="loading">No rationales yet</div>';return}
+  var h='';for(var i=rats.length-1;i>=0;i--){var rt=rats[i];
+    h+='<div class="action-item"><div class="action-header"><span class="day-badge">Day '+rt.day+'</span>'+(rt.turn?'<span class="turn-badge">Turn '+rt.turn+'</span>':'')+'<span style="color:var(--accent);font-weight:600">\ud83d\udcad Rationale</span><span class="timestamp">'+timeAgo(rt.timestamp)+'</span></div><div style="padding:8px 12px;white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.5;background:var(--bg);border-radius:6px;margin-top:6px">'+esc(rt.text)+'</div></div>'}
+  $('#rationaleList').innerHTML=h;
+}
 
 function renderTiming(r){
   var turns=r.timing_recent_turns||[];

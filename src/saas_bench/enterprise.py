@@ -101,11 +101,12 @@ class NegotiationState:
     current_offer_price: Optional[float]
     next_reply_day: Optional[int]
     # Customer parameters (asymmetric sigmoid curve model)
+    # NOTE: q_min/q_max include drift offsets (global_q_bias + group drift)
     steepness_left: float  # Steepness for left half of curve (price < c_max/2)
     steepness_right: float  # Steepness for right half of curve (price >= c_max/2)
-    c_max: float  # Hard budget constraint
-    q_max: float  # Quality ceiling — max quality this customer can perceive/utilize
-    q_min: float  # Quality floor — minimum quality needed even if free
+    c_max: float  # Hard budget constraint (drift-adjusted)
+    q_max: float  # Quality ceiling — max quality this customer can perceive/utilize (drift-adjusted)
+    q_min: float  # Quality floor — minimum quality needed even if free (drift-adjusted)
     negotiation_rate: float
     initial_offer_factor: float  # Factor for initial offer (0.75 + noise per customer)
     reply_delay_mean: float
@@ -117,16 +118,53 @@ class NegotiationState:
     current_plan: Optional[str]
     current_price: Optional[float]
     # Per-customer contract lock-in penalty (sampled from group distribution)
-    contract_lockin_penalty: float = 0.005
+    contract_lockin_penalty: float = 0.100  # 20× from 0.005
+    group_id: str = 'E1'  # Customer group for drift offset lookups
     # V2.1: Contract info
     current_contract_months: Optional[int] = None
     current_contract_end_day: Optional[int] = None
+
+
+def _get_drift_offsets(conn: sqlite3.Connection, group_id: str) -> Tuple[float, float]:
+    """Get accumulated drift offsets (q_offset, c_offset) for a customer group.
+
+    Reads global_q_bias from global_drift_state and group-specific drift from group_parameters.
+    Returns (q_offset, c_offset) to add to q_min/q_max and c_max respectively.
+    """
+    # Global q_bias
+    row = conn.execute(
+        "SELECT global_q_bias_total FROM global_drift_state WHERE id = 1"
+    ).fetchone()
+    global_q_bias = row['global_q_bias_total'] if row else 0.0
+
+    # Group-specific drift
+    gp = conn.execute(
+        "SELECT drift_q_bias_total, drift_c_max_total FROM group_parameters WHERE group_id = ?",
+        (group_id,)
+    ).fetchone()
+    group_q_bias = gp['drift_q_bias_total'] if gp else 0.0
+    group_c_offset = gp['drift_c_max_total'] if gp else 0.0
+
+    q_offset = global_q_bias + group_q_bias
+    return q_offset, group_c_offset
+
+
+def _apply_drift_to_params(conn: sqlite3.Connection, group_id: str,
+                           q_min: float, q_max: float, c_max: float) -> Tuple[float, float, float]:
+    """Apply drift offsets to q_min, q_max, c_max. Mirrors simulation._apply_drift_offsets."""
+    q_offset, c_offset = _get_drift_offsets(conn, group_id)
+    q_min += q_offset
+    q_max += q_offset
+    c_max = max(15.0, c_max + c_offset)
+    return q_min, q_max, c_max
 
 
 def get_negotiation_state(conn: sqlite3.Connection, thread_id: int) -> Optional[NegotiationState]:
     """Get the current negotiation state for a thread.
 
     Reads from enterprise_turns (latest turn = current state).
+    Applies drift offsets to q_min/q_max/c_max so negotiation evaluations
+    reflect current market conditions (competitor boosts, etc.).
     """
     # Get latest turn for this thread
     row = conn.execute("""
@@ -134,7 +172,7 @@ def get_negotiation_state(conn: sqlite3.Connection, thread_id: int) -> Optional[
                et.closed, et.close_reason,
                et.turn_number, et.current_offer_price, et.next_reply_day,
                c.steepness_left, c.steepness_right, c.c_max, c.q_max, c.q_min, c.negotiation_rate,
-               c.initial_offer_factor,
+               c.initial_offer_factor, c.group_id,
                c.reply_delay_mean, c.reply_delay_std, c.max_negotiation_turns, c.seat_count,
                c.contract_lockin_penalty,
                cs.relationship, cs.current_steepness_left, cs.current_steepness_right,
@@ -167,6 +205,16 @@ def get_negotiation_state(conn: sqlite3.Connection, thread_id: int) -> Optional[
     c_max = row['current_c_max'] if row['current_c_max'] else row['c_max']
     q_max_val = row['current_q_max'] if row['current_q_max'] is not None else row['q_max']
     q_min_val = row['current_q_min'] if row['current_q_min'] is not None else row['q_min']
+    if q_max_val is None:
+        q_max_val = 0.75
+    if q_min_val is None:
+        q_min_val = 0.25
+
+    # Apply drift offsets (global_q_bias + group drift) so negotiation evaluations
+    # reflect current market conditions (competitor boosts, etc.)
+    group_id = row['group_id'] or 'E1'
+    q_min_val, q_max_val, c_max = _apply_drift_to_params(conn, group_id, q_min_val, q_max_val, c_max)
+
     return NegotiationState(
         thread_id=row['thread_id'],
         customer_id=row['customer_id'],
@@ -178,16 +226,17 @@ def get_negotiation_state(conn: sqlite3.Connection, thread_id: int) -> Optional[
         steepness_left=steepness_left,
         steepness_right=steepness_right,
         c_max=c_max,
-        q_max=q_max_val if q_max_val is not None else 0.75,
-        q_min=q_min_val if q_min_val is not None else 0.25,
+        q_max=q_max_val,
+        q_min=q_min_val,
         negotiation_rate=row['negotiation_rate'] or 0.3,
         initial_offer_factor=row['initial_offer_factor'] or 0.75,
+        group_id=group_id,
         reply_delay_mean=row['reply_delay_mean'] or 2.0,
         reply_delay_std=row['reply_delay_std'] or 1.0,
         max_negotiation_turns=row['max_negotiation_turns'] or 5,
         seat_count=int(row['seat_count'] or 1),
         relationship=row['relationship'] or 0.5,
-        contract_lockin_penalty=row['contract_lockin_penalty'] if row['contract_lockin_penalty'] is not None else 0.005,
+        contract_lockin_penalty=row['contract_lockin_penalty'] if row['contract_lockin_penalty'] is not None else 0.100,
         current_plan=row['current_plan'],
         current_price=row['current_price'],
         current_contract_months=row['current_contract_months'],
@@ -210,7 +259,7 @@ def get_negotiation_states_batch(conn: sqlite3.Connection, thread_ids: List[int]
                et.closed, et.close_reason,
                et.turn_number, et.current_offer_price, et.next_reply_day,
                c.steepness_left, c.steepness_right, c.c_max, c.q_max, c.q_min, c.negotiation_rate,
-               c.initial_offer_factor,
+               c.initial_offer_factor, c.group_id,
                c.reply_delay_mean, c.reply_delay_std, c.max_negotiation_turns, c.seat_count,
                c.contract_lockin_penalty,
                cs.relationship, cs.current_steepness_left, cs.current_steepness_right,
@@ -232,6 +281,16 @@ def get_negotiation_states_batch(conn: sqlite3.Connection, thread_ids: List[int]
         WHERE et.thread_id IN ({placeholders})
     """, thread_ids + thread_ids).fetchall()
 
+    # Pre-fetch drift offsets once (same for all threads in this batch)
+    # global_q_bias is shared; group offsets vary per customer group
+    global_row = conn.execute(
+        "SELECT global_q_bias_total FROM global_drift_state WHERE id = 1"
+    ).fetchone()
+    global_q_bias = global_row['global_q_bias_total'] if global_row else 0.0
+    group_params = {}
+    for gp_row in conn.execute("SELECT group_id, drift_q_bias_total, drift_c_max_total FROM group_parameters").fetchall():
+        group_params[gp_row['group_id']] = (gp_row['drift_q_bias_total'] or 0.0, gp_row['drift_c_max_total'] or 0.0)
+
     result = {}
     for row in rows:
         if row['closed']:
@@ -244,6 +303,20 @@ def get_negotiation_states_batch(conn: sqlite3.Connection, thread_ids: List[int]
         c_max = row['current_c_max'] if row['current_c_max'] else row['c_max']
         q_max_val = row['current_q_max'] if row['current_q_max'] is not None else row['q_max']
         q_min_val = row['current_q_min'] if row['current_q_min'] is not None else row['q_min']
+        if q_max_val is None:
+            q_max_val = 0.75
+        if q_min_val is None:
+            q_min_val = 0.25
+
+        # Apply drift offsets (global_q_bias + group drift)
+        group_id = row['group_id'] or 'E1'
+        gp_drift = group_params.get(group_id, (0.0, 0.0))
+        q_offset = global_q_bias + gp_drift[0]
+        c_offset = gp_drift[1]
+        q_min_val += q_offset
+        q_max_val += q_offset
+        c_max = max(15.0, c_max + c_offset)
+
         result[row['thread_id']] = NegotiationState(
             thread_id=row['thread_id'],
             customer_id=row['customer_id'],
@@ -255,16 +328,17 @@ def get_negotiation_states_batch(conn: sqlite3.Connection, thread_ids: List[int]
             steepness_left=steepness_left,
             steepness_right=steepness_right,
             c_max=c_max,
-            q_max=q_max_val if q_max_val is not None else 0.75,
-            q_min=q_min_val if q_min_val is not None else 0.25,
+            q_max=q_max_val,
+            q_min=q_min_val,
             negotiation_rate=row['negotiation_rate'] or 0.3,
             initial_offer_factor=row['initial_offer_factor'] or 0.75,
+            group_id=group_id,
             reply_delay_mean=row['reply_delay_mean'] or 2.0,
             reply_delay_std=row['reply_delay_std'] or 1.0,
             max_negotiation_turns=row['max_negotiation_turns'] or 5,
             seat_count=int(row['seat_count'] or 1),
             relationship=row['relationship'] or 0.5,
-            contract_lockin_penalty=row['contract_lockin_penalty'] if row['contract_lockin_penalty'] is not None else 0.005,
+            contract_lockin_penalty=row['contract_lockin_penalty'] if row['contract_lockin_penalty'] is not None else 0.100,
             current_plan=row['current_plan'],
             current_price=row['current_price'],
             current_contract_months=row['current_contract_months'],
@@ -316,7 +390,7 @@ def compute_offering_satisfaction(
     steepness_left: float,
     steepness_right: float,
     c_max: float,
-    contract_lockin_penalty: float = 0.005,
+    contract_lockin_penalty: float = 0.100,  # 20× from 0.005
     q_max: float = 0.75,
     q_min: float = 0.25
 ) -> float:
@@ -505,6 +579,20 @@ def evaluate_offerings(
     # Counter-offer: use the best offering's plan and months, but with customer's price
     quality = qualities.get(best_plan, 0.0)
     counter_price = compute_customer_counter_offer(state, quality, best_months, config)
+
+    # If quality < q_min for the best plan, max_accepting_price is 0 — ghost immediately
+    # (product doesn't meet minimum standards, no price would work)
+    if counter_price <= 0:
+        return OfferingEvaluation(
+            decision='ghost',
+            best_offering_idx=best_idx,
+            best_plan=best_plan,
+            best_price=best_price,
+            best_contract_months=best_months,
+            best_satisfaction=best_sat,
+            counter_offer_price=None,
+            is_ghosting=True,
+        )
 
     return OfferingEvaluation(
         decision='counter',
@@ -938,6 +1026,7 @@ def get_best_plan_for_customer(
                c.q_min, c.q_max, c.c_max, c.steepness_left, c.steepness_right,
                c.negotiation_rate, c.contract_lockin_penalty,
                c.reply_delay_mean, c.reply_delay_std, c.seat_count,
+               c.group_id,
                cs.relationship
         FROM customers c
         LEFT JOIN customer_state cs ON c.customer_id = cs.customer_id
@@ -951,6 +1040,10 @@ def get_best_plan_for_customer(
     q_min = state['current_q_min'] or state['q_min']
     q_max = state['current_q_max'] if state['current_q_max'] is not None else state['q_max']
     c_max = state['current_c_max'] or state['c_max']
+
+    # Apply drift offsets (global_q_bias + group drift)
+    group_id = state['group_id'] or 'E1'
+    q_min, q_max, c_max = _apply_drift_to_params(conn, group_id, q_min, q_max, c_max)
     slope = state['current_slope']
     steepness_left = state['current_steepness_left'] if state['current_steepness_left'] else state['steepness_left']
     steepness_right = state['current_steepness_right'] if state['current_steepness_right'] else state['steepness_right']
@@ -994,7 +1087,7 @@ def get_best_plan_for_customer(
                     max_negotiation_turns=5,
                     seat_count=int(state['seat_count'] or 1),
                     relationship=state['relationship'] or 0.5,
-                    contract_lockin_penalty=state['contract_lockin_penalty'] if state['contract_lockin_penalty'] is not None else 0.005,
+                    contract_lockin_penalty=state['contract_lockin_penalty'] if state['contract_lockin_penalty'] is not None else 0.100,
                     current_plan=None, current_price=None
                 ),
                 quality
