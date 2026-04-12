@@ -636,12 +636,12 @@ class ClaudeCodeRunner:
         # Look for tool calls in the response
         if "tool_calls" in response:
             for call in response["tool_calls"]:
-                if call.get("name") in ("next_week", "next_day"):
+                if call.get("name") == "next_week":
                     return True
         if "output" in response:
             # Check text output for signals
             output = str(response["output"])
-            if "NEXT_WEEK_SIGNAL" in output or "NEXT_DAY_SIGNAL" in output:
+            if "NEXT_WEEK_SIGNAL" in output:
                 return True
         return False
 

@@ -287,8 +287,8 @@ class _APIHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == '/call':
             self._handle_call()
-        elif self.path == '/next-day':
-            self._handle_next_day()
+        elif self.path == '/next-week':
+            self._handle_next_week()
         elif self.path == '/query':
             self._handle_query()
         elif self.path == '/daily-scripts':
@@ -366,8 +366,8 @@ class _APIHandler(BaseHTTPRequestHandler):
             import traceback
             self._send_json({"success": False, "error": str(e), "traceback": traceback.format_exc()}, 500)
 
-    def _handle_next_day(self):
-        """Handle next-week advancement: POST /next-day (kept for API compat)."""
+    def _handle_next_week(self):
+        """Handle next-week advancement: POST /next-week."""
         try:
             server: NovaMindAPIServer = self.server._api_server
             result = server.advance_week()
@@ -605,7 +605,7 @@ class NovaMindAPIServer:
 
         Args:
             tools: AgentTools instance to dispatch calls to
-            simulator: Simulator instance for next-day advancement
+            simulator: Simulator instance for next-week advancement
             conn: Database connection for dashboard building
             day_callback: Optional callback(day, dashboard) called after advancing a day
             dashboard_callback: Optional callback(day) -> dashboard string

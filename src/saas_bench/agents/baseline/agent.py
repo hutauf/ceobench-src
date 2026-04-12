@@ -115,7 +115,13 @@ class BaselineAgent(BaseAgent):
             template = f.read()
 
         # Only fill simulator_instructions; leave {memory} for render time
-        return template.format(simulator_instructions=simulator_instructions, memory="{memory}")
+        return template.format(
+            simulator_instructions=simulator_instructions,
+            memory="{memory}",
+            total_days=_total_days,
+            total_weeks=_total_weeks,
+            total_years=f"{_total_years:.1f}",
+        )
 
     def reset(self):
         """Reset agent state for a new episode."""
@@ -660,7 +666,7 @@ def run_agent_loop(
             total_reward += result.reward
             step_count += 1
 
-            if verbose and action.tool in ('next_week', 'next_day'):
+            if verbose and action.tool == 'next_week':
                 day = result.info.get('day', 0)
                 cash = result.info.get('cash', 0)
                 print(f"Day {day}: Cash=${cash:,.0f}")

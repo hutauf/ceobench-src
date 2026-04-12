@@ -379,7 +379,7 @@ class Benchmark:
                         turn_tool_calls.append(tool_name)
 
                         # Check for next_week tool
-                        if tool_name in ("next_week", "next_day"):
+                        if tool_name == "next_week":
                             if verbose:
                                 print(f"  📞 next_week() -> Agent finished for this week")
                             day_ended = True
@@ -392,7 +392,7 @@ class Benchmark:
                             dashboard = self._build_weekly_dashboard(day, last_result, calc_outputs)
                             tool_results.append({
                                 'call_id': call_id,
-                                'output': f"Day ended. Advancing to next day.\n\n{dashboard}"
+                                'output': f"Week ended. Advancing to next week.\n\n{dashboard}"
                             })
                             break
 

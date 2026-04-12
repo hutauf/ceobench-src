@@ -444,7 +444,7 @@ class SaaSBenchMCPServer:
         tools = self.tools
 
         # === Special case: next_week (runs simulation step) ===
-        if name in ("next_week", "next_day"):
+        if name == "next_week":
             # Run simulation step for current week (7 days)
             self.last_result = self.simulator.step_week()
 
@@ -452,7 +452,7 @@ class SaaSBenchMCPServer:
             if self.simulator.shutdown_mode:
                 return f"GAME OVER - BANKRUPT!\n\nYou ran out of cash on day {self.current_day}.\nFinal cash: ${self.last_result.cash:,.0f}"
 
-            # Advance to next day
+            # Advance to next week
             self.current_day += 1
             self.tools.set_current_day(self.current_day)
 

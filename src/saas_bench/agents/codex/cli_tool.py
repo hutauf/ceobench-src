@@ -94,7 +94,7 @@ def cmd_status(args):
     conn.close()
 
 
-def cmd_next_day(args):
+def cmd_next_week(args):
     """Advance by one week (7 days) and show new dashboard."""
     from saas_bench.database import get_cash, get_active_subscriber_count, get_config, init_database
     from saas_bench.simulation import Simulator
@@ -257,9 +257,8 @@ def main():
     # status
     subparsers.add_parser('status', help='Show current dashboard')
 
-    # next_week (also accept next_day for backward compat)
+    # next_week
     subparsers.add_parser('next_week', help='Advance to next week')
-    subparsers.add_parser('next_day', help='Advance to next week (alias)')
 
     # set_prices
     prices_parser = subparsers.add_parser('set_prices', help='Set plan prices')
@@ -285,8 +284,8 @@ def main():
 
     if args.command == 'status':
         cmd_status(args)
-    elif args.command in ('next_week', 'next_day'):
-        cmd_next_day(args)
+    elif args.command == 'next_week':
+        cmd_next_week(args)
     elif args.command == 'set_prices':
         cmd_set_prices(args)
     elif args.command == 'set_daily_spend':

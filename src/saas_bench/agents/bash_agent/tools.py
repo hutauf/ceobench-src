@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 
 
 class NextDayTimeoutError(Exception):
-    """Raised when ./novamind-operation next-day times out.
+    """Raised when ./novamind-operation next-week times out.
 
     This should cause the runner to save checkpoint and kill the run.
     """
@@ -408,8 +408,8 @@ class BashAgentToolExecutor:
             except Exception:
                 pass
 
-            # If command is ./novamind-operation next-week (or legacy next-day), raise to kill the run
-            if './novamind-operation next-week' in command or './novamind-operation next-day' in command:
+            # If command is ./novamind-operation next-week, raise to kill the run
+            if './novamind-operation next-week' in command:
                 raise NextDayTimeoutError(
                     f"next_week timed out after {self.bash_timeout}s",
                     partial_stdout=partial_stdout,

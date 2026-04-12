@@ -84,6 +84,16 @@ class BashAgent(BaseAgent):
         self._new_dashboard: str = ""
         self._consecutive_errors: int = 0
 
+        # Token usage tracking
+        self.total_input_tokens: int = 0
+        self.total_output_tokens: int = 0
+        self.total_cached_tokens: int = 0
+        self.total_reasoning_tokens: int = 0
+        self.last_input_tokens: int = 0
+        self.last_output_tokens: int = 0
+        self.last_cached_tokens: int = 0
+        self.last_reasoning_tokens: int = 0
+
     def _default_system_prompt(self) -> str:
         """Build the default system prompt.
 
@@ -263,6 +273,8 @@ class BashAgent(BaseAgent):
         """Call the LLM and parse the response into an action."""
         if self.use_anthropic:
             return self._call_anthropic()
+        elif self.reasoning_effort:
+            return self._call_openai_responses()
         else:
             return self._call_openai()
 
@@ -311,7 +323,7 @@ class BashAgent(BaseAgent):
                     'messages': messages,
                     'tools': tools,
                     'tool_choice': 'auto',
-                    'max_tokens': 16384,
+                    'max_completion_tokens': 16384,
                     'temperature': 1.0,
                 }
                 if self.reasoning_effort:
@@ -327,6 +339,26 @@ class BashAgent(BaseAgent):
                     signal.signal(signal.SIGALRM, old_handler)  # Restore handler
                 self.total_turns += 1
                 self._consecutive_errors = 0
+
+                # Capture token usage (OpenAI chat completions format)
+                usage = getattr(response, 'usage', None)
+                if usage:
+                    self.last_input_tokens = getattr(usage, 'prompt_tokens', 0) or 0
+                    self.last_output_tokens = getattr(usage, 'completion_tokens', 0) or 0
+                    # Cache and reasoning details
+                    ptd = getattr(usage, 'prompt_tokens_details', None)
+                    self.last_cached_tokens = getattr(ptd, 'cached_tokens', 0) or 0 if ptd else 0
+                    ctd = getattr(usage, 'completion_tokens_details', None)
+                    self.last_reasoning_tokens = getattr(ctd, 'reasoning_tokens', 0) or 0 if ctd else 0
+                else:
+                    self.last_input_tokens = 0
+                    self.last_output_tokens = 0
+                    self.last_cached_tokens = 0
+                    self.last_reasoning_tokens = 0
+                self.total_input_tokens += self.last_input_tokens
+                self.total_output_tokens += self.last_output_tokens
+                self.total_cached_tokens += self.last_cached_tokens
+                self.total_reasoning_tokens += self.last_reasoning_tokens
 
                 if self.response_callback:
                     self.response_callback(
@@ -413,6 +445,168 @@ class BashAgent(BaseAgent):
                     print(f"Traceback: {traceback.format_exc()}")
                     return Action(tool='bash', arguments={'command': './novamind-operation next-week'})
 
+    def _call_openai_responses(self) -> Optional[Action]:
+        """Call OpenAI Responses API (required for reasoning models with tools)."""
+        import time as _time
+        import traceback
+        import signal
+        import openai
+
+        LLM_WALL_CLOCK_TIMEOUT = 600
+
+        class LLMTimeoutError(Exception):
+            pass
+
+        def _llm_timeout_handler(signum, frame):
+            raise LLMTimeoutError(f"LLM call exceeded {LLM_WALL_CLOCK_TIMEOUT}s wall-clock timeout")
+
+        while True:
+            # Build input array from conversation
+            input_items = []
+            for msg in self.conversation:
+                if msg.role == 'system':
+                    continue  # System prompt goes in instructions parameter
+                elif msg.role == 'user':
+                    input_items.append({'role': 'user', 'content': msg.content or ''})
+                elif msg.role == 'assistant':
+                    if isinstance(msg.content, list):
+                        # Raw response.output items from previous Responses API call
+                        input_items.extend(msg.content)
+                    else:
+                        input_items.append({'role': 'assistant', 'content': msg.content or ''})
+                elif msg.role == 'tool':
+                    input_items.append({
+                        'type': 'function_call_output',
+                        'call_id': msg.tool_call_id,
+                        'output': msg.content or '',
+                    })
+
+            # Build tools (Responses API format — no nested function wrapper)
+            tools = [
+                {
+                    'type': 'function',
+                    'name': t['name'],
+                    'description': t['description'],
+                    'parameters': t['parameters'],
+                }
+                for t in self.tool_descriptions
+            ]
+
+            try:
+                api_kwargs = {
+                    'model': self.model,
+                    'input': input_items,
+                    'tools': tools,
+                    'tool_choice': 'auto',
+                    'max_output_tokens': 16384,
+                    'instructions': self._get_system_prompt_with_memory(),
+                }
+                if self.reasoning_effort:
+                    api_kwargs['reasoning'] = {'effort': self.reasoning_effort}
+
+                # Set hard wall-clock timeout via signal.alarm
+                old_handler = signal.signal(signal.SIGALRM, _llm_timeout_handler)
+                signal.alarm(LLM_WALL_CLOCK_TIMEOUT)
+                try:
+                    response = self.client.responses.create(**api_kwargs)
+                finally:
+                    signal.alarm(0)
+                    signal.signal(signal.SIGALRM, old_handler)
+
+                self.total_turns += 1
+                self._consecutive_errors = 0
+
+                # Capture token usage (Responses API uses input_tokens/output_tokens)
+                usage = getattr(response, 'usage', None)
+                if usage:
+                    self.last_input_tokens = getattr(usage, 'input_tokens', 0) or 0
+                    self.last_output_tokens = getattr(usage, 'output_tokens', 0) or 0
+                    # Cache and reasoning details
+                    itd = getattr(usage, 'input_tokens_details', None)
+                    self.last_cached_tokens = getattr(itd, 'cached_tokens', 0) or 0 if itd else 0
+                    otd = getattr(usage, 'output_tokens_details', None)
+                    self.last_reasoning_tokens = getattr(otd, 'reasoning_tokens', 0) or 0 if otd else 0
+                else:
+                    self.last_input_tokens = 0
+                    self.last_output_tokens = 0
+                    self.last_cached_tokens = 0
+                    self.last_reasoning_tokens = 0
+                self.total_input_tokens += self.last_input_tokens
+                self.total_output_tokens += self.last_output_tokens
+                self.total_cached_tokens += self.last_cached_tokens
+                self.total_reasoning_tokens += self.last_reasoning_tokens
+
+                if self.response_callback:
+                    self.response_callback(
+                        turn=self.total_turns,
+                        day=self.current_day,
+                        messages=input_items,
+                        raw_response=response.model_dump() if hasattr(response, 'model_dump') else str(response),
+                    )
+
+                # Log reasoning content if present
+                for item in response.output:
+                    if getattr(item, 'type', '') == 'reasoning' and self.tool_result_callback:
+                        reasoning_text = ''
+                        for summary in getattr(item, 'summary', []) or []:
+                            reasoning_text += getattr(summary, 'text', '') + '\n'
+                        if reasoning_text.strip():
+                            self.tool_result_callback(
+                                self.total_turns, self.current_day, '_reasoning', {},
+                                reasoning_text.strip()
+                            )
+
+                # Store raw output items for conversation history reconstruction
+                self.conversation.append(Message(
+                    role='assistant',
+                    content=list(response.output),
+                ))
+
+                # Find function_call items
+                function_calls = [item for item in response.output
+                                  if getattr(item, 'type', '') == 'function_call']
+
+                if not function_calls:
+                    return None
+
+                # Handle tool calls — execute first, skip rest
+                first_fc = function_calls[0]
+                try:
+                    args = json.loads(first_fc.arguments) if first_fc.arguments else {}
+                except json.JSONDecodeError:
+                    args = {}
+
+                # Skip extra parallel tool calls
+                for extra_fc in function_calls[1:]:
+                    self.conversation.append(Message(
+                        role='tool',
+                        content=f"[Skipped - only one tool per turn. Call {extra_fc.name} again if needed.]",
+                        tool_call_id=extra_fc.call_id,
+                        name=extra_fc.name
+                    ))
+
+                self._pending_tool_calls = [{'id': first_fc.call_id, 'name': first_fc.name}]
+                return Action(tool=first_fc.name, arguments=args)
+
+            except Exception as e:
+                status = getattr(e, 'status_code', 0) or 0
+                is_retryable = isinstance(e, openai.APIStatusError) and (status >= 500 or status == 429)
+                if not is_retryable:
+                    is_retryable = isinstance(e, (openai.APIConnectionError, openai.APITimeoutError, LLMTimeoutError))
+                if not is_retryable:
+                    is_retryable = any(code in str(e) for code in ('429', '500', '502', '503', '504', '529'))
+                print(f"OpenAI Responses API error (retryable={is_retryable}, status={status}): {e}")
+                if is_retryable:
+                    self._consecutive_errors = getattr(self, '_consecutive_errors', 0) + 1
+                    wait_time = min(120, 10 * (2 ** min(self._consecutive_errors - 1, 3)))
+                    print(f"  Server error ({self._consecutive_errors}), retrying in {wait_time}s...")
+                    _time.sleep(wait_time)
+                    del input_items, tools
+                    continue  # Loop back to retry
+                else:
+                    print(f"Traceback: {traceback.format_exc()}")
+                    return Action(tool='bash', arguments={'command': './novamind-operation next-week'})
+
     def _call_anthropic(self) -> Optional[Action]:
         """Call Anthropic/Bedrock API and parse the response."""
         import copy
@@ -473,6 +667,24 @@ class BashAgent(BaseAgent):
 
             self.total_turns += 1
             self._consecutive_errors = 0
+
+            # Capture token usage (Anthropic format)
+            usage = getattr(response, 'usage', None)
+            if usage:
+                self.last_input_tokens = getattr(usage, 'input_tokens', 0) or 0
+                self.last_output_tokens = getattr(usage, 'output_tokens', 0) or 0
+                # Anthropic cache tracking: cache_creation_input_tokens + cache_read_input_tokens
+                self.last_cached_tokens = getattr(usage, 'cache_read_input_tokens', 0) or 0
+                self.last_reasoning_tokens = 0  # Anthropic doesn't expose reasoning tokens separately
+            else:
+                self.last_input_tokens = 0
+                self.last_output_tokens = 0
+                self.last_cached_tokens = 0
+                self.last_reasoning_tokens = 0
+            self.total_input_tokens += self.last_input_tokens
+            self.total_output_tokens += self.last_output_tokens
+            self.total_cached_tokens += self.last_cached_tokens
+            self.total_reasoning_tokens += self.last_reasoning_tokens
 
             if self.response_callback:
                 self.response_callback(

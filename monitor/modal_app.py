@@ -148,7 +148,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <table class="compare-table"><thead><tr>
           <th>Run</th><th>Model</th><th>Day</th><th>Progress</th>
           <th style="text-align:right">Cash</th><th style="text-align:right">Subscribers</th>
-          <th style="text-align:right">MRR</th><th style="text-align:right">F. Dividends</th>
+          <th style="text-align:right">MRR</th><th style="text-align:right">Mo. Profit</th><th style="text-align:right">F. Dividends</th>
           <th style="text-align:right">Turns</th><th>Last Action</th>
         </tr></thead><tbody id="compareBody"></tbody></table>
       </div>
@@ -160,7 +160,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button onclick="selectRun('')" style="background:var(--surface);border:1px solid var(--border);color:var(--accent);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:13px">&#8592; Back</button>
       <h2 id="detailTitle" style="margin:0"></h2>
     </div>
-    <div class="overview" id="detailStats" style="display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:16px"></div>
+    <div class="overview" id="detailStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"></div>
 
     <!-- Group Discovery Status -->
     <div id="discoverySection" style="margin-bottom:20px"></div>
@@ -170,9 +170,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="chart-box"><h3>Cash Balance</h3><canvas id="cashChart"></canvas></div>
       <div class="chart-box"><h3>Individual Subs + Enterprise Seats</h3><canvas id="subsChart"></canvas></div>
     </div>
-    <!-- Dividends + Timing -->
+    <!-- Dividends + Monthly Profit -->
     <div class="charts">
       <div class="chart-box"><h3>Founder Dividends (Cumulative)</h3><canvas id="divChart"></canvas></div>
+      <div class="chart-box"><h3>Monthly Profit (30-day windows)</h3><canvas id="profitChart"></canvas></div>
+    </div>
+    <!-- Timing -->
+    <div class="charts">
       <div class="chart-box" id="timingChartBox"><h3>Day Time Breakdown (s)</h3><canvas id="timingChart"></canvas></div>
     </div>
     <!-- Reputation + Q_min -->
@@ -290,7 +294,8 @@ function renderOverview(){
   for(var i=0;i<runs.length;i++){var r=runs[i];var p=pct(r.current_day||0,r.total_days||1095);
     var hb=r.last_heartbeat;var hbAge=hb?Math.floor((Date.now()-new Date(hb))/1000):null;var hbColor=hbAge!==null?(hbAge<60?'var(--green)':hbAge<300?'var(--yellow)':'var(--red)'):'var(--text2)';var hbDot='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+hbColor+';margin-right:4px"></span>';
     var lastAct=(r.recent_activity||r.recent_actions||[])[0];var lastActHtml=hbDot+(hb?'<span style="font-size:11px;color:'+hbColor+'">'+timeAgo(hb)+'</span> ':'')+(lastAct?(lastAct.type==='llm'?'<span style="color:var(--accent);font-weight:600">\ud83e\udde0 LLM '+(lastAct.elapsed_s||'?')+'s</span>':'<span style="color:var(--purple);font-weight:600">'+(actEmoji[lastAct.tool]||'\u2699\ufe0f')+' '+esc(lastAct.tool)+'</span>'):'');
-    tbody+='<tr style="cursor:pointer" onclick="selectRun(\''+r.run_id+'\')"><td><strong>'+esc(r.label)+'</strong><br><span style="color:var(--text2);font-size:11px">'+r.run_id+'</span></td><td style="font-size:12px">'+esc(r.model||'')+'</td><td class="num">'+(r.current_day||'\u2014')+'</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:var(--bg);border-radius:3px;height:4px"><div style="width:'+p+'%;background:var(--accent);height:100%;border-radius:3px"></div></div><span style="font-size:11px;color:var(--text2);min-width:35px">'+p+'%</span></div></td><td class="num" style="color:'+((r.cash||0)<0?'var(--red)':'var(--green)')+'">'+fmtCash(r.cash)+'</td><td class="num">'+fmt(r.subscribers)+'</td><td class="num">'+fmtCash(r.mrr)+'</td><td class="num" style="color:var(--yellow)">'+fmtCash(r.founder_dividends)+'</td><td class="num">'+fmt(r.agent_turns)+'</td><td style="font-size:12px">'+lastActHtml+'</td></tr>'}
+    var mp=r.monthly_profit;var mpCol=mp!=null?(mp>=0?'color:var(--green)':'color:var(--red)'):'';
+    tbody+='<tr style="cursor:pointer" onclick="selectRun(\''+r.run_id+'\')"><td><strong>'+esc(r.label)+'</strong><br><span style="color:var(--text2);font-size:11px">'+r.run_id+'</span></td><td style="font-size:12px">'+esc(r.model||'')+'</td><td class="num">'+(r.current_day||'\u2014')+'</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:var(--bg);border-radius:3px;height:4px"><div style="width:'+p+'%;background:var(--accent);height:100%;border-radius:3px"></div></div><span style="font-size:11px;color:var(--text2);min-width:35px">'+p+'%</span></div></td><td class="num" style="color:'+((r.cash||0)<0?'var(--red)':'var(--green)')+'">'+fmtCash(r.cash)+'</td><td class="num">'+fmt(r.subscribers)+'</td><td class="num">'+fmtCash(r.mrr)+'</td><td class="num" style="'+mpCol+'">'+(mp!=null?fmtCash(mp):'\u2014')+'</td><td class="num" style="color:var(--yellow)">'+fmtCash(r.founder_dividends)+'</td><td class="num">'+fmt(r.agent_turns)+'</td><td style="font-size:12px">'+lastActHtml+'</td></tr>'}
   $('#compareBody').innerHTML=tbody;
   var cards='';
   for(var i=0;i<runs.length;i++){var r=runs[i];var p=pct(r.current_day||0,r.total_days||1095);
@@ -308,7 +313,8 @@ function renderDetail(){
   if(!currentRun)return;var r=(allData.runs||[]).find(function(x){return x.run_id===currentRun});if(!r)return;
   var p=pct(r.current_day||0,r.total_days||1095);
   $('#detailTitle').textContent=r.label+' \u2014 '+r.model+' ('+r.run_id+')';
-  var stats=[{l:'Day',v:(r.current_day||'?')+' / '+(r.total_days||'?')+' ('+p+'%)'},{l:'Cash',v:fmtCash(r.cash),c:(r.cash||0)<0?'color:var(--red)':'color:var(--green)'},{l:'Subscribers',v:fmt(r.subscribers)},{l:'MRR',v:fmtCash(r.mrr)},{l:'F. Dividends',v:fmtCash(r.founder_dividends),c:'color:var(--yellow)'},{l:'Agent Turns',v:fmt(r.agent_turns||r.tool_calls_count)},{l:'Avg Day Time',v:r.timing_avg_day?r.timing_avg_day+'s':'\u2014',c:'color:var(--accent)'}];
+  var mpColor=r.monthly_profit!=null?(r.monthly_profit>=0?'color:var(--green)':'color:var(--red)'):'';
+  var stats=[{l:'Day',v:(r.current_day||'?')+' / '+(r.total_days||'?')+' ('+p+'%)'},{l:'Cash',v:fmtCash(r.cash),c:(r.cash||0)<0?'color:var(--red)':'color:var(--green)'},{l:'Subscribers',v:fmt(r.subscribers)},{l:'MRR',v:fmtCash(r.mrr)},{l:'Mo. Profit',v:r.monthly_profit!=null?fmtCash(r.monthly_profit):'\u2014',c:mpColor},{l:'F. Dividends',v:fmtCash(r.founder_dividends),c:'color:var(--yellow)'},{l:'Agent Turns',v:fmt(r.agent_turns||r.tool_calls_count)},{l:'Avg Day Time',v:r.timing_avg_day?r.timing_avg_day+'s':'\u2014',c:'color:var(--accent)'}];
   $('#detailStats').innerHTML=stats.map(function(s){return'<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px"><div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">'+s.l+'</div><div style="font-size:18px;font-weight:700;margin-top:2px;'+(s.c||'')+'">'+s.v+'</div></div>'}).join('');
   renderDiscovery(r);renderCharts(r);renderNewCharts(r);renderActions(r);renderResponses(r);renderRationales(r);renderTiming(r);renderAgentPosts(r);renderCustomerPosts(r);
 }
@@ -335,6 +341,13 @@ function renderCharts(r){
   else{charts.subs=new Chart($('#subsChart').getContext('2d'),{type:'line',options:lineOpts,data:{labels:subData.map(function(d){return d.day}),datasets:[{label:'Subscribers',data:subData.map(function(d){return d.subscribers}),borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,0.1)',fill:true}]}})};
   if(charts.div)charts.div.destroy();
   charts.div=new Chart($('#divChart').getContext('2d'),{type:'line',options:lineOpts,data:{labels:(r.dividend_series||[]).map(function(d){return d.day}),datasets:[{label:'Founder Dividends',data:(r.dividend_series||[]).map(function(d){return d.dividends}),borderColor:'#d29922',backgroundColor:'rgba(210,153,34,0.1)',fill:true}]}});
+  // Monthly Profit chart (bar chart: revenue, costs, profit line)
+  if(charts.profit)charts.profit.destroy();
+  var profitData=r.profit_series||[];
+  if(profitData.length){
+    var profitOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{size:10}}}},scales:{x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',font:{size:10}}},y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',font:{size:10},callback:function(v){return'$'+fmt(v)}}}},elements:{point:{radius:2},line:{borderWidth:2}}};
+    charts.profit=new Chart($('#profitChart').getContext('2d'),{type:'bar',options:profitOpts,data:{labels:profitData.map(function(d){return'Day '+d.day}),datasets:[{type:'bar',label:'Revenue',data:profitData.map(function(d){return d.revenue}),backgroundColor:'rgba(63,185,80,0.6)',borderColor:'#3fb950',borderWidth:1},{type:'bar',label:'Costs',data:profitData.map(function(d){return Math.abs(d.costs)}),backgroundColor:'rgba(248,81,73,0.6)',borderColor:'#f85149',borderWidth:1},{type:'line',label:'Profit',data:profitData.map(function(d){return d.profit}),borderColor:'#58a6ff',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:profitData.map(function(d){return d.profit>=0?'#3fb950':'#f85149'})}]}})
+  }
 }
 
 function renderNewCharts(r){

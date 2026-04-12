@@ -180,7 +180,7 @@ Run these bash commands to control the simulation:
 # Check current status
 python {cli_tool} status
 
-# Advance to next day (REQUIRED to progress)
+# Advance to next week (REQUIRED to progress)
 python {cli_tool} next_week
 
 # Set prices for plans A, B, C

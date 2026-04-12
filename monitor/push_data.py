@@ -108,6 +108,42 @@ def get_dividend_series_from_db(run_dir: Path, max_points: int = 200) -> list:
         return []
 
 
+def get_profit_series_from_db(run_dir: Path, max_points: int = 200) -> list:
+    """Monthly (30-day rolling) profit series. Returns list of {day, revenue, costs, profit}."""
+    conn = _open_run_db(run_dir)
+    if not conn:
+        return []
+    try:
+        # Get all distinct days from ledger
+        max_day_row = conn.execute("SELECT MAX(day) FROM ledger").fetchone()
+        if not max_day_row or max_day_row[0] is None:
+            conn.close()
+            return []
+        max_day = max_day_row[0]
+        series = []
+        # Rolling 30-day windows sampled every 7 days for smoother chart
+        day = 29  # first full 30-day window ends at day 29 (days 0-29)
+        while day <= max_day:
+            start_day = day - 29
+            row = conn.execute("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN amount > 0 AND category != 'initial_funding' THEN amount ELSE 0 END), 0) as revenue,
+                    COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) as costs
+                FROM ledger WHERE day BETWEEN ? AND ?
+            """, (start_day, day)).fetchone()
+            revenue = round(row[0], 2)
+            costs = round(row[1], 2)
+            series.append({"day": day, "revenue": revenue, "costs": costs, "profit": round(revenue + costs, 2)})
+            day += 7
+        conn.close()
+        if len(series) > max_points:
+            step = len(series) // max_points
+            series = [s for i, s in enumerate(series) if i % step == 0 or i == len(series) - 1]
+        return series
+    except Exception:
+        return []
+
+
 def get_ads_revenue_series_from_db(run_dir: Path, max_points: int = 200) -> list:
     """Daily ads revenue per active customer group. Returns list of {day, group_id, revenue}."""
     conn = _open_run_db(run_dir)
@@ -265,7 +301,7 @@ def get_seat_series_from_db(run_dir: Path, max_points: int = 200) -> list:
                     COALESCE(SUM(CASE WHEN seat_count = 1 THEN 1 ELSE 0 END), 0) as individual,
                     COALESCE(SUM(CASE WHEN seat_count > 1 THEN seat_count ELSE 0 END), 0) as enterprise_seats
                 FROM subscriptions
-                WHERE status = 'subscribed' AND start_day <= ? AND (end_day IS NULL OR end_day > ?)""",
+                WHERE status IN ('subscribed', 'cancelled') AND start_day <= ? AND (end_day IS NULL OR end_day > ?)""",
                 (day, day)
             ).fetchone()
             series.append({"day": day, "individual": row[0], "enterprise_seats": row[1]})
@@ -474,6 +510,10 @@ def get_run_data(run_id: str) -> dict:
                 cp = json.load(f)
                 data["current_day"] = cp.get("day", cp.get("current_day"))
                 data["agent_turns"] = cp.get("agent_total_turns")
+                data["total_input_tokens"] = cp.get("total_input_tokens", 0)
+                data["total_output_tokens"] = cp.get("total_output_tokens", 0)
+                data["total_cached_tokens"] = cp.get("total_cached_tokens", 0)
+                data["total_reasoning_tokens"] = cp.get("total_reasoning_tokens", 0)
         except (json.JSONDecodeError, ValueError):
             data["current_day"] = None
             data["agent_turns"] = None
@@ -509,6 +549,10 @@ def get_run_data(run_id: str) -> dict:
                 data["cash"] = latest.get("cash", 0)
                 data["subscribers"] = latest.get("subscribers", 0)
                 data["mrr"] = latest.get("mrr", 0)
+
+                # Derive current_day from latest snapshot if checkpoint missing
+                if data.get("current_day") is None and latest.get("day") is not None:
+                    data["current_day"] = latest["day"]
 
                 step = max(1, len(snapshots) // 200)
                 data["cash_series"] = [
@@ -589,11 +633,44 @@ def get_run_data(run_id: str) -> dict:
             except Exception as e:
                 data.setdefault("db_errors", []).append(f"sub_series: {e}")
 
+            # Derive current_day from DB if still missing
+            if data.get("current_day") is None:
+                try:
+                    row = conn.execute("SELECT MAX(day) FROM _hidden_group_params_history").fetchone()
+                    if row and row[0] is not None:
+                        data["current_day"] = row[0]
+                except Exception:
+                    pass
+
             conn.close()
+
+    # Always derive current_day from the actual simulation DB (most accurate).
+    # checkpoint.json "day" may be in week-units if using step_week(), while
+    # total_days and series data are in actual simulation days.
+    db_conn = _open_run_db(run_dir)
+    if db_conn:
+        try:
+            row = db_conn.execute("SELECT MAX(day) FROM _hidden_group_params_history").fetchone()
+            if row and row[0] is not None:
+                data["current_day"] = row[0]
+        except Exception:
+            pass
+        try:
+            db_conn.close()
+        except Exception:
+            pass
 
     # Founder dividends from SQLite DB (small table, quick query)
     data["founder_dividends"] = get_founder_dividends_from_db(run_dir)
     data["dividend_series"] = get_dividend_series_from_db(run_dir)
+
+    # Monthly profit series (30-day rolling windows)
+    profit_series = get_profit_series_from_db(run_dir)
+    data["profit_series"] = profit_series
+    if profit_series:
+        data["monthly_profit"] = profit_series[-1]["profit"]
+    else:
+        data["monthly_profit"] = None
 
     # Discovered groups — used to filter charts
     discovered = get_discovered_group_ids(run_dir)

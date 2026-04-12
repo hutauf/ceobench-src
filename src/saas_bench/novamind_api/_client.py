@@ -81,7 +81,7 @@ def next_week() -> Dict[str, Any]:
     Returns:
         Dict with 'day' and 'dashboard' keys
     """
-    url = f"{_base_url()}/next-day"  # Endpoint kept for backward compat
+    url = f"{_base_url()}/next-week"
     req = urllib.request.Request(
         url,
         data=b'{}',
@@ -110,8 +110,6 @@ def next_week() -> Dict[str, Any]:
     return result
 
 
-# Backward compatibility alias
-next_day = next_week
 
 
 def query(sql: str) -> Dict[str, Any]:

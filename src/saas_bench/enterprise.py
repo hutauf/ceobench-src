@@ -789,8 +789,8 @@ def get_threads_awaiting_agent_response(conn: sqlite3.Connection, current_day: i
             FROM (
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY message_id DESC) AS rn
                 FROM enterprise_turns
-                WHERE closed = 0 AND _internal_status IS NULL
-            ) WHERE rn = 1
+                WHERE _internal_status IS NULL
+            ) WHERE rn = 1 AND closed = 0
               AND sender IN ('customer', 'system')
               AND (? - day) >= ?
         """, (current_day, current_day, timeout_days)).fetchall()

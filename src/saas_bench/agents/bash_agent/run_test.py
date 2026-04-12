@@ -178,6 +178,8 @@ class BashAgentRunner:
             self.api_key = None
         elif provider == "modal":
             self.api_key = env_vars.get("MODAL_API_KEY") or os.environ.get("MODAL_API_KEY")
+        elif provider == "together":
+            self.api_key = env_vars.get("TOGETHER_API_KEY") or os.environ.get("TOGETHER_API_KEY")
         else:
             self.api_key = env_vars.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -190,6 +192,8 @@ class BashAgentRunner:
             self.base_url = "https://api.x.ai/v1"
         elif provider == "modal":
             self.base_url = "https://princeton-tony--glm5-serving-server.us-east.modal.direct/v1"
+        elif provider == "together":
+            self.base_url = "https://api.together.xyz/v1"
         else:
             self.base_url = None
 
@@ -269,9 +273,9 @@ class BashAgentRunner:
             return "(Dashboard unavailable)"
 
     def _advance_day_http(self) -> Dict:
-        """Force week advancement via HTTP POST /next-day (API endpoint kept for compat)."""
+        """Force week advancement via HTTP POST /next-week."""
         try:
-            return self._http_post('/next-day', timeout=4200)
+            return self._http_post('/next-week', timeout=4200)
         except urllib.error.URLError as e:
             return {"success": False, "error": str(e)}
 
@@ -468,6 +472,10 @@ class BashAgentRunner:
             'seed': self.seed,
             'scenario': self.scenario,
             'agent_total_turns': self.agent.total_turns if self.agent else 0,
+            'total_input_tokens': self.agent.total_input_tokens if self.agent else 0,
+            'total_output_tokens': self.agent.total_output_tokens if self.agent else 0,
+            'total_cached_tokens': self.agent.total_cached_tokens if self.agent else 0,
+            'total_reasoning_tokens': self.agent.total_reasoning_tokens if self.agent else 0,
             'daily_scripts': daily_scripts,
             'session_id': self._session_id,
         }
@@ -546,6 +554,10 @@ class BashAgentRunner:
 
         if self.agent:
             self.agent.total_turns = checkpoint.get('agent_total_turns', 0)
+            self.agent.total_input_tokens = checkpoint.get('total_input_tokens', 0)
+            self.agent.total_output_tokens = checkpoint.get('total_output_tokens', 0)
+            self.agent.total_cached_tokens = checkpoint.get('total_cached_tokens', 0)
+            self.agent.total_reasoning_tokens = checkpoint.get('total_reasoning_tokens', 0)
 
     # =========================================================================
     # Setup
@@ -695,25 +707,34 @@ class BashAgentRunner:
             _day_start = _time.monotonic()
             current_day = day
 
+            # Get actual simulation day from server (may differ from harness loop counter
+            # when agent uses next-week which advances 7 sim days per loop iteration)
+            status = self._get_game_status()
+            sim_day = status.get('day', day)
+
             if verbose:
                 print(f"\n{'='*40}")
-                print(f"DAY {day}")
+                print(f"DAY {day} (sim day {sim_day})")
                 print(f"{'='*40}")
 
             # Build dashboard (timed)
             _t0 = _time.monotonic()
             dashboard = self._get_dashboard()
             _dashboard_elapsed = _time.monotonic() - _t0
-            self._log_tool_result(0, day, '_dashboard', {}, dashboard)
-            self._log_timing("dashboard", day, elapsed_s=round(_dashboard_elapsed, 3))
+            self._log_tool_result(0, sim_day, '_dashboard', {}, dashboard)
+            self._log_timing("dashboard", sim_day, elapsed_s=round(_dashboard_elapsed, 3))
 
             # Agent loop for this day
             observation = dashboard
-            info = {'day': day, 'cash': self._get_cash()}
+            info = {'day': sim_day, 'cash': status.get('cash', self._get_cash())}
             turns_today = 0
             day_ended = False
             _day_llm_total = 0.0
             _day_tool_total = 0.0
+            _day_input_tokens = 0
+            _day_output_tokens = 0
+            _day_cached_tokens = 0
+            _day_reasoning_tokens = 0
 
             while not day_ended and turns_today < 100:
                 turns_today += 1
@@ -723,6 +744,10 @@ class BashAgentRunner:
                 action = self.agent.act(observation, 0, False, info)
                 _llm_elapsed = _time.monotonic() - _t0
                 _day_llm_total += _llm_elapsed
+                _day_input_tokens += self.agent.last_input_tokens
+                _day_output_tokens += self.agent.last_output_tokens
+                _day_cached_tokens += self.agent.last_cached_tokens
+                _day_reasoning_tokens += self.agent.last_reasoning_tokens
 
                 if action is None:
                     # No action — force next-week via bash
@@ -735,9 +760,13 @@ class BashAgentRunner:
                 else:
                     tool_args_preview = json.dumps(action.arguments or {})[:120]
 
-                self._log_timing("llm_call", day, turn=turns_today,
+                self._log_timing("llm_call", sim_day, turn=turns_today,
                                  elapsed_s=round(_llm_elapsed, 2),
-                                 tool=tool_name, tool_preview=tool_args_preview)
+                                 tool=tool_name, tool_preview=tool_args_preview,
+                                 input_tokens=self.agent.last_input_tokens,
+                                 output_tokens=self.agent.last_output_tokens,
+                                 cached_tokens=self.agent.last_cached_tokens,
+                                 reasoning_tokens=self.agent.last_reasoning_tokens)
 
                 # Execute action (timed)
                 if verbose:
@@ -751,9 +780,9 @@ class BashAgentRunner:
                     result = self._execute_tool(action.tool, action.arguments or {})
                 except self._NextDayTimeoutError as e:
                     _tool_elapsed = _time.monotonic() - _t0
-                    print(f"\n⚠️  next_week timed out on day {day} ({e})")
-                    print(f"Auto-quitting. Saving checkpoint at day {day - 1}...")
-                    self._save_checkpoint(day - 1)
+                    print(f"\n⚠️  next_week timed out on sim day {sim_day} ({e})")
+                    print(f"Auto-quitting. Saving checkpoint...")
+                    self._save_checkpoint(sim_day)
                     game_ended = True
                     game_outcome = 'timeout'
                     break
@@ -761,13 +790,13 @@ class BashAgentRunner:
                 _day_tool_total += _tool_elapsed
                 observation = result if isinstance(result, str) else json.dumps(result)
 
-                self._log_timing("tool_exec", day, turn=turns_today,
+                self._log_timing("tool_exec", sim_day, turn=turns_today,
                                  elapsed_s=round(_tool_elapsed, 3),
                                  tool=tool_name, tool_preview=tool_args_preview)
 
                 # Log tool result
                 self._log_tool_result(
-                    self.agent.total_turns, day,
+                    self.agent.total_turns, sim_day,
                     action.tool, action.arguments or {},
                     observation  # Full result in JSONL (tool already caps at 50K)
                 )
@@ -783,15 +812,34 @@ class BashAgentRunner:
 
                 # Check server for timeout (via game-status)
                 status = self._get_game_status()
+                sim_day = status.get('day', sim_day)  # Update sim_day after potential next-week
+
+                # Check if simulation reached total_days (inside inner loop)
+                if sim_day >= self.total_days:
+                    game_ended = True
+                    game_outcome = 'completed'
+                    if verbose:
+                        print(f"\n✅ Simulation reached {sim_day} days (target: {self.total_days})")
+                    break
+
                 if status.get('timed_out'):
-                    print(f"\n⚠️  step_day timed out on day {day}")
+                    print(f"\n⚠️  step_day timed out on sim day {sim_day}")
                     print(f"Auto-quitting. Saving checkpoint...")
-                    self._save_checkpoint(day - 1)
+                    self._save_checkpoint(sim_day)
                     game_ended = True
                     game_outcome = 'timeout'
                     break
 
-                info = {'day': day, 'cash': status.get('cash', self._get_cash())}
+                _cash_inner = status.get('cash', 0)
+                info = {'day': sim_day, 'cash': _cash_inner}
+
+                # Check bankruptcy inside inner loop (don't let agent keep playing while bankrupt)
+                if _cash_inner < 0:
+                    game_ended = True
+                    game_outcome = 'bankrupt'
+                    if verbose:
+                        print(f"\n💀 BANKRUPT at sim day {sim_day} (cash=${_cash_inner:,.0f})!")
+                    break
 
             if game_ended:
                 break
@@ -806,9 +854,9 @@ class BashAgentRunner:
                 if not resp.get('success'):
                     error = resp.get('error', '')
                     if error == 'step_day_timeout':
-                        print(f"\n⚠️  step_day timed out on day {day} ({_step_elapsed:.1f}s)")
-                        print(f"Auto-quitting. Saving checkpoint at day {day - 1}...")
-                        self._save_checkpoint(day - 1)
+                        print(f"\n⚠️  step_day timed out on sim day {sim_day} ({_step_elapsed:.1f}s)")
+                        print(f"Auto-quitting. Saving checkpoint...")
+                        self._save_checkpoint(sim_day)
                         game_ended = True
                         game_outcome = 'timeout'
                         break
@@ -816,21 +864,30 @@ class BashAgentRunner:
                         print(f"\n❌ advance_day failed: {error}")
 
             # Log step_day timing
-            self._log_timing("step_day", day, elapsed_s=round(_step_elapsed, 2))
+            self._log_timing("step_day", sim_day, elapsed_s=round(_step_elapsed, 2))
 
             # Log slow step_day as warning
             if _step_elapsed > 300:
-                print(f"\n⚠️  step_day took {_step_elapsed:.1f}s on day {day} (>300s) — continuing")
+                print(f"\n⚠️  step_day took {_step_elapsed:.1f}s on sim day {sim_day} (>300s) — continuing")
 
-            # Get post-day status
+            # Get post-day status (also refresh sim_day)
             status = self._get_game_status()
+            sim_day = status.get('day', sim_day)
             _subs = status.get('subscribers', 0)
             _cash = status.get('cash', 0)
+
+            # Check if simulation reached total_days
+            if sim_day >= self.total_days:
+                game_ended = True
+                game_outcome = 'completed'
+                if verbose:
+                    print(f"\n✅ Simulation reached {sim_day} days (target: {self.total_days})")
+                break
 
             # Per-day timing summary
             _day_elapsed = _time.monotonic() - _day_start
             _day_other = _day_elapsed - _day_llm_total - _day_tool_total - _step_elapsed - _dashboard_elapsed
-            self._log_timing("day_summary", day,
+            self._log_timing("day_summary", sim_day,
                              elapsed_s=round(_day_elapsed, 1),
                              llm_total_s=round(_day_llm_total, 1),
                              tool_total_s=round(_day_tool_total, 1),
@@ -839,31 +896,45 @@ class BashAgentRunner:
                              other_s=round(max(_day_other, 0), 1),
                              turns=turns_today,
                              subs=_subs,
-                             cash=_cash)
+                             cash=_cash,
+                             day_input_tokens=_day_input_tokens,
+                             day_output_tokens=_day_output_tokens,
+                             day_cached_tokens=_day_cached_tokens,
+                             day_reasoning_tokens=_day_reasoning_tokens,
+                             total_input_tokens=self.agent.total_input_tokens,
+                             total_output_tokens=self.agent.total_output_tokens,
+                             total_cached_tokens=self.agent.total_cached_tokens,
+                             total_reasoning_tokens=self.agent.total_reasoning_tokens)
 
             # Print per-day timing summary to stderr (visible in logs)
             _pct_llm = (_day_llm_total / _day_elapsed * 100) if _day_elapsed > 0 else 0
             _pct_step = (_step_elapsed / _day_elapsed * 100) if _day_elapsed > 0 else 0
             _pct_tool = (_day_tool_total / _day_elapsed * 100) if _day_elapsed > 0 else 0
-            print(f"\n⏱ DAY {day} TIMING: total={_day_elapsed:.0f}s | "
+            _cache_pct = (_day_cached_tokens / _day_input_tokens * 100) if _day_input_tokens > 0 else 0
+            print(f"\n⏱ DAY {sim_day} TIMING: total={_day_elapsed:.0f}s | "
                   f"llm={_day_llm_total:.0f}s ({_pct_llm:.0f}%) | "
                   f"step_day={_step_elapsed:.0f}s ({_pct_step:.0f}%) | "
                   f"tools={_day_tool_total:.0f}s ({_pct_tool:.0f}%) | "
                   f"dashboard={_dashboard_elapsed:.1f}s | "
-                  f"turns={turns_today}", file=sys.stderr, flush=True)
+                  f"turns={turns_today} | "
+                  f"tokens={_day_input_tokens:,}in/{_day_output_tokens:,}out "
+                  f"cached={_day_cached_tokens:,}({_cache_pct:.0f}%) "
+                  f"reasoning={_day_reasoning_tokens:,} "
+                  f"(cumul: {self.agent.total_input_tokens:,}in/{self.agent.total_output_tokens:,}out)",
+                  file=sys.stderr, flush=True)
 
             if verbose:
                 print(f"  📊 End of day: Cash=${_cash:,.0f}, Subs={_subs}")
 
-            # Save checkpoint
-            self._save_checkpoint(day)
+            # Save checkpoint (use actual sim day, not harness loop counter)
+            self._save_checkpoint(sim_day)
 
             # Check bankruptcy
             if _cash < 0:
                 game_ended = True
                 game_outcome = 'bankrupt'
                 if verbose:
-                    print(f"\n💀 BANKRUPT at day {day}!")
+                    print(f"\n💀 BANKRUPT at sim day {sim_day}!")
                 break
 
         if not game_outcome:
@@ -879,9 +950,13 @@ class BashAgentRunner:
             print(f"RUN COMPLETE")
             print(f"{'='*60}")
             print(f"Final Cash: ${final_cash:,.0f}")
-            print(f"Days Run: {current_day}")
+            print(f"Sim Days Run: {sim_day}")
             print(f"Outcome: {game_outcome}")
             print(f"Total Turns: {self.agent.total_turns}")
+            _total_cache_pct = (self.agent.total_cached_tokens / self.agent.total_input_tokens * 100) if self.agent.total_input_tokens > 0 else 0
+            print(f"Total Tokens: {self.agent.total_input_tokens:,} input / {self.agent.total_output_tokens:,} output")
+            print(f"Cached Tokens: {self.agent.total_cached_tokens:,} ({_total_cache_pct:.0f}% of input)")
+            print(f"Reasoning Tokens: {self.agent.total_reasoning_tokens:,}")
             print(f"{'='*60}\n")
 
         return {
@@ -889,7 +964,7 @@ class BashAgentRunner:
             'seed': self.seed,
             'scenario': self.scenario,
             'final_cash': final_cash,
-            'days_run': current_day,
+            'days_run': sim_day,
             'outcome': game_outcome,
             'total_turns': self.agent.total_turns,
             'workspace_dir': str(self.workspace_dir),
@@ -902,7 +977,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run bash agent for SaaS Bench")
     parser.add_argument("--model", default="gpt-4o", help="Model name")
     parser.add_argument("--provider", default="openai",
-                        choices=["openai", "xai", "anthropic", "bedrock", "modal"],
+                        choices=["openai", "xai", "anthropic", "bedrock", "modal", "together"],
                         help="API provider")
     parser.add_argument("--base-url", help="Custom API base URL")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
@@ -915,6 +990,7 @@ def main():
                         help="Reasoning effort for GPT-5.2+ models")
     parser.add_argument("--continue-from", type=Path,
                         help="Path to previous run directory to resume from")
+    parser.add_argument("--api-key", help="API key (overrides .env and environment)")
 
     args = parser.parse_args()
 
@@ -922,6 +998,7 @@ def main():
         model=args.model,
         provider=args.provider,
         base_url=args.base_url,
+        api_key=args.api_key,
         seed=args.seed,
         scenario=args.scenario,
         total_days=args.days,

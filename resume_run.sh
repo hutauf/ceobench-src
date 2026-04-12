@@ -72,6 +72,7 @@ RUN_ID=$(python3 -c "import json; print(json.load(open('$RUN_DIR/config.json'))[
 MODEL=$(python3 -c "import json; print(json.load(open('$RUN_DIR/config.json'))['model'])")
 PROVIDER=$(python3 -c "import json; print(json.load(open('$RUN_DIR/config.json'))['provider'])")
 SEED=$(python3 -c "import json; print(json.load(open('$RUN_DIR/config.json'))['seed'])")
+TOTAL_DAYS=$(python3 -c "import json; print(json.load(open('$RUN_DIR/config.json')).get('total_days', 3650))")
 CP_DAY=$(python3 -c "import json; print(json.load(open('$RUN_DIR/checkpoint.json'))['day'])")
 AGENT_TURNS=$(python3 -c "import json; print(json.load(open('$RUN_DIR/checkpoint.json')).get('agent_total_turns', '?'))")
 
@@ -168,6 +169,7 @@ nohup setsid bash -c "
     if [ -f .env ]; then set -a; source .env; set +a; fi
     stdbuf -oL uv run python -u -m saas_bench.agents.bash_agent.run_test \
         --model '$MODEL' --provider '$PROVIDER' --seed '$SEED' \
+        --days '$TOTAL_DAYS' \
         --continue-from '$ABS_RUN_DIR' \
         >> '$LOG_FILE' 2>> '$STDERR_FILE'
 " </dev/null >/dev/null 2>&1 &

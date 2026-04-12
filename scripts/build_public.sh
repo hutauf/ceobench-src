@@ -83,6 +83,11 @@ if [ "$SKIP_BINARY" = false ]; then
         --hidden-import saas_bench.novamind_cli \
         --hidden-import saas_bench.server_entry \
         --hidden-import numpy \
+        --exclude-module matplotlib \
+        --exclude-module scipy \
+        --exclude-module PIL \
+        --exclude-module tkinter \
+        --exclude-module _tkinter \
         --paths "$SRC_DIR" \
         "$SRC_DIR/saas_bench/server_entry.py"
 

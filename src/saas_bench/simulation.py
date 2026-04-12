@@ -5063,8 +5063,8 @@ Guidelines:
             FROM (
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY message_id DESC) AS rn
                 FROM enterprise_turns
-                WHERE closed = 0 AND _internal_status IS NULL
-            ) WHERE rn = 1
+                WHERE _internal_status IS NULL
+            ) WHERE rn = 1 AND closed = 0
         """)
         _ent_timings['latest_turns_cache'] = _time.monotonic() - _t0
 
@@ -5082,11 +5082,17 @@ Guidelines:
         # from the cached temp table (instant — no GROUP BY needed).
         _t0 = _time.monotonic()
         active_thread_customers = set()
+        payment_suspended_customers = set()
         rows = self.conn.execute(
-            "SELECT DISTINCT customer_id FROM _tmp_latest_turns"
+            "SELECT DISTINCT customer_id, thread_type FROM _tmp_latest_turns"
         ).fetchall()
         for row in rows:
             active_thread_customers.add(row['customer_id'])
+            if row['thread_type'] == 'churn_prevention':
+                payment_suspended_customers.add(row['customer_id'])
+        # Cache for _process_billing: enterprise customers with active churn_prevention
+        # threads have payment suspended (sat was < 0 when thread was created)
+        self._payment_suspended_customers = payment_suspended_customers
         _ent_timings['active_threads_query'] = _time.monotonic() - _t0
 
         # Check for new negotiation triggers
@@ -6186,7 +6192,21 @@ Guidelines:
         reset_updates = []      # (new_daily_usage_rate, subscription_id)
         promo_updates = []      # (promotion, effective_price, effective_c_max, first_billing_done, subscription_id)
 
+        # Payment suspension: enterprise customers with active churn_prevention
+        # threads don't pay (satisfaction was < 0 at renewal time).
+        # Payment resumes when customer accepts a deal (_finalize_deal closes thread).
+        payment_suspended = getattr(self, '_payment_suspended_customers', set())
+
         for sub in subscribers:
+            # Skip billing for enterprise customers with suspended payment
+            if sub['customer_type'] == 'large' and sub['customer_id'] in payment_suspended:
+                # Still reset billing period usage and daily_usage_rate (usage continues)
+                usage_scale = sub['usage_scale'] if sub['usage_scale'] else 50.0
+                seat_count_val = int(sub['seat_count'] or 1)
+                new_daily_usage_rate = sample_daily_usage_rate(self.rng, usage_scale, seat_count_val)
+                reset_updates.append((new_daily_usage_rate, sub['subscription_id']))
+                continue
+
             # Apply pending plan change at start of new billing period
             if sub['pending_plan']:
                 billing_price = sub['pending_price']
@@ -6505,6 +6525,10 @@ Guidelines:
 
         accumulated = None
         for i in range(7):
+            # Stop early if bankrupt (shutdown_mode set by step_day when cash < 0)
+            if self.shutdown_mode and accumulated is not None:
+                break
+
             # Suppress customer social posts for first 6 days of the week
             self._suppress_customer_posts = (i < 6)
             day_result = self.step_day()

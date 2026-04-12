@@ -186,23 +186,23 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Social Media Ads',
         description='Facebook, Instagram, TikTok — reaches individuals via feeds and influencer content',
         leads_per_1000_dollars={
-            'S1': 1147.5,  # Best channel for S1: viral social discovery (135× base)
-            'S2': 607.5,  # Moderate: some professionals on social (135× base)
-            'S3': 378.0,  # Lower: power users prefer technical content (135× base)
+            'S1': 2295.0,  # Best channel for S1: viral social discovery (270× base)
+            'S2': 1215.0,  # Moderate: some professionals on social (270× base)
+            'S3': 756.0,  # Lower: power users prefer technical content (270× base)
             'E1': 0.262,  # Very low: enterprises don't buy from TikTok; whole-company acquisition (÷2)
             'E2': 0.158,  # Negligible: professional services avoid social ads entirely (÷2)
             'E3': 0.081, # Negligible: C-level doesn't buy from Instagram (÷2)
             # Discoverable individual groups
-            'D_S01': 945.0,  # Niche Creators: highly active on social (135× base)
-            'D_S02': 229.5,  # Academic Researchers: rarely on social for tools (135× base)
-            'D_S03': 567.0,  # Non-Profit Workers: community-oriented social (135× base)
-            'D_S04': 702.0,  # Small Agency Teams: manage social for clients (135× base)
-            'D_S05': 742.5,  # Indie Game Devs: active on TikTok/Twitter (135× base)
-            'D_S06': 432.0,  # Freelance Writers: moderate social presence (135× base)
-            'D_S07': 270.0,  # Data Analysts: prefer technical content (135× base)
-            'D_S08': 1080.0,  # Social Media Managers: live on social platforms (135× base)
-            'D_S09': 607.5,  # UX Designers: active on design-focused social (135× base)
-            'D_S10': 810.0,  # Music Producers: active on Instagram/TikTok (135× base)
+            'D_S01': 1890.0,  # Niche Creators: highly active on social (270× base)
+            'D_S02': 459.0,  # Academic Researchers: rarely on social for tools (270× base)
+            'D_S03': 1134.0,  # Non-Profit Workers: community-oriented social (270× base)
+            'D_S04': 1404.0,  # Small Agency Teams: manage social for clients (270× base)
+            'D_S05': 1485.0,  # Indie Game Devs: active on TikTok/Twitter (270× base)
+            'D_S06': 864.0,  # Freelance Writers: moderate social presence (270× base)
+            'D_S07': 540.0,  # Data Analysts: prefer technical content (270× base)
+            'D_S08': 2160.0,  # Social Media Managers: live on social platforms (270× base)
+            'D_S09': 1215.0,  # UX Designers: active on design-focused social (270× base)
+            'D_S10': 1620.0,  # Music Producers: active on Instagram/TikTok (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
             'D_E01': 0.052,  # Government Agencies: zero social media procurement (÷2)
             'D_E02': 0.133, # Educational Institutions: some ed-tech social presence (÷2)
@@ -221,23 +221,23 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Search Engine Ads',
         description='Google Ads, Bing — reaches S2/S3 who research tools via search',
         leads_per_1000_dollars={
-            'S1': 472.5,  # Moderate: search for deals and alternatives (135× base)
-            'S2': 513.0,  # Best search channel for S2: thorough research (135× base)
-            'S3': 310.5,  # Strong: power users search for technical solutions (135× base)
+            'S1': 945.0,  # Moderate: search for deals and alternatives (270× base)
+            'S2': 1026.0,  # Best search channel for S2: thorough research (270× base)
+            'S3': 621.0,  # Strong: power users search for technical solutions (270× base)
             'E1': 0.315,  # Very low: procurement team vendor comparison; whole-company sale (÷2)
             'E2': 0.262,  # Very low: compliance research leads to long eval cycle (÷2)
             'E3': 0.158,  # Negligible: strategic partners prefer referrals over search (÷2)
             # Discoverable individual groups
-            'D_S01': 378.0,  # Niche Creators: search for creative tools (135× base)
-            'D_S02': 540.0,  # Academic Researchers: heavy tool search (135× base)
-            'D_S03': 351.0,  # Non-Profit Workers: search for affordable tools (135× base)
-            'D_S04': 432.0,  # Small Agency Teams: search for PM tools (135× base)
-            'D_S05': 405.0,  # Indie Game Devs: search for dev tools (135× base)
-            'D_S06': 513.0,  # Freelance Writers: search for writing tools (135× base)
-            'D_S07': 472.5,  # Data Analysts: search for analytics tools (135× base)
-            'D_S08': 310.5,  # Social Media Managers: less search, more social (135× base)
-            'D_S09': 405.0,  # UX Designers: search for prototyping tools (135× base)
-            'D_S10': 243.0,  # Music Producers: niche search, prefer community (135× base)
+            'D_S01': 756.0,  # Niche Creators: search for creative tools (270× base)
+            'D_S02': 1080.0,  # Academic Researchers: heavy tool search (270× base)
+            'D_S03': 702.0,  # Non-Profit Workers: search for affordable tools (270× base)
+            'D_S04': 864.0,  # Small Agency Teams: search for PM tools (270× base)
+            'D_S05': 810.0,  # Indie Game Devs: search for dev tools (270× base)
+            'D_S06': 1026.0,  # Freelance Writers: search for writing tools (270× base)
+            'D_S07': 945.0,  # Data Analysts: search for analytics tools (270× base)
+            'D_S08': 621.0,  # Social Media Managers: less search, more social (270× base)
+            'D_S09': 810.0,  # UX Designers: search for prototyping tools (270× base)
+            'D_S10': 486.0,  # Music Producers: niche search, prefer community (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
             'D_E01': 0.21,  # Government Agencies: formal procurement, some vendor search (÷2)
             'D_E02': 0.262,  # Educational Institutions: ed-tech evaluation via search (÷2)
@@ -256,23 +256,23 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='LinkedIn Ads',
         description='Professional network — best channel for reaching enterprise decision makers',
         leads_per_1000_dollars={
-            'S1': 189.0,  # Low: freelancers less active on LinkedIn (135× base)
-            'S2': 243.0,  # Moderate: professionals browse LinkedIn (135× base)
-            'S3': 135.0,  # Low: devs prefer Twitter/HN over LinkedIn (135× base)
+            'S1': 378.0,  # Low: freelancers less active on LinkedIn (270× base)
+            'S2': 486.0,  # Moderate: professionals browse LinkedIn (270× base)
+            'S3': 270.0,  # Low: devs prefer Twitter/HN over LinkedIn (270× base)
             'E1': 0.315,  # Best enterprise channel: VPs browse LinkedIn; account acquisition (÷2)
             'E2': 0.287, # Strong: thought leadership reaches quality buyers (÷2)
             'E3': 0.21,  # Moderate: C-level executives network here (÷2)
             # Discoverable individual groups
-            'D_S01': 94.5,  # Niche Creators: minimal LinkedIn presence (135× base)
-            'D_S02': 202.5,  # Academic Researchers: some academic networking (135× base)
-            'D_S03': 175.5,  # Non-Profit Workers: LinkedIn for grants (135× base)
-            'D_S04': 243.0,  # Small Agency Teams: LinkedIn for clients (135× base)
-            'D_S05': 67.5,  # Indie Game Devs: very low LinkedIn activity (135× base)
-            'D_S06': 229.5,  # Freelance Writers: LinkedIn for gigs (135× base)
-            'D_S07': 270.0,  # Data Analysts: active on LinkedIn professionally (135× base)
-            'D_S08': 148.5,  # Social Media Managers: LinkedIn for B2B (135× base)
-            'D_S09': 189.0,  # UX Designers: portfolio + job networking (135× base)
-            'D_S10': 67.5,  # Music Producers: minimal LinkedIn presence (135× base)
+            'D_S01': 189.0,  # Niche Creators: minimal LinkedIn presence (270× base)
+            'D_S02': 405.0,  # Academic Researchers: some academic networking (270× base)
+            'D_S03': 351.0,  # Non-Profit Workers: LinkedIn for grants (270× base)
+            'D_S04': 486.0,  # Small Agency Teams: LinkedIn for clients (270× base)
+            'D_S05': 135.0,  # Indie Game Devs: very low LinkedIn activity (270× base)
+            'D_S06': 459.0,  # Freelance Writers: LinkedIn for gigs (270× base)
+            'D_S07': 540.0,  # Data Analysts: active on LinkedIn professionally (270× base)
+            'D_S08': 297.0,  # Social Media Managers: LinkedIn for B2B (270× base)
+            'D_S09': 378.0,  # UX Designers: portfolio + job networking (270× base)
+            'D_S10': 135.0,  # Music Producers: minimal LinkedIn presence (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
             'D_E01': 0.262,  # Government Agencies: contracting officers on LinkedIn (÷2)
             'D_E02': 0.21,  # Educational Institutions: deans/IT on LinkedIn (÷2)
@@ -291,23 +291,23 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Content Marketing',
         description='Blog posts, SEO, whitepapers — reaches S2/S3/E2 through detailed evaluation content',
         leads_per_1000_dollars={
-            'S1': 472.5,  # Moderate: S1 wants quick solutions, not long reads (135× base)
-            'S2': 567.0,  # Very strong: S2 reads reviews, comparisons (135× base)
-            'S3': 405.0,  # Strong: S3 trusts technical blog posts (135× base)
+            'S1': 945.0,  # Moderate: S1 wants quick solutions, not long reads (270× base)
+            'S2': 1134.0,  # Very strong: S2 reads reviews, comparisons (270× base)
+            'S3': 810.0,  # Strong: S3 trusts technical blog posts (270× base)
             'E1': 0.392, # Low: vendor comparison content drives account-level interest (÷2)
             'E2': 0.444, # Best enterprise channel for E2: whitepapers + case studies (÷2)
             'E3': 0.287, # Low: strategic content resonates but long sales cycle (÷2)
             # Discoverable individual groups
-            'D_S01': 351.0,  # Niche Creators: tutorials and tool reviews (135× base)
-            'D_S02': 607.5,  # Academic Researchers: best channel — papers (135× base)
-            'D_S03': 378.0,  # Non-Profit Workers: case studies (135× base)
-            'D_S04': 513.0,  # Small Agency Teams: workflow blogs (135× base)
-            'D_S05': 432.0,  # Indie Game Devs: dev blogs (135× base)
-            'D_S06': 634.5,  # Freelance Writers: writing tool reviews (135× base)
-            'D_S07': 540.0,  # Data Analysts: technical tutorials (135× base)
-            'D_S08': 378.0,  # Social Media Managers: platform strategy (135× base)
-            'D_S09': 472.5,  # UX Designers: design process blogs (135× base)
-            'D_S10': 270.0,  # Music Producers: production technique (135× base)
+            'D_S01': 702.0,  # Niche Creators: tutorials and tool reviews (270× base)
+            'D_S02': 1215.0,  # Academic Researchers: best channel — papers (270× base)
+            'D_S03': 756.0,  # Non-Profit Workers: case studies (270× base)
+            'D_S04': 1026.0,  # Small Agency Teams: workflow blogs (270× base)
+            'D_S05': 864.0,  # Indie Game Devs: dev blogs (270× base)
+            'D_S06': 1269.0,  # Freelance Writers: writing tool reviews (270× base)
+            'D_S07': 1080.0,  # Data Analysts: technical tutorials (270× base)
+            'D_S08': 756.0,  # Social Media Managers: platform strategy (270× base)
+            'D_S09': 945.0,  # UX Designers: design process blogs (270× base)
+            'D_S10': 540.0,  # Music Producers: production technique (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
             'D_E01': 0.367,  # Government Agencies: compliance whitepapers (÷2)
             'D_E02': 0.472,  # Educational Institutions: ed-tech case studies (÷2)
@@ -326,23 +326,23 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Referral Program',
         description='Customer referral incentives — cheapest channel, powered by satisfied users sharing',
         leads_per_1000_dollars={
-            'S1': 1215.0,  # Very high: share deals with friends for credits (135× base)
-            'S2': 877.5,  # Very high: recommend to professional colleagues (135× base)
-            'S3': 648.0,  # High: tech communities share tools heavily (135× base)
+            'S1': 2430.0,  # Very high: share deals with friends for credits (270× base)
+            'S2': 1755.0,  # Very high: recommend to professional colleagues (270× base)
+            'S3': 1296.0,  # High: tech communities share tools heavily (270× base)
             'E1': 0.735,  # Low: internal referrals between departments; whole-company deals (÷2)
             'E2': 0.658, # Low: peer recommendations in professional circles (÷2)
             'E3': 0.525,  # Low: executive referral networks; long eval cycles (÷2)
             # Discoverable individual groups
-            'D_S01': 1012.5,  # Niche Creators: strong community sharing (135× base)
-            'D_S02': 702.0,  # Academic Researchers: recommend to lab colleagues (135× base)
-            'D_S03': 810.0,  # Non-Profit Workers: mission-driven sharing (135× base)
-            'D_S04': 742.5,  # Small Agency Teams: recommend to partners (135× base)
-            'D_S05': 877.5,  # Indie Game Devs: dev communities share (135× base)
-            'D_S06': 567.0,  # Freelance Writers: moderate referral culture (135× base)
-            'D_S07': 634.5,  # Data Analysts: share in analytics communities (135× base)
-            'D_S08': 945.0,  # Social Media Managers: natural sharers (135× base)
-            'D_S09': 702.0,  # UX Designers: design community recs (135× base)
-            'D_S10': 783.0,  # Music Producers: strong community referrals (135× base)
+            'D_S01': 2025.0,  # Niche Creators: strong community sharing (270× base)
+            'D_S02': 1404.0,  # Academic Researchers: recommend to lab colleagues (270× base)
+            'D_S03': 1620.0,  # Non-Profit Workers: mission-driven sharing (270× base)
+            'D_S04': 1485.0,  # Small Agency Teams: recommend to partners (270× base)
+            'D_S05': 1755.0,  # Indie Game Devs: dev communities share (270× base)
+            'D_S06': 1134.0,  # Freelance Writers: moderate referral culture (270× base)
+            'D_S07': 1269.0,  # Data Analysts: share in analytics communities (270× base)
+            'D_S08': 1890.0,  # Social Media Managers: natural sharers (270× base)
+            'D_S09': 1404.0,  # UX Designers: design community recs (270× base)
+            'D_S10': 1566.0,  # Music Producers: strong community referrals (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
             'D_E01': 0.392,  # Government Agencies: slow procurement; inter-agency referrals rare (÷2)
             'D_E02': 0.577,   # Educational Institutions: academic peer recommendations (÷2)
@@ -548,16 +548,16 @@ class BenchmarkConfig:
     # Frequency: 6× original (mean 10 days between events).
     # Magnitude: scales linearly from 1× at day 0 to 6× at total_days.
     # Early game = small disruptions, late game = major market shifts.
-    competitor_event_mean_interval: int = 10      # 6× original (was 60)
-    competitor_event_min_interval: int = 5        # 6× original (was 30)
+    competitor_event_mean_interval: int = 21      # 0.66x freq of v3.2z (was 14)
+    competitor_event_min_interval: int = 9        # 0.66x freq of v3.2z (was 6)
     competitor_event_post_days: int = 3           # Days of competitor-themed social posts after event
     competitor_event_posts_per_day: int = 2       # Posts/day during event window
     # Boost distribution: lognormal(mu, sigma) — BASE values (1× magnitude)
     # Actual magnitude = base × linear_scale where linear_scale goes 1→16 over simulation
-    competitor_event_boost_mu: float = -3.85      # Original 1× base
+    competitor_event_boost_mu: float = -4.543     # Halved from -3.85 (subtract ln2≈0.693)
     competitor_event_boost_sigma: float = 1.2     # Lognormal sigma parameter
-    competitor_event_boost_min: float = 0.004     # Original 1× floor
-    competitor_event_boost_max: float = 0.35      # Original 1× cap
+    competitor_event_boost_min: float = 0.002     # Halved from 0.004
+    competitor_event_boost_max: float = 0.175     # Halved from 0.35
     competitor_event_magnitude_scale_min: float = 1.0   # Scale at day 0
     competitor_event_magnitude_scale_max: float = 6.0   # Scale at total_days (was 4.0)
 
@@ -748,7 +748,7 @@ class BenchmarkConfig:
 
     # === ISSUE RESOLUTION PARAMS ===
     issue_resolution_base_rate: float = 2.0  # Issues resolved per day at $0 ops spending
-    issue_resolution_ops_scale: float = 0.053  # Additional issues per $ ops spend per day
+    issue_resolution_ops_scale: float = 0.1  # Additional issues per $ ops spend per day (was 0.053)
     quick_resolution_threshold_days: int = 2  # Max days for "quick" resolution bonus
     quick_resolution_boost_1day: float = 0.40  # Relationship boost for 1-day resolution
     quick_resolution_boost_2day: float = 0.30  # Relationship boost for 2-day resolution

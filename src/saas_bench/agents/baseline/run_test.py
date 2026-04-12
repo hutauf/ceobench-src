@@ -920,7 +920,7 @@ class BaselineRunner:
                     action = Action(tool='next_week')
 
                 # Execute action
-                if action.tool in ('next_week', 'next_day'):
+                if action.tool == 'next_week':
                     day_ended = True
                     observation = "Week ended. Moving to next week..."
                     # Log next_week tool result

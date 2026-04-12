@@ -1,7 +1,7 @@
 """NovaMind CLI — Command-line interface for the NovaMind SaaS simulator.
 
 Two entry points:
-    novamind-operation  — Simulation control (next-day)
+    novamind-operation  — Simulation control (next-week)
     novamind            — Script management (register/list/remove daily scripts)
 """
 
@@ -25,12 +25,12 @@ def _get_workspace() -> Path:
 # novamind-operation CLI
 # =========================================================================
 
-def _cmd_next_day(args):
-    """Advance the simulator to the next day.
+def _cmd_next_week(args):
+    """Advance the simulator by one week (7 days).
 
-    Calls the API server to step the simulation forward by one day.
+    Calls the API server to step the simulation forward by one week.
     Prints the dashboard to stdout, which includes key metrics,
-    yesterday's results, and inbox notifications.
+    this week's results, and inbox notifications.
 
     **What happens each day (in order):**
     1. Daily calculations run (if registered)
@@ -72,7 +72,6 @@ def operation_main():
 
     Commands:
         next-week   Advance the simulator by one week (7 days)
-        next-day    Alias for next-week (backward compat)
 
     Examples:
         ./novamind-operation next-week
@@ -83,13 +82,9 @@ def operation_main():
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
-    # next-week (primary)
-    sub_next = subparsers.add_parser('next-week', help='Advance to the next simulation week (7 days)')
-    sub_next.set_defaults(func=_cmd_next_day)
-
-    # next-day (backward compat alias)
-    sub_next_day = subparsers.add_parser('next-day', help='Alias for next-week')
-    sub_next_day.set_defaults(func=_cmd_next_day)
+    # next-week
+    sub_next = subparsers.add_parser('next-week', help='Advance the simulation by one week (7 days)')
+    sub_next.set_defaults(func=_cmd_next_week)
 
     args = parser.parse_args()
     args.func(args)
@@ -257,7 +252,7 @@ def get_cli_docs() -> str:
 
     # operation commands
     op_commands = [
-        ("next-day", _cmd_next_day),
+        ("next-week", _cmd_next_week),
     ]
     for name, func in op_commands:
         doc = func.__doc__ or "No documentation."
