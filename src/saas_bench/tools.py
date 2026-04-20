@@ -3406,7 +3406,8 @@ _VALID_TABLES = {{
     'social_media_posts', 'enterprise_turns', 'notifications',
     'ad_channel_leads', 'ads_revenue', 'agent_social_media_posts',
     'config_overrides', 'daily_usage', 'group_info_levels',
-    'issues', 'macroeconomic_conditions', 'research_projects', 'segment_discovery'
+    'issues', 'macroeconomic_conditions', 'research_projects', 'segment_discovery',
+    'predictions'
 }}
 
 # Table columns for helpful error messages (generated at sandbox creation time)
