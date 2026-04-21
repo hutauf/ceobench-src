@@ -1,18 +1,17 @@
 #!/bin/bash
-# Start a fresh Claude Opus 4.7 run (500 days, seed 42) via Anthropic direct API.
-# Uses thinking effort = xhigh.
-# Prompt caching is enabled via cache_control breakpoints (system + last tool + last message).
+# Fresh Bedrock Sonnet 4.6 bash_agent run (500 days, seed 42, xhigh reasoning).
+# Uses nohup+setsid so the process survives shell exit.
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
-LOG="/tmp/bossbench_opus_fresh.log"
+LOG="/tmp/bossbench_sonnet_bash_fresh.log"
 
-echo "Starting fresh Claude Opus 4.7 run..." | tee "$LOG"
+echo "Starting fresh Bedrock Sonnet 4.6 bash_agent run..." | tee "$LOG"
 nohup setsid uv run python -m saas_bench.agents.bash_agent.run_test \
-  --model claude-opus-4-7 \
-  --provider anthropic \
-  --reasoning-effort xhigh \
+  --model us.anthropic.claude-sonnet-4-6 \
+  --provider bedrock \
+  --reasoning-effort max \
   --seed 42 \
   --days 500 \
   --workspace bash_agent_runs \
@@ -25,7 +24,6 @@ echo "Log: $LOG"
 sleep 5
 if kill -0 $PID 2>/dev/null; then
     echo "Process alive (PID $PID)"
-    # Wait briefly for the run directory to be created, then attach monitor.
     for i in 1 2 3 4 5 6 7 8 9 10; do
         RUN_DIR=$(ls -td bash_agent_runs/run_*/ 2>/dev/null | head -1)
         if [ -n "$RUN_DIR" ] && [ -f "$RUN_DIR/checkpoint.json" ]; then

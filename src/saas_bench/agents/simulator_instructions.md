@@ -202,6 +202,4 @@ Before advancing to the next week, you **MUST** submit three cash predictions. T
 
 All three values are required numbers (dollars, e.g. `1250000.0`). There is no way to skip or pass a null; the call will fail with a 400 error if any are missing or non-numeric.
 
-**You will be evaluated on the accuracy of these predictions at each horizon.** The benchmark scores percent error `(predicted − actual) / actual` at every horizon and tracks prediction accuracy over time alongside standard business metrics. Good prediction accuracy is a signal that you understand the simulator's dynamics (growth, churn, cost structure, seasonality, competitor events). Poor prediction accuracy — even with strong nominal cash performance — indicates the decisions driving your cash were not grounded in an accurate internal model of the world.
-
 Predictions are stored at submission time; updating them later is not possible. Plan your forecast before you advance.

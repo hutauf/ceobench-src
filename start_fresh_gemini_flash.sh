@@ -1,6 +1,6 @@
 #!/bin/bash
 # Start a fresh Gemini 3 Flash Preview run (500 days, seed 42) via Google AI Studio OpenAI-compat.
-# Uses thinking level = high (reasoning_effort=high).
+# Uses thinking level = high (Google API rejects "max" — valid: low, medium, high, minimal, none).
 # Implicit prompt caching is automatic (1K min tokens for Flash).
 
 set -euo pipefail

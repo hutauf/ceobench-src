@@ -549,16 +549,16 @@ class BenchmarkConfig:
     # Magnitude: scales linearly from scale_min at day 1 to scale_max at (total_days - late_cutoff_days).
     # Boosts are blocked entirely before drift_grace_period_days and after (total_days - late_cutoff_days).
     # Early game = small disruptions, late game = major market shifts, very late = no more shocks.
-    competitor_event_mean_interval: int = 13      # 0.75x freq of v3.3i (was 10)
-    competitor_event_min_interval: int = 5        # 0.75x freq of v3.3i (was 4)
+    competitor_event_mean_interval: int = 6       # v3.3y: 2× freq from v3.3x (was 13)
+    competitor_event_min_interval: int = 2        # v3.3y: 2× freq from v3.3x (was 5)
     competitor_event_post_days: int = 3           # Days of competitor-themed social posts after event
     competitor_event_posts_per_day: int = 2       # Posts/day during event window
     # Boost distribution: lognormal(mu, sigma) — BASE values (1× magnitude)
     # Actual magnitude = base × linear_scale where linear_scale goes 1→16 over simulation
-    competitor_event_boost_mu: float = -4.7129    # v3.3x: 1.5× from v3.3w (added ln(1.5) ≈ 0.4055)
+    competitor_event_boost_mu: float = -4.4505    # v3.3y: 1.3× from v3.3x (added ln(1.3) ≈ 0.2624)
     competitor_event_boost_sigma: float = 1.2     # Lognormal sigma parameter
-    competitor_event_boost_min: float = 0.0016875 # v3.3x: 1.5× from v3.3w
-    competitor_event_boost_max: float = 0.14765625 # v3.3x: 1.5× from v3.3w
+    competitor_event_boost_min: float = 0.00219375  # v3.3y: 1.3× from v3.3x
+    competitor_event_boost_max: float = 0.191953125 # v3.3y: 1.3× from v3.3x
     competitor_event_magnitude_scale_min: float = 1.0   # Scale at day 1 (v3.3t: anchor shifted from day 0)
     competitor_event_magnitude_scale_max: float = 2.0   # Scale at (total_days - late_cutoff_days) (v3.3t). v3.3l: was 6.0
     # v3.3t: block competitor events in the last N days so bankruptcy can't be caused by a late-game boost
@@ -751,7 +751,7 @@ class BenchmarkConfig:
 
     # === ISSUE RESOLUTION PARAMS ===
     issue_resolution_base_rate: float = 2.0  # Issues resolved per day at $0 ops spending
-    issue_resolution_ops_scale: float = 0.15  # v3.3r: reverted to 0.15 (was 0.1 in v3.3q). Additional issues resolved per $ ops spend per day
+    issue_resolution_ops_scale: float = 0.1  # v3.3y: 0.15→0.1. Additional issues resolved per $ ops spend per day
     quick_resolution_threshold_days: int = 2  # Max days for "quick" resolution bonus
     quick_resolution_boost_1day: float = 0.40  # Relationship boost for 1-day resolution
     quick_resolution_boost_2day: float = 0.30  # Relationship boost for 2-day resolution
