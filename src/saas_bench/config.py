@@ -565,10 +565,10 @@ class BenchmarkConfig:
     competitor_event_posts_per_day: int = 2       # Posts/day during event window
     # Boost distribution: lognormal(mu, sigma) — BASE values (1× magnitude)
     # Actual magnitude = base × linear_scale where linear_scale goes 1→16 over simulation
-    competitor_event_boost_mu: float = -4.4505    # v3.3y: 1.3× from v3.3x (added ln(1.3) ≈ 0.2624)
+    competitor_event_boost_mu: float = -4.5559    # v3.4m: 0.9× mean magnitude from v3.4l (added ln(0.9) ≈ -0.1054)
     competitor_event_boost_sigma: float = 1.2     # Lognormal sigma parameter
-    competitor_event_boost_min: float = 0.00219375  # v3.3y: 1.3× from v3.3x
-    competitor_event_boost_max: float = 0.191953125 # v3.3y: 1.3× from v3.3x
+    competitor_event_boost_min: float = 0.001974375  # v3.4m: 0.9× from v3.4l
+    competitor_event_boost_max: float = 0.17275781250 # v3.4m: 0.9× from v3.4l
     competitor_event_magnitude_scale_min: float = 1.0   # Scale at day 1 (v3.3t: anchor shifted from day 0)
     competitor_event_magnitude_scale_max: float = 4.0   # v3.4k: 2.0→4.0 (restore 1-4 scale range, matches v3.4f/g/h). Scale at (total_days - late_cutoff_days).
     # v3.3t: block competitor events in the last N days so bankruptcy can't be caused by a late-game boost
@@ -2543,6 +2543,90 @@ GROUP_PREFERENCE_DRIFT: Dict[str, Dict[str, float]] = {
     'D_E08': {'q_bias_drift': +0.00025},                # Energy: rising quality demands (halved from 0.0005)
     'D_E09': {'c_max_drift': -0.0002},                 # Real estate: volatile contraction
     'D_E10': {},                                       # Shipping (no group-level additive drift)
+}
+
+# =============================================================================
+# Competitor-Event Reactivity (per-group q_bias shock coefficient)
+# =============================================================================
+# Each competitor event samples a `boost` magnitude (lognormal, scaled by
+# late-game magnitude_scale). The simulator applies the raw boost to the
+# GLOBAL q_bias accumulator (update_global_drift), then — for every group —
+# adds `COMPETITOR_REACTIVITY_Q_BIAS[group_id] * boost` to that group's
+# drift_q_bias_total accumulator. Coefficients are NOT centered at 1: they
+# represent the additional reactivity ON TOP OF the global shift, so 0 means
+# "no extra group-level reaction" and higher values mean the group is
+# disproportionately sensitive to competitor moves.
+#
+# Design rationale (Attention × Switching axes):
+# - High attention to AI-tool news + low switching cost → high coef
+# - Low attention / compliance-bound / long procurement cycles → low coef
+# - Values span 0.02 (sticky gov/bank, slow procurement) up to 0.35 (early-
+#   adopter game-dev vertical that churns on every shiny launch).
+#
+# Applied to ALL 26 groups, including discoverable groups BEFORE discovery.
+# The accumulator silently tracks shocks so that when a group is eventually
+# discovered, sampled customers already reflect the full history of market
+# disruption. q_bias shifts q_min AND q_max together (see _apply_drift_offsets).
+#
+COMPETITOR_REACTIVITY_Q_BIAS: Dict[str, float] = {
+    # === Initial groups ===
+    # S1: Price-sensitive freelancers — notice new free/cheap tools quickly.
+    'S1': 0.15,
+    # S2: Quality professionals — stick with what works, moderate reaction.
+    'S2': 0.06,
+    # S3: Power users / tech-forward — actively chase state-of-the-art.
+    'S3': 0.25,
+    # E1: Cost-cutting enterprise — procurement cycles buffer them, but they
+    # still use competitor news as negotiating leverage.
+    'E1': 0.12,
+    # E2: Quality-first / compliance-bound enterprise — slow to switch.
+    'E2': 0.04,
+    # E3: Strategic partners — deep integrations, near-zero reaction.
+    'E3': 0.02,
+
+    # === Discoverable individual groups ===
+    # D_S01: Coding assistants — developers track tool launches religiously.
+    'D_S01': 0.18,
+    # D_S02: Writing assistants — workflow-locked, modest reaction.
+    'D_S02': 0.04,
+    # D_S03: Academic research — slow-moving, risk-averse.
+    'D_S03': 0.03,
+    # D_S04: Game developers — early adopters, viral "try the new tool" culture.
+    'D_S04': 0.30,
+    # D_S05: AI music/art — creative early adopters, very trend-driven.
+    'D_S05': 0.20,
+    # D_S06: Indie SaaS builders — hunt for leverage, switch eagerly.
+    'D_S06': 0.25,
+    # D_S07: Content creators / YouTubers — chase whatever's buzzy.
+    'D_S07': 0.15,
+    # D_S08: AI power users / prompt engineers — benchmark every new model.
+    'D_S08': 0.35,
+    # D_S09: Legal/finance individuals — compliance-averse, minimal churn.
+    'D_S09': 0.04,
+    # D_S10: Data analysts — pragmatic, moderate reaction.
+    'D_S10': 0.08,
+
+    # === Discoverable enterprise groups ===
+    # D_E01: Government — procurement cycles measured in quarters/years.
+    'D_E01': 0.02,
+    # D_E02: Education — slow adoption, committee-driven.
+    'D_E02': 0.03,
+    # D_E03: Healthcare — HIPAA/compliance lock-in.
+    'D_E03': 0.02,
+    # D_E04: Banking — regulatory certification required, near-zero churn.
+    'D_E04': 0.02,
+    # D_E05: Insurance — slightly more flexible than banks but still slow.
+    'D_E05': 0.06,
+    # D_E06: Construction — tool-stack inertia, some reaction to cost moves.
+    'D_E06': 0.08,
+    # D_E07: Telecom — large vendors, slow switchers.
+    'D_E07': 0.03,
+    # D_E08: Energy — slow, risk-averse, regulated.
+    'D_E08': 0.04,
+    # D_E09: Real estate / PropTech — fast movers compared to other E groups.
+    'D_E09': 0.15,
+    # D_E10: Shipping / logistics — operational stability trumps novelty.
+    'D_E10': 0.03,
 }
 
 # =============================================================================
