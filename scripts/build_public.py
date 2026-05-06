@@ -19,7 +19,7 @@ compiled ``_engine`` sits inside the zipapp at the archive root so that
 engine itself); agent-spawned child processes never see it.
 
 Usage:
-    uv run python build_public.py
+    uv run python scripts/build_public.py
 """
 
 import os
@@ -33,7 +33,7 @@ import zipapp
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PUBLIC_DIR = PROJECT_ROOT / "public"
 SRC_DIR = PROJECT_ROOT / "src" / "saas_bench"
 

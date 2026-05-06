@@ -59,14 +59,14 @@ public/
 ```bash
 # From repo root:
 uv sync                                  # install deps
-uv run python build_public.py            # canonical builder (produces public/)
+uv run python scripts/build_public.py    # canonical builder (produces public/)
 
 # Or, alternative shell pipeline that also stamps docs explicitly:
 bash scripts/build_public.sh             # generate_public_docs.py → assemble
 bash scripts/build_public.sh --skip-binary   # docs only
 ```
 
-`build_public.py` does:
+`scripts/build_public.py` does:
 
 1. Compile `src/saas_bench/` to `.pyc`, drop into `_engine/` inside the zipapp
 2. Generate `docs/api/*.json` + `docs/tables/*.json` + `docs/cli.md` from
@@ -134,14 +134,14 @@ uv run python -m saas_bench.agents.bash_agent.run_test \
 Two convenience launchers wrap this with `nohup setsid` for long runs:
 
 ```bash
-bash start_fresh_sonnet_bash.sh      # Bedrock Sonnet 4.6, max effort
-bash start_fresh_gpt_bash.sh         # OpenAI GPT-5.4, xhigh effort
+bash scripts/start_fresh_sonnet_bash.sh      # Bedrock Sonnet 4.6, max effort
+bash scripts/start_fresh_gpt_bash.sh         # OpenAI GPT-5.4, xhigh effort
 ```
 
 Resume an interrupted run from its checkpoint:
 
 ```bash
-bash resume_run.sh bash_agent_runs/run_<id>
+bash scripts/resume_run.sh bash_agent_runs/run_<id>
 ```
 
 ### 3.2 Output layout
@@ -181,17 +181,17 @@ ledger encryption.
 saas-bench/
 ├── README.md                          ← this file
 ├── pyproject.toml, uv.lock, .python-version
-├── build_public.py                    ← canonical public-repo builder
-├── start_fresh_sonnet_bash.sh         ← bash agent launcher (Bedrock Sonnet)
-├── start_fresh_gpt_bash.sh            ← bash agent launcher (OpenAI GPT)
-├── resume_run.sh                      ← resume bash agent from checkpoint
 ├── public/                            ← built artifact (submodule)
 ├── public_sources/                    ← human-written inputs to the public build
 │   ├── README.md, requirements.txt
 │   └── examples/{autoplay_loop,basic_strategy}.py
 ├── scripts/
+│   ├── build_public.py                ← canonical public-repo builder
 │   ├── build_public.sh                ← alt shell pipeline
-│   └── generate_public_docs.py        ← docs/api + docs/tables generator
+│   ├── generate_public_docs.py        ← docs/api + docs/tables generator
+│   ├── start_fresh_sonnet_bash.sh     ← bash agent launcher (Bedrock Sonnet)
+│   ├── start_fresh_gpt_bash.sh        ← bash agent launcher (OpenAI GPT)
+│   └── resume_run.sh                  ← resume bash agent from checkpoint
 └── src/saas_bench/                    ← simulator + bash agent
     ├── simulation.py, environment.py, shocks.py, event_logger.py
     ├── config.py

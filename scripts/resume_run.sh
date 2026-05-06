@@ -17,7 +17,7 @@
 #   5. Prints the seashells URL and run PID
 
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 # ─── Parse arguments ───
 RUN_DIR=""
