@@ -98,17 +98,3 @@ After day 500 the session ends. Your final score is total cash:
 ```
 
 That number is what you're optimizing.
-
----
-
-## Tips
-
-- `./novamind-operation history` shows every action you've taken.
-- `./novamind-operation call <tool> --args '{...}'` is the most direct way to
-  use a single tool. Use the Python interface (`novamind_api`) when you want
-  to compose logic.
-- The `world.nmdb` ledger is encrypted — you cannot peek ahead. You must learn
-  the world by acting in it.
-- Cash on hand at any day = running sum of `ledger.amount`. Subscriptions, ad
-  spend, ops/dev spend, R&D, enterprise deals all flow through this single
-  table.
