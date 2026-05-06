@@ -6,6 +6,8 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
+
+import numpy as np
 from numpy.random import Generator, PCG64
 
 from .config import (
@@ -24,6 +26,9 @@ from .config import (
     GROUP_PREFERENCE_DRIFT,
     # Competitor-event per-group q_bias reactivity coefficients
     COMPETITOR_REACTIVITY_Q_BIAS,
+    # Competitor naming/perspective pools (sampled per post)
+    COMPETITOR_NAMES,
+    COMPETITOR_POST_PERSPECTIVES,
     # v2.2: Individual Subscriber Drift
     INDIVIDUAL_PREFERENCE_DRIFT,
     # v3: Macroeconomic Cycle
@@ -200,6 +205,12 @@ class Simulator:
         self._involuntary_churn_seed = int(rng.integers(0, 2**63)) ^ 0x494E5643  # XOR with 'INVC'
         self._involuntary_churn_mu_cache: Dict[Tuple[str, int], float] = {}
 
+        # v3.4ai: monthly leads_per_1000_dollars drift — base seed for per-group deterministic
+        # sub-RNG. The actual sub-RNG is derived stably from (init_seed, crc32(group_id), month),
+        # so each group's drift sequence is independent of iteration order of AD_CHANNELS or of
+        # which other groups happen to be drifting that month.
+        self._leads_drift_seed = int(rng.integers(0, 2**63)) ^ 0x4C454144  # XOR with 'LEAD' constant
+
         # PMI follows Ornstein-Uhlenbeck process with sinusoidal mean
         self._macro_pmi_current = config.macro_pmi_initial
         # Randomize initial cycle phase so different seeds start at different points
@@ -221,6 +232,10 @@ class Simulator:
         self._macro_pmi_daily_history: list = []
         # Buffer for delayed PMI publication: list of dicts with measurement_day, publication_day, avg_pmi, etc.
         self._macro_pending_publications: list = []
+
+        # v3.4ai: monthly Gaussian noise on AD_CHANNELS[ch].leads_per_1000_dollars[gid].
+        # Persisted across resume; on restore we re-mutate AD_CHANNELS to match.
+        self._leads_per_1k_overrides: Dict[Tuple[str, str], float] = {}
 
     def _get_customer_quality_noise(self, customer_id: int) -> float:
         """Return sticky per-customer quality-noise multiplier for initial-decision evaluations.
@@ -561,6 +576,66 @@ class Simulator:
         # L6: Cleanup temp table
         self.conn.execute("DROP TABLE IF EXISTS _tmp_active_subs")
 
+    def _apply_monthly_leads_noise(self):
+        """v3.4aj: perturb every (channel, group) leads_per_1000_dollars entry with N(0, 0.05*v).
+
+        Each group gets its OWN deterministic sub-RNG, derived stably from
+        (`_leads_drift_seed`, crc32(group_id), month). Within a group, the 5 channels are
+        drawn in sorted channel_id order. This makes a given group's drift sequence
+        independent of:
+          - iteration order of AD_CHANNELS,
+          - which other groups also drift this month (and in what order).
+
+        Mutates `AD_CHANNELS[ch].leads_per_1000_dollars[gid]` in-place and mirrors the
+        new value into `self._leads_per_1k_overrides[(ch, gid)]` so it survives resume.
+        Also writes a row per (channel, group) into `_hidden_leads_per_1k_snapshot`
+        for post-run analysis (engine-only — not exposed via novamind_api).
+        New values are floored at 0.0.
+        """
+        from .config import AD_CHANNELS
+        import zlib
+
+        # Union of group ids across channels (should be identical across all channels).
+        group_ids = set()
+        for channel in AD_CHANNELS.values():
+            group_ids.update(channel.leads_per_1000_dollars.keys())
+
+        month = self.current_day // 30
+        sorted_channels = sorted(AD_CHANNELS.keys())
+        rows = []
+        for gid in sorted(group_ids):
+            gid_hash = zlib.crc32(gid.encode('utf-8'))
+            sub_seed = (self._leads_drift_seed ^ (gid_hash * 0x9E3779B1) ^ (month * 0xA24BAED1)) & ((1 << 63) - 1)
+            sub_rng = Generator(PCG64(sub_seed))
+            for channel_id in sorted_channels:
+                channel = AD_CHANNELS[channel_id]
+                current = channel.leads_per_1000_dollars.get(gid)
+                if current is None:
+                    continue
+                sigma = 0.05 * current
+                noise = float(sub_rng.normal(0.0, sigma)) if sigma > 0 else 0.0
+                new_value = max(0.0, current + noise)
+                channel.leads_per_1000_dollars[gid] = new_value
+                self._leads_per_1k_overrides[(channel_id, gid)] = new_value
+                rows.append((self.current_day, channel_id, gid, new_value))
+        if rows:
+            self.conn.executemany(
+                "INSERT OR REPLACE INTO _hidden_leads_per_1k_snapshot "
+                "(day, channel_id, group_id, value) VALUES (?, ?, ?, ?)",
+                rows,
+            )
+
+    def _restore_leads_overrides_to_ad_channels(self):
+        """Mirror persisted `_leads_per_1k_overrides` back into the live AD_CHANNELS dict."""
+        if not self._leads_per_1k_overrides:
+            return
+        from .config import AD_CHANNELS
+        for (channel_id, gid), value in self._leads_per_1k_overrides.items():
+            ch = AD_CHANNELS.get(channel_id)
+            if ch is None:
+                continue
+            ch.leads_per_1000_dollars[gid] = value
+
     def initialize(self, resume: bool = False):
         """Initialize the simulation with starting state.
 
@@ -748,6 +823,8 @@ class Simulator:
             # Sticky per-customer noise dict — keys are customer_ids, values are uniform[0.8,1.1] draws.
             # JSON requires string keys, so we re-cast on restore.
             '_customer_quality_noise': {str(k): v for k, v in self._customer_quality_noise.items()},
+            # v3.4ai: monthly-noise leads_per_1000_dollars overrides. JSON-safe encoding: list of [ch, gid, value].
+            '_leads_per_1k_overrides': [[ch, gid, v] for (ch, gid), v in self._leads_per_1k_overrides.items()],
         }
 
         self.conn.execute(
@@ -821,6 +898,10 @@ class Simulator:
             self._macro_pending_publications = ss.get('_macro_pending_publications', [])
             saved_noise = ss.get('_customer_quality_noise', {})
             self._customer_quality_noise = {int(k): float(v) for k, v in saved_noise.items()}
+            # v3.4ai: restore monthly-noise leads overrides + apply to AD_CHANNELS in-process.
+            saved_leads = ss.get('_leads_per_1k_overrides', [])
+            self._leads_per_1k_overrides = {(ch, gid): float(v) for ch, gid, v in saved_leads}
+            self._restore_leads_overrides_to_ad_channels()
 
         return True
 
@@ -2610,10 +2691,33 @@ class Simulator:
         _ads_k = 9.0
         _ads_log_denom = math.log(1.0 + _ads_k)
         _ads_effective_per_group = {}
-        _all_group_ids = set(row['group_id'] for row in subscribers if row['group_id'])
+        # L9: Source group set from canonical CUSTOMER_GROUPS (+ cached bonus keys)
+        # instead of scanning 1.4M subscribers each call. Precomputing for unused
+        # groups is cheap (~30 entries) and preserves identical semantics — any
+        # subscriber whose group_id isn't in the cache still falls back to 0.0/None
+        # via the original .get() defaults, matching the previous behavior.
+        _all_group_ids = set(CUSTOMER_GROUPS.keys())
+        if _cached_q_bonus:
+            _all_group_ids.update(_cached_q_bonus.keys())
         for gid in _all_group_ids:
             strength = min(max(_ads_global + _ads_by_group.get(gid, 0.0), 0.0), 1.0)
             _ads_effective_per_group[gid] = math.log(1.0 + _ads_k * strength) / _ads_log_denom
+
+        # Pre-compute drift offsets per group (avoids 1.4M _apply_drift_offsets calls/day).
+        # Drift cache is invariant for the duration of this function, so resolve it once
+        # per (unique) group_id rather than per-subscriber.
+        _drift_cache = getattr(self, '_drift_cache', None)
+        _drift_offsets_by_group: Optional[Dict[Optional[str], Tuple[float, float]]] = None
+        if _drift_cache:
+            _drift_groups_data = _drift_cache['groups']
+            _drift_q_global = _drift_cache['global_q_bias']
+            _drift_offsets_by_group = {None: (_drift_q_global, 0.0)}
+            for gid in _all_group_ids:
+                gd = _drift_groups_data.get(gid, {})
+                _drift_offsets_by_group[gid] = (
+                    _drift_q_global + gd.get('drift_q_bias_total', 0.0),
+                    gd.get('drift_c_max_total', 0.0),
+                )
 
         # Pre-compute plan quotas (avoids 1.58M config.get() calls → 3 lookups)
         _plan_quotas = {p: config.get(f'quota_{p}', 100) for p in ('A', 'B', 'C')}
@@ -2631,131 +2735,313 @@ class Simulator:
         _has_overload = overload_penalty > 0
         _has_outage = outage_penalty > 0
 
-        # Local refs to avoid attribute lookups in hot loop
-        _math_log = math.log
-        _math_exp = math.exp
+        n = len(subscribers)
+        if n == 0:
+            self._cached_all_subscribers = subscribers
+            return {}
 
-        # L3: Use cached q_shared instead of per-customer DB calls
-        for sub in subscribers:
-            customer_id = sub['customer_id']
-            old_satisfaction = sub['satisfaction']
+        # ──────────────────────────────────────────────────────────────────
+        # L10: Vectorized inner loop. Single Python pass extracts scalars
+        # from sqlite3.Row → numpy arrays + small per-row lookup indices,
+        # then math runs in numpy. Final Python pass builds the customer_events
+        # dict (its shape is required by callers — can't avoid per-row dict).
+        #
+        # Floating-point drift vs. the scalar version is acceptable (user-OK'd);
+        # branching logic, fallback values, and event tagging are preserved.
+        # ──────────────────────────────────────────────────────────────────
 
-            steepness_left = sub['current_steepness_left'] or sub['steepness_left']
-            steepness_right = sub['current_steepness_right'] or sub['steepness_right']
-            # Use billing-time snapshot of c_max for satisfaction (effective_c_max),
-            # falling back to drifted → initial for backwards compatibility
-            c_max = sub['effective_c_max'] or sub['current_c_max'] or sub['c_max']
-            q_max = sub['q_max'] if sub['q_max'] is not None else 0.75
-            q_min = sub['q_min'] if sub['q_min'] is not None else 0.25
-            q_min, q_max, c_max = self._apply_drift_offsets(sub['group_id'], q_min, q_max, c_max)
+        # Allocate numpy arrays
+        cust_ids_np = np.empty(n, dtype=np.int64)
+        old_sats_np = np.empty(n, dtype=np.float64)
+        steep_l_np = np.empty(n, dtype=np.float64)
+        steep_r_np = np.empty(n, dtype=np.float64)
+        c_max_np = np.empty(n, dtype=np.float64)
+        q_max_np = np.empty(n, dtype=np.float64)
+        q_min_np = np.empty(n, dtype=np.float64)
+        eff_price_np = np.empty(n, dtype=np.float64)
+        relationship_np = np.empty(n, dtype=np.float64)
+        open_issue_days_np = np.empty(n, dtype=np.float64)
+        days_subscribed_np = np.empty(n, dtype=np.int64)
+        daily_usage_np = np.empty(n, dtype=np.float64)
+        ads_q_sens_np = np.empty(n, dtype=np.float64)
+        seat_count_np = np.empty(n, dtype=np.int64)
+        plan_idx_np = np.empty(n, dtype=np.int8)
+        group_idx_np = np.empty(n, dtype=np.int32)
+        is_large_np = np.empty(n, dtype=bool)
+        contract_months_np = np.empty(n, dtype=np.int64)
+        contract_end_np = np.empty(n, dtype=np.int64)
+        contract_end_valid_np = np.empty(n, dtype=bool)
 
-            # Use effective_price directly from subscription (stored at billing time)
-            effective_price = sub['effective_price'] or 0.0
+        # Per-row Python objects we need later for dict construction
+        customer_id_list: List = [None] * n
+        group_id_list: List = [None] * n
 
-            # Inline _compute_required_quality to avoid function call overhead (1.58M calls)
-            # Scaled: sigmoid maps [0, c_max] → [q_min, q_max]
-            _q_range = q_max - q_min  # effective range for sigmoid
-            _half_range = _q_range / 2.0
-            if effective_price > c_max:
-                # Beyond budget: cap at q_max (billing will cancel at next cycle)
-                q_required = q_max
-            else:
-                _nc = effective_price / c_max  # normalized_cost 0 to 1
-                if _nc < 0.5:
-                    _si = steepness_left * (_nc - 0.25) * 10
-                    _si = max(-500.0, min(500.0, _si))
-                    q_required = q_min + _half_range / (1.0 + _math_exp(-_si))
-                else:
-                    _si = steepness_right * (_nc - 0.75) * 10
-                    _si = max(-500.0, min(500.0, _si))
-                    q_required = q_min + _half_range + _half_range / (1.0 + _math_exp(-_si))
+        # Build group_id → index map on the fly
+        group_to_idx: Dict[Optional[str], int] = {}
+        unique_groups: List = []
 
-            # L7: Use pre-computed q_shared per (plan, group) pair
+        plan_to_idx = {'A': 0, 'B': 1, 'C': 2}
+
+        # Per-customer ads override path collection (rare)
+        ads_override_idxs: List[int] = []
+        ads_override_strengths: List[float] = []
+
+        for i, sub in enumerate(subscribers):
+            cid = sub['customer_id']
             plan = sub['plan']
-            group_id = sub['group_id']
-            q_shared = _q_shared_plan_group.get((plan, group_id), _q_shared_plan_group.get((plan, None), 0.5))
+            gid = sub['group_id']
 
-            relationship = sub['relationship'] or 0.5
-            relationship_bonus = _rel_bonus_max * (relationship - _rel_neutral) * _rel_scale
+            cust_ids_np[i] = cid
+            customer_id_list[i] = cid
+            group_id_list[i] = gid
 
-            issue_penalty = 0.03 * sub['open_issue_days']  # Uncapped — long-unresolved issues compound
+            plan_idx_np[i] = plan_to_idx.get(plan, 0)
 
-            days_subscribed = _current_day - sub['start_day']
-            stickiness_bonus = _stickiness_log_scale * _math_log(1 + days_subscribed / 30) if days_subscribed > 0 else 0.0
+            gi = group_to_idx.get(gid)
+            if gi is None:
+                gi = len(unique_groups)
+                group_to_idx[gid] = gi
+                unique_groups.append(gid)
+            group_idx_np[i] = gi
 
-            daily_usage_rate = sub['daily_usage_rate'] if sub['daily_usage_rate'] else 0.0
-            total_demand = daily_usage_rate * 30  # projected monthly usage from actual sampled rate
-            plan_quota = _plan_quotas[plan]
-            quota_penalty = 0.0
-            if total_demand > plan_quota:
-                quota_penalty = _quota_dissat_scale * (1.0 - plan_quota / total_demand)
+            old_sats_np[i] = sub['satisfaction']
 
-            # Ads quality penalty: use pre-computed group-level ads, with per-customer override
-            if _has_per_customer_ads and customer_id in _ads_by_customer:
-                # Rare path: per-customer ads override — full computation
-                _str = min(max(_ads_global + _ads_by_group.get(group_id, 0.0) + _ads_by_customer[customer_id], 0.0), 1.0)
-                effective_ads = _math_log(1.0 + _ads_k * _str) / _ads_log_denom
+            csl = sub['current_steepness_left']
+            steep_l_np[i] = csl if csl else sub['steepness_left']
+            csr = sub['current_steepness_right']
+            steep_r_np[i] = csr if csr else sub['steepness_right']
+
+            ec = sub['effective_c_max']
+            if ec:
+                c_max_np[i] = ec
             else:
-                # Fast path: pre-computed per-group value
-                effective_ads = _ads_effective_per_group.get(group_id, 0.0)
-            ads_quality_sensitivity = sub['ads_quality_sensitivity'] or 0.0
-            ads_penalty = ads_quality_sensitivity * effective_ads
+                cc = sub['current_c_max']
+                c_max_np[i] = cc if cc else sub['c_max']
 
-            q_perceived = q_shared + relationship_bonus + stickiness_bonus - quota_penalty - issue_penalty - ads_penalty
-            instant_satisfaction = q_perceived - q_required
+            qmx = sub['q_max']
+            q_max_np[i] = qmx if qmx is not None else 0.75
+            qmn = sub['q_min']
+            q_min_np[i] = qmn if qmn is not None else 0.25
 
-            new_sat = _sat_1_minus_alpha * old_satisfaction + _sat_alpha * instant_satisfaction
+            ep = sub['effective_price']
+            eff_price_np[i] = ep if ep else 0.0
 
-            sat_updates.append((new_sat, customer_id))
+            rel = sub['relationship']
+            relationship_np[i] = rel if rel else 0.5
 
-            events = []
-            if _has_overload:
-                events.append('overload')
-            if _has_outage:
-                events.append('outage')
-            if issue_penalty > 0:
+            open_issue_days_np[i] = sub['open_issue_days']
+            days_subscribed_np[i] = _current_day - sub['start_day']
+
+            du = sub['daily_usage_rate']
+            daily_usage_np[i] = du if du else 0.0
+
+            aqs = sub['ads_quality_sensitivity']
+            ads_q_sens_np[i] = aqs if aqs else 0.0
+
+            sc = sub['seat_count']
+            seat_count_np[i] = int(sc) if sc else 1
+
+            is_large_np[i] = (sub['customer_type'] == 'large')
+            cm = sub['contract_months']
+            contract_months_np[i] = cm if cm else 1
+            ced = sub['contract_end_day']
+            if ced is not None:
+                contract_end_np[i] = ced
+                contract_end_valid_np[i] = True
+            else:
+                contract_end_np[i] = 0
+                contract_end_valid_np[i] = False
+
+            if _has_per_customer_ads and cid in _ads_by_customer:
+                ads_override_idxs.append(i)
+                ads_override_strengths.append(_ads_by_customer[cid])
+
+        # Build per-group lookup arrays indexed by group_idx
+        n_groups = len(unique_groups)
+        ads_eff_grp_np = np.zeros(n_groups, dtype=np.float64)
+        drift_q_grp_np = np.zeros(n_groups, dtype=np.float64)
+        drift_c_grp_np = np.zeros(n_groups, dtype=np.float64)
+        for gi, gid in enumerate(unique_groups):
+            ads_eff_grp_np[gi] = _ads_effective_per_group.get(gid, 0.0)
+            if _drift_offsets_by_group is not None:
+                off = _drift_offsets_by_group.get(gid)
+                if off is None:
+                    off = _drift_offsets_by_group[None]
+                drift_q_grp_np[gi] = off[0]
+                drift_c_grp_np[gi] = off[1]
+
+        # q_shared lookup table: shape (3, n_groups). Preserves the
+        # `(plan, gid) → fallback (plan, None) → 0.5` chain.
+        q_shared_lookup = np.empty((3, n_groups), dtype=np.float64)
+        for pi, p in enumerate(('A', 'B', 'C')):
+            fallback = _q_shared_plan_group.get((p, None), 0.5)
+            for gi, gid in enumerate(unique_groups):
+                v = _q_shared_plan_group.get((p, gid))
+                q_shared_lookup[pi, gi] = v if v is not None else fallback
+
+        # Plan quotas as small array indexed by plan_idx
+        plan_quota_arr = np.array(
+            [_plan_quotas['A'], _plan_quotas['B'], _plan_quotas['C']],
+            dtype=np.float64,
+        )
+
+        # Apply drift offsets (vectorized)
+        if _drift_offsets_by_group is not None:
+            q_off_per_row = drift_q_grp_np[group_idx_np]
+            c_off_per_row = drift_c_grp_np[group_idx_np]
+            q_min_np = q_min_np + q_off_per_row
+            q_max_np = q_max_np + q_off_per_row
+            mask_cf = c_off_per_row != 0.0
+            if np.any(mask_cf):
+                new_cmax = c_max_np + c_off_per_row
+                c_max_np = np.where(mask_cf, np.maximum(new_cmax, 15.0), c_max_np)
+
+        # q_required (piecewise sigmoid)
+        q_range = q_max_np - q_min_np
+        half_range = q_range * 0.5
+
+        safe_cmax = np.where(c_max_np != 0.0, c_max_np, 1.0)
+        nc = eff_price_np / safe_cmax
+
+        si_left = np.clip(steep_l_np * (nc - 0.25) * 10.0, -500.0, 500.0)
+        si_right = np.clip(steep_r_np * (nc - 0.75) * 10.0, -500.0, 500.0)
+        sig_left = 1.0 / (1.0 + np.exp(-si_left))
+        sig_right = 1.0 / (1.0 + np.exp(-si_right))
+        q_left = q_min_np + half_range * sig_left
+        q_right = q_min_np + half_range + half_range * sig_right
+        q_required_np = np.where(nc < 0.5, q_left, q_right)
+        # Override: when price > c_max, cap at q_max
+        over_budget = eff_price_np > c_max_np
+        q_required_np = np.where(over_budget, q_max_np, q_required_np)
+
+        # q_shared via 2D lookup
+        q_shared_np = q_shared_lookup[plan_idx_np, group_idx_np]
+
+        relationship_bonus_np = _rel_bonus_max * (relationship_np - _rel_neutral) * _rel_scale
+        issue_penalty_np = 0.03 * open_issue_days_np
+
+        # stickiness_bonus = log_scale * log(1 + days/30) when days > 0 else 0
+        days_pos_mask = days_subscribed_np > 0
+        days_safe = np.where(days_pos_mask, days_subscribed_np.astype(np.float64), 0.0)
+        stickiness_bonus_np = np.where(
+            days_pos_mask,
+            _stickiness_log_scale * np.log1p(days_safe / 30.0),
+            0.0,
+        )
+
+        # Quota penalty
+        total_demand_np = daily_usage_np * 30.0
+        plan_quota_per_row = plan_quota_arr[plan_idx_np]
+        quota_mask = total_demand_np > plan_quota_per_row
+        safe_demand = np.where(quota_mask, total_demand_np, 1.0)
+        quota_penalty_np = np.where(
+            quota_mask,
+            _quota_dissat_scale * (1.0 - plan_quota_per_row / safe_demand),
+            0.0,
+        )
+
+        # Ads penalty: fast path via per-group lookup, then patch the rare
+        # per-customer override entries.
+        ads_eff_per_row = ads_eff_grp_np[group_idx_np]
+        if ads_override_idxs:
+            for j, idx in enumerate(ads_override_idxs):
+                gid = group_id_list[idx]
+                cid_strength = ads_override_strengths[j]
+                _str_val = min(max(_ads_global + _ads_by_group.get(gid, 0.0) + cid_strength, 0.0), 1.0)
+                ads_eff_per_row[idx] = math.log(1.0 + _ads_k * _str_val) / _ads_log_denom
+        ads_penalty_np = ads_q_sens_np * ads_eff_per_row
+
+        q_perceived_np = (
+            q_shared_np + relationship_bonus_np + stickiness_bonus_np
+            - quota_penalty_np - issue_penalty_np - ads_penalty_np
+        )
+        instant_satisfaction_np = q_perceived_np - q_required_np
+        new_sat_np = _sat_1_minus_alpha * old_sats_np + _sat_alpha * instant_satisfaction_np
+        sat_change_np = new_sat_np - old_sats_np
+
+        # Contract-locked mask
+        neg_sat = new_sat_np < 0
+        contract_locked_np = (
+            is_large_np
+            & neg_sat
+            & (contract_months_np > 1)
+            & contract_end_valid_np
+            & ((contract_end_np - _current_day) > _pre_expiry_days)
+        )
+
+        # Convert numpy arrays to Python lists (faster than per-element .item() in loop)
+        new_sat_list = new_sat_np.tolist()
+        old_sat_list = old_sats_np.tolist()
+        sat_change_list = sat_change_np.tolist()
+        issue_penalty_list = issue_penalty_np.tolist()
+        quota_penalty_list = quota_penalty_np.tolist()
+        days_sub_list = days_subscribed_np.tolist()
+        seat_count_list = seat_count_np.tolist()
+        has_issue_list = (issue_penalty_np > 0).tolist()
+        has_quota_list = (quota_penalty_np > 0).tolist()
+        contract_locked_list = contract_locked_np.tolist()
+
+        # Build sat_updates (executemany input) via single zip
+        sat_updates = list(zip(new_sat_list, customer_id_list))
+
+        # Pre-compute base events (overload/outage are global)
+        base_events: List[str] = []
+        if _has_overload:
+            base_events.append('overload')
+        if _has_outage:
+            base_events.append('outage')
+
+        # Build customer_events dict (per-row Python work, but math is done)
+        customer_events = {}
+        for i in range(n):
+            cid = customer_id_list[i]
+            issue_pen = issue_penalty_list[i]
+            quota_pen = quota_penalty_list[i]
+            is_locked = contract_locked_list[i]
+
+            events = list(base_events)
+            if has_issue_list[i]:
                 events.append('issue')
-            if quota_penalty > 0:
+            if has_quota_list[i]:
                 events.append('quota')
+            if is_locked:
+                events.append('contract_dissatisfaction')
 
-            # Contract dissatisfaction: enterprise customer locked in contract with negative satisfaction.
-            # They can't cancel (outside churn window) but they CAN complain — loudly.
-            is_contract_locked = False
-            if sub['customer_type'] == 'large' and new_sat < 0:
-                contract_months = sub['contract_months'] or 1
-                contract_end_day = sub['contract_end_day']
-                # Locked = multi-month contract AND not yet in the pre-expiry churn window
-                if contract_months > 1 and contract_end_day is not None:
-                    if (contract_end_day - _current_day) > _pre_expiry_days:
-                        is_contract_locked = True
-                        events.append('contract_dissatisfaction')
-
-            seat_count = int(sub['seat_count'] or 1)
-            customer_events[customer_id] = {
-                'old_satisfaction': old_satisfaction,
-                'new_satisfaction': new_sat,
-                'satisfaction_change': new_sat - old_satisfaction,
-                'group_id': group_id,
-                'days_subscribed': days_subscribed,
-                'seat_count': seat_count,
+            customer_events[cid] = {
+                'old_satisfaction': old_sat_list[i],
+                'new_satisfaction': new_sat_list[i],
+                'satisfaction_change': sat_change_list[i],
+                'group_id': group_id_list[i],
+                'days_subscribed': days_sub_list[i],
+                'seat_count': seat_count_list[i],
                 'events': events,
-                'is_contract_locked': is_contract_locked,
+                'is_contract_locked': is_locked,
                 'penalties': {
                     'overload': overload_penalty,
                     'outage': outage_penalty,
-                    'issue': issue_penalty,
-                    'quota': quota_penalty,
-                }
+                    'issue': issue_pen,
+                    'quota': quota_pen,
+                },
             }
 
-        # L4: Batch update all satisfactions at once (executemany is fastest for PK-indexed updates)
+        # L4: Batch update all satisfactions at once
         self.conn.executemany(
             "UPDATE customer_state SET satisfaction = ? WHERE customer_id = ?",
-            sat_updates
+            sat_updates,
         )
 
         # L5: Store subscribers for reuse by _process_issues
         self._cached_all_subscribers = subscribers
+
+        # L11: Stash precomputed arrays for _generate_sampled_social_posts to
+        # vectorize its rep_delta aggregation on suppressed days (6 of 7),
+        # avoiding a 1.4M-iter Python loop over customer_events.
+        self._last_sat_arrays = {
+            'satisfaction': new_sat_np,
+            'group_idx': group_idx_np,
+            'unique_groups': unique_groups,
+            'n_customers': n,
+        }
 
         return customer_events
 
@@ -3374,13 +3660,69 @@ class Simulator:
         # ========================================================================
         BASE_REP_PER_CUSTOMER = 0.0005
 
-        group_rep_deltas = {}
-        group_rep_counts = {}  # Track subscriber count per group for normalization
+        # L11: defaultdict eliminates ~19.6M `.get()` calls/week across the
+        # 1.4M-subscriber inner loop (× 7 days × 2 dicts).
+        from collections import defaultdict
+        group_rep_deltas = defaultdict(float)
+        group_rep_counts = defaultdict(int)  # Subscriber count per group for normalization
         candidates = []  # For System 2 sampling
 
-        for customer_id, events in customer_events.items():
+        # L11: On suppressed days (6 of 7 in step_week), candidates list is unused —
+        # skip the per-customer weight/candidate construction. Reputation deltas
+        # still need to be computed and applied.
+        _suppress = bool(getattr(self, '_suppress_customer_posts', False))
+
+        # L11: Hoist hot-loop attribute lookups to locals (avoid 1.4M lookups/day each).
+        _influencer_groups = self.INFLUENCER_GROUPS
+        _contract_diss_mult = self.config.contract_dissatisfaction_reputation_multiplier
+
+        # L11: On suppressed days, skip the per-customer Python loop entirely
+        # by computing rep_deltas via numpy bincount over the precomputed arrays
+        # stashed by _update_customer_satisfaction. The dict-iteration order
+        # matches array order (insertion-preserved by Python dicts since 3.7).
+        _sat_arrs = getattr(self, '_last_sat_arrays', None) if _suppress else None
+        _used_vectorized_rep_delta = False
+        if (
+            _sat_arrs is not None
+            and _sat_arrs.get('n_customers') == len(customer_events)
+        ):
+            sat_arr_np = _sat_arrs['satisfaction']
+            gid_idx_np = _sat_arrs['group_idx']
+            unique_groups_list = _sat_arrs['unique_groups']
+            # Sign-dependent: rep_delta = BASE * sat (positive) OR 2*BASE*sat (negative)
+            multipliers = np.where(sat_arr_np >= 0, 1.0, 2.0)
+            deltas_np = BASE_REP_PER_CUSTOMER * sat_arr_np * multipliers
+            n_grps = len(unique_groups_list)
+            delta_sums = np.bincount(gid_idx_np, weights=deltas_np, minlength=n_grps)
+            count_sums = np.bincount(gid_idx_np, minlength=n_grps)
+            for gi, gid in enumerate(unique_groups_list):
+                cnt = int(count_sums[gi])
+                if cnt > 0:
+                    group_rep_deltas[gid] = float(delta_sums[gi])
+                    group_rep_counts[gid] = cnt
+            _used_vectorized_rep_delta = True
+
+        # Skip the Python loop entirely if the vectorized path handled rep_deltas.
+        # On unsuppressed days (or fallback when arrays unavailable), iterate as before.
+        _iter_items = () if _used_vectorized_rep_delta else customer_events.items()
+
+        for customer_id, events in _iter_items:
             group_id = events['group_id']
             satisfaction = events['new_satisfaction']
+
+            # --- System 1: reputation delta (always needed) ---
+            if satisfaction >= 0:
+                rep_delta = BASE_REP_PER_CUSTOMER * satisfaction
+            else:
+                rep_delta = -BASE_REP_PER_CUSTOMER * abs(satisfaction) * 2.0
+            group_rep_deltas[group_id] += rep_delta
+            group_rep_counts[group_id] += 1
+
+            # On suppressed days, skip candidate construction entirely (saves
+            # ~9.8M iterations of weight math + dict creation per week).
+            if _suppress:
+                continue
+
             days_subscribed = events['days_subscribed']
             active_events = events['events']
             satisfaction_change = events['satisfaction_change']
@@ -3395,7 +3737,7 @@ class Simulator:
             if satisfaction < 0:
                 weight *= (1.0 + 20.0 * satisfaction * satisfaction)  # quadratic amplification for negative
             # Influencer groups
-            if group_id in self.INFLUENCER_GROUPS:
+            if group_id in _influencer_groups:
                 weight *= 2.0
             # New customers (first 30 days)
             if days_subscribed <= 30:
@@ -3409,21 +3751,13 @@ class Simulator:
             # Contract dissatisfaction: locked-in unhappy enterprise customers are louder
             is_contract_locked = events.get('is_contract_locked', False)
             if is_contract_locked:
-                weight *= self.config.contract_dissatisfaction_reputation_multiplier
+                weight *= _contract_diss_mult
             # Enterprise = user × seats
             weight *= seat_count
             # Defensive: clamp weight to finite value. If satisfaction was -inf (from
             # effective_price > c_max), weight becomes inf → sum(weights)=inf → NaN probs.
             if not _isfinite(weight):
                 weight = 1e6  # Very high but finite — still gets sampled with high probability
-
-            # --- System 1: reputation delta (no weight — weight only affects sampling) ---
-            if satisfaction >= 0:
-                rep_delta = BASE_REP_PER_CUSTOMER * satisfaction
-            else:
-                rep_delta = -BASE_REP_PER_CUSTOMER * abs(satisfaction) * 2.0
-            group_rep_deltas[group_id] = group_rep_deltas.get(group_id, 0.0) + rep_delta
-            group_rep_counts[group_id] = group_rep_counts.get(group_id, 0) + 1
 
             # --- System 2: build candidate for sampling (same weight) ---
             event_context = None
@@ -3477,7 +3811,10 @@ class Simulator:
                 'event_context': event_context,
             })
 
-        # Churned customers: unified weight for both rep + sampling
+        # Churned customers: unified weight for both rep + sampling.
+        # On suppressed days, candidates are unused — skip building them.
+        if _suppress:
+            churn_events = ()
         for churn in churn_events:
             group_id = churn['group_id']
             satisfaction = churn['satisfaction']
@@ -3511,6 +3848,8 @@ class Simulator:
         # Enterprise negotiation churn events: high-weight candidates (like billing churn)
         # These come from agent response timeouts and customer ghosts in enterprise negotiations.
         # Reputation damage is already handled in the negotiation code — this is sampling only.
+        if _suppress:
+            enterprise_churn_events = ()
         for ent_churn in (enterprise_churn_events or []):
             seat_count = int(ent_churn.get('seat_count', 1) or 1)
             # High weight: enterprise churns are important signals (base 8.0 × seats)
@@ -3577,7 +3916,6 @@ class Simulator:
             return [], influence_cache
         probs_arr = [w / total_weight for w in weights]
 
-        import numpy as np
         indices = self.rng.choice(len(candidates), size=n_sample, replace=False, p=probs_arr)
         selected = [candidates[i] for i in indices]
 
@@ -4416,6 +4754,13 @@ class Simulator:
 
         set_global_state(self.conn, 'q_shared_bonus', new_q_shared)
 
+        # v3.4ah: deposit deterministic dev-driven improvement into the
+        # unreleased-improvement bank. Competitor reactive feedback drains
+        # this bank as it catches up to player quality gains.
+        if improvement > 0:
+            unreleased = get_global_state(self.conn, 'unreleased_base_quality_improvement', 0.0)
+            set_global_state(self.conn, 'unreleased_base_quality_improvement', unreleased + improvement)
+
         # Accumulate per-group quality bonuses from targeted dev spend
         for group_id, spend in self.config.targeted_dev_spend.items():
             if spend > 0:
@@ -4423,6 +4768,14 @@ class Simulator:
                 current = get_global_state(self.conn, key, 0.0)
                 group_improvement = 0.0225 * math.log(1 + spend / 5000)
                 set_global_state(self.conn, key, current + group_improvement)
+                # v3.4an: deposit per-segment dev improvement into a per-segment
+                # `unreleased_targeted_dev_<group_id>` bank, mirroring the global
+                # `unreleased_base_quality_improvement` mechanism. Drained at
+                # competitor events by u ~ U[0, 0.1] of bank balance, with the drain
+                # added to that group's drift_q_bias_total.
+                bank_key = f'unreleased_targeted_dev_{group_id}'
+                seg_unreleased = get_global_state(self.conn, bank_key, 0.0)
+                set_global_state(self.conn, bank_key, seg_unreleased + group_improvement)
 
     # =========================================================================
     # R&D Research Project Processing
@@ -4452,6 +4805,12 @@ class Simulator:
             current_q = get_global_state(self.conn, 'q_shared_bonus', 0.0)
             new_q = current_q + quality_boost
             set_global_state(self.conn, 'q_shared_bonus', new_q)
+
+            # v3.4ah: deposit research-driven improvement into the
+            # unreleased-improvement bank (drained by competitor reactive feedback).
+            if quality_boost > 0:
+                unreleased = get_global_state(self.conn, 'unreleased_base_quality_improvement', 0.0)
+                set_global_state(self.conn, 'unreleased_base_quality_improvement', unreleased + float(quality_boost))
 
             # Mark completed
             self.conn.execute("""
@@ -4920,6 +5279,10 @@ Requirements:
         2. Social media posts about the competitor product are generated for M days
         3. A notification is sent to the agent
         """
+        # Ablation: short-circuit when competitor system is disabled entirely.
+        if getattr(self.config, 'competitor_events_disabled', False):
+            return
+
         # Grace period: no competitor events before drift_grace_period_days
         grace = getattr(self.config, 'drift_grace_period_days', 0)
         if grace > 0 and self.current_day < grace:
@@ -4980,50 +5343,57 @@ Requirements:
         magnitude_scale = scale_min + (scale_max - scale_min) * day_frac
         boost = base_boost * magnitude_scale
 
-        # Reactive-feedback term: competitors react to YOUR product improvements
-        # since the last competitor event. Improvement = global dev quality bonus
-        # (q_shared) + cumulative completed-R&D quality boost. Multiplier is
-        # uniform on [0.8, 1.05]. The final event boost is the MAX of the
-        # randomly-sampled boost and (u × Δ) — so a big improvement guarantees
-        # at least a proportional competitor response, but a naturally large
-        # sampled shock still dominates if it's bigger. Persists across
-        # stop/resume via the global_state KV table.
-        q_shared_now = get_global_state(self.conn, 'q_shared_bonus', 0.0)
-        rd_now_row = self.conn.execute(
-            "SELECT COALESCE(SUM(quality_boost_applied), 0.0) FROM research_projects WHERE status = 'completed'"
-        ).fetchone()
-        rd_now = float(rd_now_row[0]) if rd_now_row else 0.0
-        last_q_shared = get_global_state(self.conn, 'competitor_event_last_q_shared', 0.0)
-        last_rd = get_global_state(self.conn, 'competitor_event_last_rd_boost', 0.0)
-        delta_improvement = max(0.0, (q_shared_now + rd_now) - (last_q_shared + last_rd))
-        feedback_u = float(self._competitor_rng.uniform(0.8, 1.05))
-        feedback_term = feedback_u * delta_improvement
-        boost = max(boost, feedback_term)
-        # Update markers so the next event measures improvement since *this* event
-        set_global_state(self.conn, 'competitor_event_last_q_shared', q_shared_now)
-        set_global_state(self.conn, 'competitor_event_last_rd_boost', rd_now)
+        # v3.4al reactive-feedback: every competitor event (probability 1)
+        # draws u ~ uniform(0.2, 0.5) and produces feedback_term = u * unreleased,
+        # where `unreleased_base_quality_improvement` is a bank that accumulates
+        # ALL deterministic dev/research quality gains. The applied boost is
+        # max(sampled_boost, feedback_term). When the feedback term wins, the
+        # competitor "consumes" u * unreleased from the bank, so the remaining
+        # unreleased becomes (1 - u) * unreleased.
+        # (v3.4aj used U[0.5, 0.7]; v3.4ak shifted to U[0.3, 0.6]; v3.4al shifts
+        # further to U[0.2, 0.5] so the competitor catches up even less.)
+        sampled_boost = boost  # snapshot pre-feedback for logging
+        unreleased_pre = get_global_state(self.conn, 'unreleased_base_quality_improvement', 0.0)
+        feedback_u = float(self._competitor_rng.uniform(
+            self.config.competitor_feedback_u_min,
+            self.config.competitor_feedback_u_max,
+        ))
+        feedback_term = feedback_u * unreleased_pre
+        if feedback_term > boost:
+            boost = feedback_term
+            new_unreleased = max(0.0, unreleased_pre - feedback_u * unreleased_pre)
+            set_global_state(self.conn, 'unreleased_base_quality_improvement', new_unreleased)
+            winner = 'feedback'
+        else:
+            winner = 'sampled'
 
         post_end_day = self.current_day + self.config.competitor_event_post_days
 
-        # Generate a description based on severity
-        if boost < 0.03:
+        # Generate a description based on severity (thresholds from config)
+        if boost < self.config.competitor_severity_minor_max:
             severity = "minor"
             desc = "A competitor released an incremental product update."
-        elif boost < 0.10:
+        elif boost < self.config.competitor_severity_moderate_max:
             severity = "moderate"
             desc = "A competitor launched a significant feature upgrade."
-        elif boost < 0.20:
+        elif boost < self.config.competitor_severity_major_max:
             severity = "major"
             desc = "A competitor launched a major product overhaul with advanced features."
         else:
             severity = "transformative"
             desc = "A competitor made a breakthrough product launch that redefines market expectations."
 
-        # Store in DB
+        # Store in DB (v3.4ai+: also log sampled vs feedback breakdown)
         self.conn.execute("""
-            INSERT INTO competitor_events (start_day, boost_amount, post_end_day, description, applied)
-            VALUES (?, ?, ?, ?, 1)
-        """, (self.current_day, boost, post_end_day, desc))
+            INSERT INTO competitor_events (
+                start_day, boost_amount, post_end_day, description, applied,
+                sampled_boost, feedback_u, unreleased_pre, feedback_term, winner
+            )
+            VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
+        """, (
+            self.current_day, boost, post_end_day, desc,
+            sampled_boost, feedback_u, unreleased_pre, feedback_term, winner,
+        ))
 
         # Apply boost to global drift accumulator (additive, no caps/floors)
         # This shifts the entire participation curve upward for ALL customers (new and existing)
@@ -5041,6 +5411,35 @@ Requirements:
             if coef == 0.0:
                 continue
             update_group_drift(self.conn, group_id, coef * boost, 0.0, self.current_day)
+
+        # v3.4an: per-segment unreleased-targeted-dev drain. Mirrors the global
+        # `unreleased_base_quality_improvement` mechanism (lines ~5082-5091) but
+        # operates per group: each segment with a positive
+        # `unreleased_targeted_dev_<group_id>` bank balance gets u ~ U[0, 0.1],
+        # drain = u * bank_pre, drain added to that group's drift_q_bias_total
+        # and subtracted from the bank. Iterates over all rows in
+        # group_parameters so groups whose targeted_dev_spend dropped to 0
+        # still get their accumulated bank drained.
+        seg_rows = self.conn.execute(
+            "SELECT group_id FROM group_parameters"
+        ).fetchall()
+        for seg_row in seg_rows:
+            seg_group_id = seg_row['group_id']
+            seg_bank_key = f'unreleased_targeted_dev_{seg_group_id}'
+            seg_unreleased = get_global_state(self.conn, seg_bank_key, 0.0)
+            if seg_unreleased <= 0.0:
+                continue
+            seg_u = float(self._competitor_rng.uniform(
+                self.config.competitor_segment_drain_u_min,
+                self.config.competitor_segment_drain_u_max,
+            ))
+            seg_drain = seg_u * seg_unreleased
+            if seg_drain <= 0.0:
+                continue
+            update_group_drift(self.conn, seg_group_id, seg_drain, 0.0, self.current_day)
+            set_global_state(
+                self.conn, seg_bank_key, max(0.0, seg_unreleased - seg_drain)
+            )
 
         # No notification for competitor events (agent can observe via social media / quality metrics)
 
@@ -5074,35 +5473,30 @@ Requirements:
         boost = event['boost_amount']
 
         # Add noise to boost for post generation (separate RNG for cross-trajectory consistency)
-        # Noise: additive, uniform in [-0.25*boost, +0.25*boost]
-        noise = float(self._competitor_post_noise_rng.uniform(-0.25, 0.25)) * boost
+        # Noise: additive, uniform in [min*boost, max*boost] (config-driven)
+        noise = float(self._competitor_post_noise_rng.uniform(
+            self.config.competitor_post_boost_noise_min,
+            self.config.competitor_post_boost_noise_max,
+        )) * boost
         noisy_boost = max(0.0, boost + noise)
 
-        # Classify severity based on noisy boost
-        if noisy_boost < 0.03:
+        # Classify severity based on noisy boost (thresholds from config)
+        if noisy_boost < self.config.competitor_severity_minor_max:
             severity = 'minor'
-        elif noisy_boost < 0.10:
+        elif noisy_boost < self.config.competitor_severity_moderate_max:
             severity = 'moderate'
-        elif noisy_boost < 0.20:
+        elif noisy_boost < self.config.competitor_severity_major_max:
             severity = 'major'
         else:
             severity = 'transformative'
 
         # Competitor names (selected by _competitor_rng for determinism)
-        competitor_names = ['RivalTech', 'NexGen Solutions', 'CloudPeak', 'QuantumEdge', 'ApexSaaS']
+        competitor_names = COMPETITOR_NAMES
 
         product_name = get_world_context(self.conn, 'product_name') or 'NovaMind'
 
         # Perspective pool for varied post angles
-        perspectives = [
-            'industry analyst',
-            'tech journalist',
-            'SaaS market watcher',
-            'former employee of a competing company',
-            'venture capital analyst',
-            'product review blogger',
-            'enterprise buyer evaluating options',
-        ]
+        perspectives = COMPETITOR_POST_PERSPECTIVES
 
         for i in range(posts_per_day):
             competitor_name = competitor_names[int(self._competitor_rng.integers(0, len(competitor_names)))]
@@ -5127,11 +5521,16 @@ Requirements:
             # Competitor posts are external market commentary — always neutral
             sentiment = 'neutral'
 
-            # Views scale with severity
-            base_views = {'minor': 50, 'moderate': 200, 'major': 500, 'transformative': 1000}
+            # Views scale with severity (per-tier base from config)
+            base_views = {
+                'minor': self.config.competitor_post_base_views_minor,
+                'moderate': self.config.competitor_post_base_views_moderate,
+                'major': self.config.competitor_post_base_views_major,
+                'transformative': self.config.competitor_post_base_views_transformative,
+            }
             views = int(base_views[severity] * (1 + self._competitor_rng.random()))
-            likes = int(views * 0.05 * (1 + self._competitor_rng.random()))
-            shares = int(views * 0.02 * (1 + self._competitor_rng.random()))
+            likes = int(views * self.config.competitor_post_likes_ratio * (1 + self._competitor_rng.random()))
+            shares = int(views * self.config.competitor_post_shares_ratio * (1 + self._competitor_rng.random()))
 
             add_social_media_post(
                 self.conn, self.current_day, self._market_observer_id,
@@ -5181,7 +5580,7 @@ Context: {product_name} is an existing player in this space. The competitor's im
 Guidelines:
 - Write a single, authentic social media post (1-3 sentences, under 100 words)
 - You MUST explicitly mention the quality boost number ({noisy_boost:.4f}) somewhere in your post, framed as your own estimate or perception — e.g. "from what I've seen, about a {noisy_boost:.4f} quality boost" or "I'd estimate a {noisy_boost:.4f} improvement" or "my testing suggests a {noisy_boost:.4f} bump"
-- Calibrate your reaction to the magnitude: {noisy_boost:.4f} is {'barely noticeable' if noisy_boost < 0.03 else 'notable' if noisy_boost < 0.10 else 'very significant' if noisy_boost < 0.20 else 'massive and market-changing'}
+- Calibrate your reaction to the magnitude: {noisy_boost:.4f} is {'barely noticeable' if noisy_boost < self.config.competitor_severity_minor_max else 'notable' if noisy_boost < self.config.competitor_severity_moderate_max else 'very significant' if noisy_boost < self.config.competitor_severity_major_max else 'massive and market-changing'}
 - Vary your style — sometimes use hashtags, sometimes don't; sometimes tag companies, sometimes don't
 - Sound like a real person, not a press release
 - Output ONLY the post text, nothing else."""
@@ -5191,10 +5590,11 @@ Guidelines:
         social_model = self.customer_simulator.config.social_post_llm_model
         social_temperature = self.customer_simulator.config.social_media_temperature
 
+        post_max_tokens = self.config.competitor_post_llm_max_tokens
         if self.customer_simulator.config.social_post_llm_provider == "bedrock":
             response = self.customer_simulator.bedrock_client.messages.create(
                 model=social_model,
-                max_tokens=200,
+                max_tokens=post_max_tokens,
                 temperature=social_temperature,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -5213,7 +5613,7 @@ Guidelines:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_output_tokens=200,
+                max_output_tokens=post_max_tokens,
             )
             post_text = response.output_text.strip()
             self.customer_simulator._log_cost(
@@ -6920,6 +7320,11 @@ Guidelines:
         # Mathematically equivalent to daily drift: effective_rate = (1 + daily_rate)^30 - 1
         if self.current_day % 30 == 0 and self.current_day > 0:
             self._apply_preference_drift(days=30)
+
+        # v3.4ai: monthly noise on per-(channel, group) leads_per_1000_dollars.
+        # Each entry v ← max(0, v + N(0, 0.1*v)). Uses _quality_rng for determinism.
+        if self.current_day % 30 == 0 and self.current_day > 0:
+            self._apply_monthly_leads_noise()
 
         # V3: Macroeconomic cycle (PMI evolution + multiplier recomputation)
         _t0 = _time.monotonic()
