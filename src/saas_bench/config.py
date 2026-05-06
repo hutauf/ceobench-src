@@ -187,34 +187,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Social Media Ads',
         description='Facebook, Instagram, TikTok — reaches individuals via feeds and influencer content',
         leads_per_1000_dollars={
-            'S1': 1008.5449,  # Best channel for S1: viral social discovery (270× base)
-            'S2': 533.9355,  # Moderate: some professionals on social (270× base)
-            'S3': 332.2266,  # Lower: power users prefer technical content (270× base)
-            'E1': 0.2878,  # Very low: enterprises don't buy from TikTok; whole-company acquisition (÷2)
-            'E2': 0.1736,  # Negligible: professional services avoid social ads entirely (÷2)
-            'E3': 0.0891, # Negligible: C-level doesn't buy from Instagram (÷2)
+            'S1': 124.5849,  # Best channel for S1: viral social discovery (270× base)
+            'S2': 149.5020,  # Moderate: some professionals on social (270× base)
+            'S3': 106.7871,  # Lower: power users prefer technical content (270× base)
+            'E1': 0.1038,  # Very low: enterprises don't buy from TikTok; whole-company acquisition (÷2)
+            'E2': 0.2169,  # Negligible: professional services avoid social ads entirely (÷2)
+            'E3': 0.0693, # Negligible: C-level doesn't buy from Instagram (÷2)
             # Discoverable individual groups
-            'D_S01': 830.5664,  # Niche Creators: highly active on social (270× base)
-            'D_S02': 201.7090,  # Academic Researchers: rarely on social for tools (270× base)
-            'D_S03': 498.3399,  # Non-Profit Workers: community-oriented social (270× base)
-            'D_S04': 616.9922,  # Small Agency Teams: manage social for clients (270× base)
-            'D_S05': 652.5879,  # Indie Game Devs: active on TikTok/Twitter (270× base)
-            'D_S06': 379.6875,  # Freelance Writers: moderate social presence (270× base)
-            'D_S07': 237.3047,  # Data Analysts: prefer technical content (270× base)
-            'D_S08': 949.2188,  # Social Media Managers: live on social platforms (270× base)
-            'D_S09': 533.9355,  # UX Designers: active on design-focused social (270× base)
-            'D_S10': 711.9141,  # Music Producers: active on Instagram/TikTok (270× base)
+            'D_S01': 99.6681,  # Niche Creators: highly active on social (270× base)
+            'D_S02': 185.0976,  # Academic Researchers: rarely on social for tools (270× base)
+            'D_S03': 213.5742,  # Non-Profit Workers: community-oriented social (270× base)
+            'D_S04': 195.7764,  # Small Agency Teams: manage social for clients (270× base)
+            'D_S05': 113.9064,  # Indie Game Devs: active on TikTok/Twitter (270× base)
+            'D_S06': 60.5127,  # Freelance Writers: moderate social presence (270× base)
+            'D_S07': 71.1915,  # Data Analysts: prefer technical content (270× base)
+            'D_S08': 99.6681,  # Social Media Managers: live on social platforms (270× base)
+            'D_S09': 49.8339,  # UX Designers: active on design-focused social (270× base)
+            'D_S10': 71.1915,  # Music Producers: active on Instagram/TikTok (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.0571,  # Government Agencies: zero social media procurement (÷2)
-            'D_E02': 0.1462, # Educational Institutions: some ed-tech social presence (÷2)
-            'D_E03': 0.0891, # Healthcare Networks: HIPAA-conscious, avoid social (÷2)
-            'D_E04': 0.0571,  # Regional Banks: conservative, no social buying (÷2)
-            'D_E05': 0.0891, # Insurance Brokers: minimal social presence (÷2)
-            'D_E06': 0.1154,  # Construction Firms: field workers on Facebook (÷2)
-            'D_E07': 0.1462, # Telecom Operators: some digital marketing awareness (÷2)
-            'D_E08': 0.0571,  # Energy Companies: safety-focused, no social buying (÷2)
-            'D_E09': 0.1736,  # Real Estate Groups: active on social for listings (÷2)
-            'D_E10': 0.0571,  # Shipping Lines: operational focus, no social (÷2)
+            'D_E01': 0.1293,  # Government Agencies: zero social media procurement (÷2)
+            'D_E02': 0.0438, # Educational Institutions: some ed-tech social presence (÷2)
+            'D_E03': 0.1386, # Healthcare Networks: HIPAA-conscious, avoid social (÷2)
+            'D_E04': 0.0171,  # Regional Banks: conservative, no social buying (÷2)
+            'D_E05': 0.0267, # Insurance Brokers: minimal social presence (÷2)
+            'D_E06': 0.0522,  # Construction Firms: field workers on Facebook (÷2)
+            'D_E07': 0.0864, # Telecom Operators: some digital marketing awareness (÷2)
+            'D_E08': 0.1386,  # Energy Companies: safety-focused, no social buying (÷2)
+            'D_E09': 0.0864,  # Real Estate Groups: active on social for listings (÷2)
+            'D_E10': 0.0171,  # Shipping Lines: operational focus, no social (÷2)
         }
     ),
     'search_ads': AdChannel(
@@ -222,34 +222,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Search Engine Ads',
         description='Google Ads, Bing — reaches S2/S3 who research tools via search',
         leads_per_1000_dollars={
-            'S1': 415.2832,  # Moderate: search for deals and alternatives (270× base)
-            'S2': 450.8789,  # Best search channel for S2: thorough research (270× base)
-            'S3': 272.9004,  # Strong: power users search for technical solutions (270× base)
-            'E1': 0.3460,  # Very low: procurement team vendor comparison; whole-company sale (÷2)
-            'E2': 0.2878,  # Very low: compliance research leads to long eval cycle (÷2)
-            'E3': 0.1736,  # Negligible: strategic partners prefer referrals over search (÷2)
+            'S1': 124.5849,  # Moderate: search for deals and alternatives (270× base)
+            'S2': 64.0722,  # Best search channel for S2: thorough research (270× base)
+            'S3': 81.8700,  # Strong: power users search for technical solutions (270× base)
+            'E1': 0.1038,  # Very low: procurement team vendor comparison; whole-company sale (÷2)
+            'E2': 0.1464,  # Very low: compliance research leads to long eval cycle (÷2)
+            'E3': 0.0522,  # Negligible: strategic partners prefer referrals over search (÷2)
             # Discoverable individual groups
-            'D_S01': 332.2266,  # Niche Creators: search for creative tools (270× base)
-            'D_S02': 474.6094,  # Academic Researchers: heavy tool search (270× base)
-            'D_S03': 308.4961,  # Non-Profit Workers: search for affordable tools (270× base)
-            'D_S04': 379.6875,  # Small Agency Teams: search for PM tools (270× base)
-            'D_S05': 355.9570,  # Indie Game Devs: search for dev tools (270× base)
-            'D_S06': 450.8789,  # Freelance Writers: search for writing tools (270× base)
-            'D_S07': 415.2832,  # Data Analysts: search for analytics tools (270× base)
-            'D_S08': 272.9004,  # Social Media Managers: less search, more social (270× base)
-            'D_S09': 355.9570,  # UX Designers: search for prototyping tools (270× base)
-            'D_S10': 213.5742,  # Music Producers: niche search, prefer community (270× base)
+            'D_S01': 92.5488,  # Niche Creators: search for creative tools (270× base)
+            'D_S02': 60.5127,  # Academic Researchers: heavy tool search (270× base)
+            'D_S03': 99.6681,  # Non-Profit Workers: search for affordable tools (270× base)
+            'D_S04': 64.0722,  # Small Agency Teams: search for PM tools (270× base)
+            'D_S05': 106.7871,  # Indie Game Devs: search for dev tools (270× base)
+            'D_S06': 167.2998,  # Freelance Writers: search for writing tools (270× base)
+            'D_S07': 124.5849,  # Data Analysts: search for analytics tools (270× base)
+            'D_S08': 284.7657,  # Social Media Managers: less search, more social (270× base)
+            'D_S09': 185.0976,  # UX Designers: search for prototyping tools (270× base)
+            'D_S10': 17.7978,  # Music Producers: niche search, prefer community (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.2306,  # Government Agencies: formal procurement, some vendor search (÷2)
-            'D_E02': 0.2878,  # Educational Institutions: ed-tech evaluation via search (÷2)
-            'D_E03': 0.2615, # Healthcare Networks: compliance-focused vendor search (÷2)
-            'D_E04': 0.2032, # Regional Banks: conservative, limited search (÷2)
-            'D_E05': 0.2306,  # Insurance Brokers: vendor comparison research (÷2)
-            'D_E06': 0.1736,  # Construction Firms: less tech-focused search (÷2)
-            'D_E07': 0.2878,  # Telecom Operators: tech-savvy vendor evaluation (÷2)
-            'D_E08': 0.2032, # Energy Companies: specialized vendor search (÷2)
-            'D_E09': 0.2615, # Real Estate Groups: PropTech search (÷2)
-            'D_E10': 0.1736,  # Shipping Lines: logistics tech vendor search (÷2)
+            'D_E01': 0.0693,  # Government Agencies: formal procurement, some vendor search (÷2)
+            'D_E02': 0.1557,  # Educational Institutions: ed-tech evaluation via search (÷2)
+            'D_E03': 0.1557, # Healthcare Networks: compliance-focused vendor search (÷2)
+            'D_E04': 0.0945, # Regional Banks: conservative, limited search (÷2)
+            'D_E05': 0.1209,  # Insurance Brokers: vendor comparison research (÷2)
+            'D_E06': 0.0864,  # Construction Firms: less tech-focused search (÷2)
+            'D_E07': 0.1731,  # Telecom Operators: tech-savvy vendor evaluation (÷2)
+            'D_E08': 0.0609, # Energy Companies: specialized vendor search (÷2)
+            'D_E09': 0.0783, # Real Estate Groups: PropTech search (÷2)
+            'D_E10': 0.0945,  # Shipping Lines: logistics tech vendor search (÷2)
         }
     ),
     'linkedin': AdChannel(
@@ -257,34 +257,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='LinkedIn Ads',
         description='Professional network — best channel for reaching enterprise decision makers',
         leads_per_1000_dollars={
-            'S1': 166.1133,  # Low: freelancers less active on LinkedIn (270× base)
-            'S2': 213.5742,  # Moderate: professionals browse LinkedIn (270× base)
-            'S3': 118.6524,  # Low: devs prefer Twitter/HN over LinkedIn (270× base)
-            'E1': 0.3460,  # Best enterprise channel: VPs browse LinkedIn; account acquisition (÷2)
-            'E2': 0.3152, # Strong: thought leadership reaches quality buyers (÷2)
-            'E3': 0.2306,  # Moderate: C-level executives network here (÷2)
+            'S1': 49.8339,  # Low: freelancers less active on LinkedIn (270× base)
+            'S2': 160.1808,  # Moderate: professionals browse LinkedIn (270× base)
+            'S3': 35.5956,  # Low: devs prefer Twitter/HN over LinkedIn (270× base)
+            'E1': 0.1293,  # Best enterprise channel: VPs browse LinkedIn; account acquisition (÷2)
+            'E2': 0.0945, # Strong: thought leadership reaches quality buyers (÷2)
+            'E3': 0.0267,  # Moderate: C-level executives network here (÷2)
             # Discoverable individual groups
-            'D_S01': 83.0566,  # Niche Creators: minimal LinkedIn presence (270× base)
-            'D_S02': 177.9785,  # Academic Researchers: some academic networking (270× base)
-            'D_S03': 154.2480,  # Non-Profit Workers: LinkedIn for grants (270× base)
-            'D_S04': 213.5742,  # Small Agency Teams: LinkedIn for clients (270× base)
-            'D_S05': 59.3262,  # Indie Game Devs: very low LinkedIn activity (270× base)
-            'D_S06': 201.7090,  # Freelance Writers: LinkedIn for gigs (270× base)
-            'D_S07': 237.3047,  # Data Analysts: active on LinkedIn professionally (270× base)
-            'D_S08': 130.5176,  # Social Media Managers: LinkedIn for B2B (270× base)
-            'D_S09': 166.1133,  # UX Designers: portfolio + job networking (270× base)
-            'D_S10': 59.3262,  # Music Producers: minimal LinkedIn presence (270× base)
+            'D_S01': 249.1698,  # Niche Creators: minimal LinkedIn presence (270× base)
+            'D_S02': 142.3827,  # Academic Researchers: some academic networking (270× base)
+            'D_S03': 149.5020,  # Non-Profit Workers: LinkedIn for grants (270× base)
+            'D_S04': 113.9064,  # Small Agency Teams: LinkedIn for clients (270× base)
+            'D_S05': 195.7764,  # Indie Game Devs: very low LinkedIn activity (270× base)
+            'D_S06': 135.2637,  # Freelance Writers: LinkedIn for gigs (270× base)
+            'D_S07': 142.3827,  # Data Analysts: active on LinkedIn professionally (270× base)
+            'D_S08': 39.1554,  # Social Media Managers: LinkedIn for B2B (270× base)
+            'D_S09': 124.5849,  # UX Designers: portfolio + job networking (270× base)
+            'D_S10': 206.4552,  # Music Producers: minimal LinkedIn presence (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.2878,  # Government Agencies: contracting officers on LinkedIn (÷2)
-            'D_E02': 0.2306,  # Educational Institutions: deans/IT on LinkedIn (÷2)
-            'D_E03': 0.3460,  # Healthcare Networks: C-suite healthcare on LinkedIn (÷2)
-            'D_E04': 0.3152, # Regional Banks: banking executives on LinkedIn (÷2)
-            'D_E05': 0.2878,  # Insurance Brokers: professional networking (÷2)
-            'D_E06': 0.1736,  # Construction Firms: less LinkedIn activity (÷2)
-            'D_E07': 0.3725, # Telecom Operators: tech executives active on LinkedIn (÷2)
-            'D_E08': 0.3152, # Energy Companies: sustainability officers on LinkedIn (÷2)
-            'D_E09': 0.2878,  # Real Estate Groups: deal-driven LinkedIn networking (÷2)
-            'D_E10': 0.2032, # Shipping Lines: logistics execs moderate LinkedIn (÷2)
+            'D_E01': 0.0171,  # Government Agencies: contracting officers on LinkedIn (÷2)
+            'D_E02': 0.1902,  # Educational Institutions: deans/IT on LinkedIn (÷2)
+            'D_E03': 0.1038,  # Healthcare Networks: C-suite healthcare on LinkedIn (÷2)
+            'D_E04': 0.1386, # Regional Banks: banking executives on LinkedIn (÷2)
+            'D_E05': 0.0864,  # Insurance Brokers: professional networking (÷2)
+            'D_E06': 0.1557,  # Construction Firms: less LinkedIn activity (÷2)
+            'D_E07': 0.0438, # Telecom Operators: tech executives active on LinkedIn (÷2)
+            'D_E08': 0.0171, # Energy Companies: sustainability officers on LinkedIn (÷2)
+            'D_E09': 0.0522,  # Real Estate Groups: deal-driven LinkedIn networking (÷2)
+            'D_E10': 0.0609, # Shipping Lines: logistics execs moderate LinkedIn (÷2)
         }
     ),
     'content_marketing': AdChannel(
@@ -292,34 +292,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Content Marketing',
         description='Blog posts, SEO, whitepapers — reaches S2/S3/E2 through detailed evaluation content',
         leads_per_1000_dollars={
-            'S1': 415.2832,  # Moderate: S1 wants quick solutions, not long reads (270× base)
-            'S2': 498.3399,  # Very strong: S2 reads reviews, comparisons (270× base)
-            'S3': 355.9570,  # Strong: S3 trusts technical blog posts (270× base)
-            'E1': 0.4306, # Low: vendor comparison content drives account-level interest (÷2)
-            'E2': 0.4878, # Best enterprise channel for E2: whitepapers + case studies (÷2)
-            'E3': 0.3152, # Low: strategic content resonates but long sales cycle (÷2)
+            'S1': 320.3613,  # Moderate: S1 wants quick solutions, not long reads (270× base)
+            'S2': 231.3720,  # Very strong: S2 reads reviews, comparisons (270× base)
+            'S3': 99.6681,  # Strong: S3 trusts technical blog posts (270× base)
+            'E1': 0.2424, # Low: vendor comparison content drives account-level interest (÷2)
+            'E2': 0.0522, # Best enterprise channel for E2: whitepapers + case studies (÷2)
+            'E3': 0.0945, # Low: strategic content resonates but long sales cycle (÷2)
             # Discoverable individual groups
-            'D_S01': 308.4961,  # Niche Creators: tutorials and tool reviews (270× base)
-            'D_S02': 533.9355,  # Academic Researchers: best channel — papers (270× base)
-            'D_S03': 332.2266,  # Non-Profit Workers: case studies (270× base)
-            'D_S04': 450.8789,  # Small Agency Teams: workflow blogs (270× base)
-            'D_S05': 379.6875,  # Indie Game Devs: dev blogs (270× base)
-            'D_S06': 557.6660,  # Freelance Writers: writing tool reviews (270× base)
-            'D_S07': 474.6094,  # Data Analysts: technical tutorials (270× base)
-            'D_S08': 332.2266,  # Social Media Managers: platform strategy (270× base)
-            'D_S09': 415.2832,  # UX Designers: design process blogs (270× base)
-            'D_S10': 237.3047,  # Music Producers: production technique (270× base)
+            'D_S01': 24.9171,  # Niche Creators: tutorials and tool reviews (270× base)
+            'D_S02': 53.3937,  # Academic Researchers: best channel — papers (270× base)
+            'D_S03': 46.2744,  # Non-Profit Workers: case studies (270× base)
+            'D_S04': 185.0976,  # Small Agency Teams: workflow blogs (270× base)
+            'D_S05': 17.7978,  # Indie Game Devs: dev blogs (270× base)
+            'D_S06': 113.9064,  # Freelance Writers: writing tool reviews (270× base)
+            'D_S07': 71.1915,  # Data Analysts: technical tutorials (270× base)
+            'D_S08': 81.8700,  # Social Media Managers: platform strategy (270× base)
+            'D_S09': 106.7871,  # UX Designers: design process blogs (270× base)
+            'D_S10': 213.5742,  # Music Producers: production technique (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.4032,  # Government Agencies: compliance whitepapers (÷2)
-            'D_E02': 0.5186,  # Educational Institutions: ed-tech case studies (÷2)
-            'D_E03': 0.4615,  # Healthcare Networks: clinical workflow whitepapers (÷2)
-            'D_E04': 0.3725, # Regional Banks: fintech comparison content (÷2)
-            'D_E05': 0.4032,  # Insurance Brokers: claims efficiency case studies (÷2)
-            'D_E06': 0.2878,  # Construction Firms: less content-driven (÷2)
-            'D_E07': 0.4306, # Telecom Operators: tech evaluation whitepapers (÷2)
-            'D_E08': 0.4615,  # Energy Companies: sustainability/efficiency content (÷2)
-            'D_E09': 0.3725, # Real Estate Groups: PropTech case studies (÷2)
-            'D_E10': 0.3152, # Shipping Lines: logistics optimization content (÷2)
+            'D_E01': 0.0864,  # Government Agencies: compliance whitepapers (÷2)
+            'D_E02': 0.0864,  # Educational Institutions: ed-tech case studies (÷2)
+            'D_E03': 0.0783,  # Healthcare Networks: clinical workflow whitepapers (÷2)
+            'D_E04': 0.1116, # Regional Banks: fintech comparison content (÷2)
+            'D_E05': 0.0693,  # Insurance Brokers: claims efficiency case studies (÷2)
+            'D_E06': 0.0522,  # Construction Firms: less content-driven (÷2)
+            'D_E07': 0.1116, # Telecom Operators: tech evaluation whitepapers (÷2)
+            'D_E08': 0.0945,  # Energy Companies: sustainability/efficiency content (÷2)
+            'D_E09': 0.1902, # Real Estate Groups: PropTech case studies (÷2)
+            'D_E10': 0.1209, # Shipping Lines: logistics optimization content (÷2)
         }
     ),
     'referral_program': AdChannel(
@@ -327,34 +327,34 @@ AD_CHANNELS: Dict[str, AdChannel] = {
         name='Referral Program',
         description='Customer referral incentives — cheapest channel, powered by satisfied users sharing',
         leads_per_1000_dollars={
-            'S1': 1067.8711,  # Very high: share deals with friends for credits (270× base)
-            'S2': 771.2402,  # Very high: recommend to professional colleagues (270× base)
-            'S3': 569.5312,  # High: tech communities share tools heavily (270× base)
-            'E1': 0.8075,  # Low: internal referrals between departments; whole-company deals (÷2)
-            'E2': 0.7229, # Low: peer recommendations in professional circles (÷2)
-            'E3': 0.5768,  # Low: executive referral networks; long eval cycles (÷2)
+            'S1': 302.5635,  # Very high: share deals with friends for credits (270× base)
+            'S2': 135.2637,  # Very high: recommend to professional colleagues (270× base)
+            'S3': 170.8593,  # High: tech communities share tools heavily (270× base)
+            'E1': 0.0864,  # Low: internal referrals between departments; whole-company deals (÷2)
+            'E2': 0.0864, # Low: peer recommendations in professional circles (÷2)
+            'E3': 0.1731,  # Low: executive referral networks; long eval cycles (÷2)
             # Discoverable individual groups
-            'D_S01': 889.8926,  # Niche Creators: strong community sharing (270× base)
-            'D_S02': 616.9922,  # Academic Researchers: recommend to lab colleagues (270× base)
-            'D_S03': 711.9141,  # Non-Profit Workers: mission-driven sharing (270× base)
-            'D_S04': 652.5879,  # Small Agency Teams: recommend to partners (270× base)
-            'D_S05': 771.2402,  # Indie Game Devs: dev communities share (270× base)
-            'D_S06': 498.3399,  # Freelance Writers: moderate referral culture (270× base)
-            'D_S07': 557.6660,  # Data Analysts: share in analytics communities (270× base)
-            'D_S08': 830.5664,  # Social Media Managers: natural sharers (270× base)
-            'D_S09': 616.9922,  # UX Designers: design community recs (270× base)
-            'D_S10': 688.1836,  # Music Producers: strong community referrals (270× base)
+            'D_S01': 266.9679,  # Niche Creators: strong community sharing (270× base)
+            'D_S02': 160.1808,  # Academic Researchers: recommend to lab colleagues (270× base)
+            'D_S03': 92.5488,  # Non-Profit Workers: mission-driven sharing (270× base)
+            'D_S04': 135.2637,  # Small Agency Teams: recommend to partners (270× base)
+            'D_S05': 231.3720,  # Indie Game Devs: dev communities share (270× base)
+            'D_S06': 149.5020,  # Freelance Writers: moderate referral culture (270× base)
+            'D_S07': 167.2998,  # Data Analysts: share in analytics communities (270× base)
+            'D_S08': 249.1698,  # Social Media Managers: natural sharers (270× base)
+            'D_S09': 160.1808,  # UX Designers: design community recs (270× base)
+            'D_S10': 64.0722,  # Music Producers: strong community referrals (270× base)
             # Discoverable enterprise groups (account-level: 1.5× base)
-            'D_E01': 0.4306,  # Government Agencies: slow procurement; inter-agency referrals rare (÷2)
-            'D_E02': 0.6339,   # Educational Institutions: academic peer recommendations (÷2)
-            'D_E03': 0.5186,   # Healthcare Networks: clinical peer networks; compliance barriers (÷2)
-            'D_E04': 0.4615,   # Regional Banks: consortium referrals; regulatory hurdles (÷2)
-            'D_E05': 0.5768,   # Insurance Brokers: industry peer networks; compliance review (÷2)
-            'D_E06': 0.5186,   # Construction Firms: contractor network referrals (÷2)
-            'D_E07': 0.5768,   # Telecom Operators: industry peer sharing (÷2)
-            'D_E08': 0.4306,  # Energy Companies: utility consortium; long eval cycles (÷2)
-            'D_E09': 0.6339,   # Real Estate Groups: deal-network referrals (÷2)
-            'D_E10': 0.4032,   # Shipping Lines: port/logistics network; few players (÷2)
+            'D_E01': 0.1209,  # Government Agencies: slow procurement; inter-agency referrals rare (÷2)
+            'D_E02': 0.0693,   # Educational Institutions: academic peer recommendations (÷2)
+            'D_E03': 0.0267,   # Healthcare Networks: clinical peer networks; compliance barriers (÷2)
+            'D_E04': 0.0609,   # Regional Banks: consortium referrals; regulatory hurdles (÷2)
+            'D_E05': 0.1731,   # Insurance Brokers: industry peer networks; compliance review (÷2)
+            'D_E06': 0.0345,   # Construction Firms: contractor network referrals (÷2)
+            'D_E07': 0.1293,   # Telecom Operators: industry peer sharing (÷2)
+            'D_E08': 0.1293,  # Energy Companies: utility consortium; long eval cycles (÷2)
+            'D_E09': 0.1116,   # Real Estate Groups: deal-network referrals (÷2)
+            'D_E10': 0.0522,   # Shipping Lines: port/logistics network; few players (÷2)
         }
     ),
 }
@@ -560,7 +560,8 @@ class BenchmarkConfig:
     # Magnitude: scales linearly from scale_min at day 1 to scale_max at (total_days - late_cutoff_days).
     # Boosts are blocked entirely before drift_grace_period_days and after (total_days - late_cutoff_days).
     # Early game = small disruptions, late game = major market shifts, very late = no more shocks.
-    competitor_event_mean_interval: float = 8.572  # v3.4l: 4.286→8.572 (freq ×0.5 from v3.4k; = 0.35× of v3.4j baseline=3).
+    competitor_events_disabled: bool = False  # ablation: skip _process_competitor_events entirely (no events, no posts, no boost)
+    competitor_event_mean_interval: float = 6.858  # v3.4ai: 8.572÷1.25 (freq ×1.25 from v3.4ah/l).
     competitor_event_min_interval: int = 1         # v3.4e: 3× freq from v3.4d (was 3). Kept at 1 in v3.4k (floor not binding).
     competitor_event_post_days: int = 3           # Days of competitor-themed social posts after event
     competitor_event_posts_per_day: int = 2       # Posts/day during event window
@@ -574,6 +575,47 @@ class BenchmarkConfig:
     competitor_event_magnitude_scale_max: float = 4.0   # v3.4k: 2.0→4.0 (restore 1-4 scale range, matches v3.4f/g/h). Scale at (total_days - late_cutoff_days).
     # v3.3t: block competitor events in the last N days so bankruptcy can't be caused by a late-game boost
     competitor_event_late_cutoff_days: int = 30
+    # Reactive feedback floor on each competitor-event boost: drawn ~U(min, max) and
+    # multiplied by the per-segment unreleased dev bank to set a quality-bias floor.
+    # Defaults preserve pre-config behavior (was hardcoded U(0.2, 0.5) in simulation.py).
+    #
+    # ↳ DIFFICULTY KNOB: this U range controls how aggressively the competitor
+    #   "catches up" by consuming the player's unreleased dev/research bank.
+    #   Higher u → competitor reacts harder (more difficult, less benefit from
+    #   stockpiling improvements). Lower u → easier (player keeps more bank).
+    #   Examples: U(0.0, 0.1) = very easy, U(0.2, 0.5) = default, U(0.5, 0.8) = hard.
+    competitor_feedback_u_min: float = 0.2
+    competitor_feedback_u_max: float = 0.5
+
+    # Per-segment unreleased-targeted-dev drain on every competitor event:
+    # each segment draws u ~ U(min, max) and drains u × bank into the segment's
+    # drift_q_bias_total. Mirrors the global feedback above but per-group.
+    competitor_segment_drain_u_min: float = 0.0
+    competitor_segment_drain_u_max: float = 0.1
+
+    # Noise applied to per-post boost (for LLM tone calibration). Each post
+    # draws additive noise ~ U(min, max) × boost.
+    competitor_post_boost_noise_min: float = -0.25
+    competitor_post_boost_noise_max: float = 0.25
+
+    # Severity classification thresholds (boost magnitude → severity label).
+    # Used both for the event description and per-post severity guidance.
+    competitor_severity_minor_max: float = 0.03         # boost < this → "minor"
+    competitor_severity_moderate_max: float = 0.10      # boost < this → "moderate"
+    competitor_severity_major_max: float = 0.20         # boost < this → "major"; else "transformative"
+
+    # Per-severity base view counts for competitor posts (engagement scales with severity).
+    competitor_post_base_views_minor: int = 50
+    competitor_post_base_views_moderate: int = 200
+    competitor_post_base_views_major: int = 500
+    competitor_post_base_views_transformative: int = 1000
+
+    # Likes/shares ratios applied to views (with U(0,1) jitter).
+    competitor_post_likes_ratio: float = 0.05
+    competitor_post_shares_ratio: float = 0.02
+
+    # LLM max_tokens for competitor-event social posts (Haiku/GPT generation).
+    competitor_post_llm_max_tokens: int = 200
 
     # Grace period: no drift or competitor events for the first N days
     drift_grace_period_days: int = 60  # v3.4c: 100→60. No global/group/individual drift or competitor events before this day
@@ -623,9 +665,15 @@ class BenchmarkConfig:
     agent_llm_reasoning_effort: str = "low"  # "low", "medium", "high"
 
     # Social Post LLM (for generating social media posts)
-    # Uses Claude Haiku 4.5 via Bedrock - fast and cheap for short creative posts
+    # Defaults to Claude Haiku 4.5 via Bedrock - fast and cheap for short creative posts.
+    # Supported providers: "bedrock", "anthropic", or "openai".
+    #   - "bedrock":   AnthropicBedrock SDK; requires AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION.
+    #                  Use a Bedrock model id (e.g. "us.anthropic.claude-haiku-4-5-20251001-v1:0").
+    #   - "anthropic": Direct Anthropic SDK; requires ANTHROPIC_API_KEY.
+    #                  Use the public model name (e.g. "claude-haiku-4-5"). No AWS credentials needed.
+    #   - "openai":    OpenAI Responses API; requires OPENAI_API_KEY.
     social_post_llm_model: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-    social_post_llm_provider: str = "bedrock"  # "bedrock" or "openai"
+    social_post_llm_provider: str = "bedrock"  # "bedrock" | "anthropic" | "openai"
     social_post_llm_temperature: float = 0.9  # Higher for creative variety
     social_post_llm_max_tokens: int = 1000
 
@@ -774,8 +822,8 @@ class BenchmarkConfig:
     # individual issues. Each pool (global + 4 targeted scopes) is partitioned by group;
     # each group g draws Poisson(scale_g × spend × n_g / |pool|) resolutions. Pure-group
     # pools collapse to scale_g × spend. Mixed pools yield a composition-weighted rate.
-    individual_ops_scale: float = 0.3  # issues resolved per $ ops spend per day for S* + D_S* groups
-    enterprise_ops_scale: float = 0.05  # issues resolved per $ ops spend per day for E* + D_E* groups (lower than individual)
+    individual_ops_scale: float = 0.6  # issues resolved per $ ops spend per day for S* + D_S* groups
+    enterprise_ops_scale: float = 0.1  # issues resolved per $ ops spend per day for E* + D_E* groups (lower than individual)
     quick_resolution_threshold_days: int = 2  # Max days for "quick" resolution bonus
     quick_resolution_boost_1day: float = 0.40  # Relationship boost for 1-day resolution
     quick_resolution_boost_2day: float = 0.30  # Relationship boost for 2-day resolution
@@ -2690,6 +2738,30 @@ COMPETITOR_REACTIVITY_Q_BIAS: Dict[str, float] = {
     # D_E10: Shipping / logistics — operational stability trumps novelty.
     'D_E10': 0.03,
 }
+
+# =============================================================================
+# Competitor names — sampled per post for variety.
+# =============================================================================
+COMPETITOR_NAMES: List[str] = [
+    'RivalTech',
+    'NexGen Solutions',
+    'CloudPeak',
+    'QuantumEdge',
+    'ApexSaaS',
+]
+
+# =============================================================================
+# Competitor-post author perspectives — sampled per post for varied angles.
+# =============================================================================
+COMPETITOR_POST_PERSPECTIVES: List[str] = [
+    'industry analyst',
+    'tech journalist',
+    'SaaS market watcher',
+    'former employee of a competing company',
+    'venture capital analyst',
+    'product review blogger',
+    'enterprise buyer evaluating options',
+]
 
 # =============================================================================
 # V2.2: Individual Subscriber Drift — Post-Subscription Behavioral Shifts

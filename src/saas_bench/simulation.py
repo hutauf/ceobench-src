@@ -4053,8 +4053,8 @@ class Simulator:
                     social_model = config.social_post_llm_model
                     social_provider = config.social_post_llm_provider
 
-                    if social_provider == "bedrock":
-                        llm_response = self.customer_simulator.bedrock_client.messages.create(
+                    if social_provider in ("bedrock", "anthropic"):
+                        llm_response = self.customer_simulator.social_post_client.messages.create(
                             model=social_model,
                             max_tokens=300,
                             temperature=config.social_media_temperature,
@@ -4217,8 +4217,8 @@ class Simulator:
                     social_model = config.social_post_llm_model
                     social_provider = config.social_post_llm_provider
 
-                    if social_provider == "bedrock":
-                        llm_response = self.customer_simulator.bedrock_client.messages.create(
+                    if social_provider in ("bedrock", "anthropic"):
+                        llm_response = self.customer_simulator.social_post_client.messages.create(
                             model=social_model,
                             max_tokens=300,
                             temperature=config.social_media_temperature,
@@ -4543,7 +4543,8 @@ class Simulator:
             WHERE s.status = 'subscribed' AND s.end_day IS NULL
         """).fetchone()[0]
 
-        bedrock_client = self.customer_simulator.bedrock_client
+        # Use social_post_client (bedrock or direct anthropic) — both expose the same .messages.create() API
+        bedrock_client = self.customer_simulator.social_post_client
         social_model = self.config.social_post_llm_model
         viral_threshold = 0.6
 
@@ -5591,8 +5592,8 @@ Guidelines:
         social_temperature = self.customer_simulator.config.social_media_temperature
 
         post_max_tokens = self.config.competitor_post_llm_max_tokens
-        if self.customer_simulator.config.social_post_llm_provider == "bedrock":
-            response = self.customer_simulator.bedrock_client.messages.create(
+        if self.customer_simulator.config.social_post_llm_provider in ("bedrock", "anthropic"):
+            response = self.customer_simulator.social_post_client.messages.create(
                 model=social_model,
                 max_tokens=post_max_tokens,
                 temperature=social_temperature,

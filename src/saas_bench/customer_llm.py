@@ -128,6 +128,12 @@ def _create_bedrock_client(config: BenchmarkConfig):
     return AnthropicBedrock(aws_region=config.bedrock_region)
 
 
+def _create_anthropic_client(config: BenchmarkConfig):
+    """Create a direct Anthropic API client. Reads ANTHROPIC_API_KEY from env."""
+    from anthropic import Anthropic
+    return Anthropic()
+
+
 @dataclass
 class CustomerLLMResponse:
     """Response from customer LLM."""
@@ -156,15 +162,42 @@ class CustomerSimulator:
         self.event_logger = None  # Optional event logger
         self.current_day = 0  # Track current day for logging
 
-        # Initialize Bedrock client lazily (only when needed)
+        # Initialize Anthropic-compatible clients lazily (only when needed)
         self._bedrock_client = None
+        self._anthropic_client = None
 
     @property
     def bedrock_client(self):
-        """Lazy-initialize the Bedrock client."""
+        """Lazy-initialize the AnthropicBedrock client (AWS Bedrock)."""
         if self._bedrock_client is None:
             self._bedrock_client = _create_bedrock_client(self.config)
         return self._bedrock_client
+
+    @property
+    def anthropic_client(self):
+        """Lazy-initialize the direct Anthropic API client."""
+        if self._anthropic_client is None:
+            self._anthropic_client = _create_anthropic_client(self.config)
+        return self._anthropic_client
+
+    @property
+    def social_post_client(self):
+        """Return whichever Anthropic-compatible client matches social_post_llm_provider.
+
+        Both AnthropicBedrock and Anthropic SDKs expose the same .messages.create()
+        interface, so call sites can use this client without further branching as
+        long as the provider is one of {"bedrock", "anthropic"}.
+        Raises ValueError for "openai" (caller must dispatch to the OpenAI path).
+        """
+        provider = self.config.social_post_llm_provider
+        if provider == "bedrock":
+            return self.bedrock_client
+        if provider == "anthropic":
+            return self.anthropic_client
+        raise ValueError(
+            f"social_post_client only supports 'bedrock' or 'anthropic'; got {provider!r}. "
+            f"For OpenAI, dispatch via self.client.responses.create()."
+        )
 
     def set_event_logger(self, event_logger):
         """Set the event logger for detailed LLM cost logging."""
@@ -464,9 +497,9 @@ Output ONLY the post text, nothing else."""
         # V2.2: Use social_media_temperature (0.95) for higher creative variety
         social_temperature = self.config.social_media_temperature
 
-        if social_provider == "bedrock":
-            # Use Bedrock Haiku 4.5 for social posts
-            response = self.bedrock_client.messages.create(
+        if social_provider in ("bedrock", "anthropic"):
+            # Bedrock or direct Anthropic — both share the .messages.create() API
+            response = self.social_post_client.messages.create(
                 model=social_model,
                 max_tokens=self.config.social_post_llm_max_tokens,
                 temperature=social_temperature,
@@ -480,7 +513,7 @@ Output ONLY the post text, nothing else."""
             output_tokens = response.usage.output_tokens
         else:
             # Fallback to OpenAI
-            print(f"[WARN] Social post using OpenAI fallback (provider={social_provider}, model={social_model}). Set social_post_llm_provider='bedrock' for Haiku 4.5.")
+            print(f"[WARN] Social post using OpenAI fallback (provider={social_provider}, model={social_model}). Set social_post_llm_provider='bedrock' or 'anthropic' for Haiku 4.5.")
             response = self.client.responses.create(
                 model=social_model,
                 reasoning={"effort": "low"},

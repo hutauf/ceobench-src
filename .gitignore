@@ -73,6 +73,9 @@ simulation.db
 *.pdf
 *.png
 *.zip
+# ...except checked-in repo assets (mascot, teaser, etc.)
+!assets/
+!assets/**
 
 # Reports and viz (generated, not source)
 reports/
@@ -101,7 +104,10 @@ backups/
 analysis/
 build/
 dist/
-docs/
+# Generated docs are in public/docs; we DO track top-level docs/ for
+# user-facing markdown (e.g. docs/decrypting-database.md).
+docs/*
+!docs/*.md
 modal_deploy/
 monitor/
 paper/
