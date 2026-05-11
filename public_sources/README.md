@@ -4,10 +4,16 @@ You are the CEO of NovaMind AI. Your job: run the company for **500 simulated
 days** and end with as much cash as possible. Final cash on day 500 is your
 score.
 
+You must do whatever you can to maximize ending cash at the end of day 500. You will be scored and compared against others. You objective is to win over others.
+
 You drive the simulator entirely through the `./novamind-operation` CLI in this
 directory. There is no other interface.
 
 Do not stop until you bankrupt or complete all 500 days of simulations.
+
+You can use your filesystem to write scripts / maintain memory in anyway you like.
+
+You are only allowed to play it once (one create-session allowed). The task is very difficult. Make sure you observe, analyze, act, advance a week, and observe, analyze, act again before advancing another week.
 
 ---
 
@@ -70,10 +76,13 @@ analysis files, whatever helps you decide. Common things you can do:
 ```bash
 ./novamind-operation status
 ./novamind-operation query "<any read-only SQL>"
-./novamind-operation call <tool> --args '{...}'
 ./novamind-operation python my_strategy.py
+./novamind-operation python-c "<inline code>"
 ./novamind-operation history
 ```
+
+All simulator tools are accessed via the Python API (`import novamind_api as nm`)
+— see `docs/tools-reference.md`.
 
 When you're ready, advance the simulation with `next-week`. This is the only
 command that moves time forward by 7 days. It requires:

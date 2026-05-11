@@ -33,8 +33,10 @@ def render_tools_reference(output_path: Path):
     lines = [
         "# NovaMind Tools Reference",
         "",
-        "Complete reference for all available tools. Use these via `novamind-operation call <tool> --args '{...}'`",
-        "or via the Python API (`import novamind_api as nm`).",
+        "Complete reference for all available tools. Call them via the Python API",
+        "(`import novamind_api as nm`) — see `docs/novamind_api/` for the SDK source",
+        "and run scripts with `./novamind-operation python <script.py>` or",
+        "`./novamind-operation python-c \"<inline code>\"`.",
         "",
         "## Tool Summary",
         "",
@@ -63,7 +65,6 @@ def render_tools_reference(output_path: Path):
             lines.append(f"#### `{name}`")
             lines.append("")
             lines.append(f"**Python:** `novamind_api.{module}.{name}(...)`")
-            lines.append(f"**CLI:** `novamind-operation call {name} --args '{{...}}'`")
             lines.append("")
             lines.append(doc.get("description", ""))
             lines.append("")
@@ -277,21 +278,6 @@ Execute inline Python code.
 ```bash
 novamind-operation python-c "import novamind_api as nm; nm.pricing.set_prices(A=29.99)"
 ```
-
----
-
-### Direct Tool Calls
-
-#### `novamind-operation call <tool_name> [--args '{...}'] [--session ID]`
-Call a simulator tool directly with JSON arguments.
-
-```bash
-novamind-operation call set_prices --args '{"A": 29.99, "B": 69.99, "C": 179.99}'
-novamind-operation call get_cost_info
-novamind-operation call start_research_project --args '{"tier": "T3"}'
-```
-
-See `docs/tools-reference.md` for all available tools and their parameters.
 
 ---
 

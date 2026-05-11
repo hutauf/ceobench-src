@@ -324,29 +324,6 @@ def _execute_python(session_id: str, port: int, code: str, source: str = "unknow
     sys.exit(result.returncode)
 
 
-def cmd_call(args):
-    session_id = _resolve_session(args.session)
-    port = _ensure_server_running(session_id)
-    tool_args = {}
-    if args.args:
-        try:
-            tool_args = json.loads(args.args)
-        except json.JSONDecodeError:
-            print(f"Error: Invalid JSON for --args: {args.args}", file=sys.stderr)
-            sys.exit(1)
-    result = _api_call(port, "POST", "/call", {"tool": args.tool, "args": tool_args})
-    _log_history(session_id, {
-        "type": "tool_call",
-        "tool": args.tool,
-        "args": tool_args,
-        "success": result.get("success", False),
-        "timestamp": time.time(),
-    })
-    print(json.dumps(result, indent=2, default=str))
-    if not result.get("success"):
-        sys.exit(1)
-
-
 def cmd_query(args):
     session_id = _resolve_session(args.session)
     port = _ensure_server_running(session_id)
@@ -477,7 +454,6 @@ Examples:
                                   # per horizon (+7d/+28d/+84d/+182d), submit point + 95% CI low/high
   ./novamind-operation python my_strategy.py
   ./novamind-operation python-c "import novamind_api as nm; nm.pricing.set_prices(A=25)"
-  ./novamind-operation call set_prices --args '{"A": 29.99, "B": 69.99}'
   ./novamind-operation query "SELECT * FROM subscriptions LIMIT 10"
   ./novamind-operation status
   ./novamind-operation history --tail 20
@@ -529,11 +505,6 @@ Examples:
     p.add_argument("code", type=str, help="Python code to execute")
     p.add_argument("--session", type=str, default=None, help="Session ID (default: latest)")
 
-    p = subparsers.add_parser("call", help="Call a simulator tool directly")
-    p.add_argument("tool", type=str, help="Tool name (e.g., set_prices)")
-    p.add_argument("--args", type=str, default=None, help="Tool arguments as JSON")
-    p.add_argument("--session", type=str, default=None, help="Session ID (default: latest)")
-
     p = subparsers.add_parser("query", help="Execute a SQL query")
     p.add_argument("sql", type=str, help="SQL query string")
     p.add_argument("--session", type=str, default=None, help="Session ID (default: latest)")
@@ -557,7 +528,6 @@ Examples:
         "next-week": cmd_next_week,
         "python": cmd_python,
         "python-c": cmd_python_c,
-        "call": cmd_call,
         "query": cmd_query,
         "status": cmd_status,
         "history": cmd_history,
