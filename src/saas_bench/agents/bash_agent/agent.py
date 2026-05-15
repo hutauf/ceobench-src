@@ -12,7 +12,7 @@ import re
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 from ..base import BaseAgent
 from ...environment import Action
@@ -104,6 +104,15 @@ class BashAgent(BaseAgent):
         self.last_output_tokens: int = 0
         self.last_cached_tokens: int = 0
         self.last_reasoning_tokens: int = 0
+
+        # Conversation snapshot — persisted after each LLM call so a mid-day
+        # crash can restore the exact accumulated context on resume. Path is
+        # set by run_test.py after the session_id is known. Snapshot includes
+        # the conversation, _pending_tool_calls, current_day, and turns_today.
+        self._snapshot_path: Optional[Path] = None
+        # When True, the next observation will skip _refresh_context so a
+        # restored mid-day conversation isn't wiped. Cleared after one act().
+        self._skip_next_refresh: bool = False
 
     def _default_system_prompt(self) -> str:
         """Build the default system prompt.
@@ -249,9 +258,15 @@ class BashAgent(BaseAgent):
         # Check if this is a new day (context refresh)
         current_day = info.get('day', 0)
         if current_day > self.current_day:
-            self._refresh_context(observation, current_day)
-            self.current_day = current_day
-            self.turns_today = 0
+            if self._skip_next_refresh:
+                # Mid-day resume: conversation was restored from snapshot.
+                # Don't wipe it; just sync the day counter and clear the flag.
+                self.current_day = current_day
+                self._skip_next_refresh = False
+            else:
+                self._refresh_context(observation, current_day)
+                self.current_day = current_day
+                self.turns_today = 0
 
         # Safety: force next_week if too many turns (0 = no limit)
         if self.max_turns_per_day > 0 and self.turns_today >= self.max_turns_per_day:
@@ -291,7 +306,142 @@ class BashAgent(BaseAgent):
         action = self._call_llm()
         self.turns_today += 1
 
+        # Persist conversation snapshot so a mid-day crash can be resumed
+        # with the exact accumulated context. Best-effort: failure here must
+        # not derail the run, just log.
+        self._save_conversation_snapshot()
+
         return action
+
+    def _serialize_content_item(self, item: Any) -> Any:
+        """Convert a single content item to a JSON-safe form.
+
+        Assistant messages from the OpenAI Responses API store raw pydantic
+        output items (ResponseReasoningItem, ResponseFunctionToolCall, etc.)
+        in `content`. These must round-trip via `.model_dump()` so reasoning
+        summaries + function_calls survive the snapshot. Plain dicts and
+        primitives pass through unchanged.
+        """
+        if hasattr(item, "model_dump"):
+            return item.model_dump(mode="json", exclude_none=False)
+        if isinstance(item, dict):
+            return item
+        if isinstance(item, (str, int, float, bool)) or item is None:
+            return item
+        # Anthropic content blocks may be objects without model_dump; fall back
+        # to repr so we never crash. They won't be replay-correct, but the
+        # snapshot is best-effort and Anthropic uses a different code path.
+        return repr(item)
+
+    def _serialize_message(self, m: "Message") -> Dict[str, Any]:
+        content = m.content
+        if isinstance(content, list):
+            content = [self._serialize_content_item(x) for x in content]
+        return {
+            "role": m.role,
+            "content": content,
+            "tool_calls": m.tool_calls,
+            "tool_call_id": m.tool_call_id,
+            "name": m.name,
+        }
+
+    def _save_conversation_snapshot(self) -> None:
+        """Atomically write self.conversation + minimal turn state to disk.
+
+        Overwrites the same file each call (single snapshot, not append-only).
+        On Modal/NFS, rename() is atomic — readers see either the old or new
+        complete file, never a partial write.
+
+        Pydantic Responses-API output items (reasoning summaries, function
+        calls) are converted via `.model_dump()` so they survive the JSON
+        round-trip — see _serialize_content_item.
+        """
+        if self._snapshot_path is None:
+            return
+        try:
+            payload = {
+                "conversation": [self._serialize_message(m) for m in self.conversation],
+                "pending_tool_calls": list(self._pending_tool_calls),
+                "current_day": self.current_day,
+                "turns_today": self.turns_today,
+                "total_turns": self.total_turns,
+                "last_observation_preview": (self._last_observation or "")[:2000],
+                "saved_at": time.time(),
+            }
+            tmp_path = self._snapshot_path.with_suffix(self._snapshot_path.suffix + ".tmp")
+            tmp_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(tmp_path, "w") as f:
+                json.dump(payload, f)
+            os.replace(tmp_path, self._snapshot_path)
+        except Exception as e:
+            # Never let snapshot failure kill the run.
+            print(f"[snapshot] WARN failed to save conversation snapshot: {e}")
+
+    def load_conversation_snapshot(self, path: Path) -> bool:
+        """Restore self.conversation + turn state from a snapshot file.
+
+        Drops any trailing assistant message that contains tool_calls (the
+        in-flight tool was never executed/recorded, so we discard it). Clears
+        _pending_tool_calls. Sets _skip_next_refresh so the next act() does
+        not wipe the restored conversation.
+
+        Returns True if restoration succeeded, False otherwise.
+        """
+        if not path.exists():
+            return False
+        try:
+            with open(path, "r") as f:
+                payload = json.load(f)
+            raw_msgs = payload.get("conversation", [])
+            msgs: List[Message] = []
+            for m in raw_msgs:
+                msgs.append(Message(
+                    role=m.get("role", "user"),
+                    content=m.get("content", ""),
+                    tool_calls=m.get("tool_calls"),
+                    tool_call_id=m.get("tool_call_id"),
+                    name=m.get("name"),
+                ))
+
+            def _has_in_flight_tool_call(msg: "Message") -> bool:
+                """Detect an assistant turn whose tool call was never executed.
+
+                Covers two shapes:
+                  - chat-completions style:  msg.tool_calls is set
+                  - Responses API style:    msg.content is a list containing
+                    `{'type': 'function_call', ...}` items
+                """
+                if msg.role != "assistant":
+                    return False
+                if msg.tool_calls:
+                    return True
+                if isinstance(msg.content, list):
+                    for item in msg.content:
+                        t = item.get("type") if isinstance(item, dict) else getattr(item, "type", "")
+                        if t == "function_call":
+                            return True
+                return False
+
+            # Drop trailing assistant w/ in-flight tool_call — that tool was
+            # never executed at crash time, so discarding leaves us at "right
+            # after the previous tool_result was delivered" — a clean re-entry
+            # point. The next LLM call regenerates from the prior context.
+            dropped = 0
+            while msgs and _has_in_flight_tool_call(msgs[-1]):
+                msgs.pop()
+                dropped += 1
+            self.conversation = msgs
+            self._pending_tool_calls = []
+            self.current_day = int(payload.get("current_day", 0) or 0)
+            self.turns_today = int(payload.get("turns_today", 0) or 0)
+            self._skip_next_refresh = True
+            print(f"[snapshot] Restored conversation: {len(msgs)} messages "
+                  f"(dropped {dropped} in-flight assistant tool_call), "
+                  f"current_day={self.current_day}, turns_today={self.turns_today}")
+            return True
+        except Exception as e:
+            print(f"[snapshot] WARN failed to load conversation snapshot: {e}")
+            return False
 
     def _call_llm(self) -> Optional[Action]:
         """Call the LLM and parse the response into an action."""
@@ -598,7 +748,7 @@ class BashAgent(BaseAgent):
                     'instructions': self._get_system_prompt_with_memory(),
                 }
                 if self.reasoning_effort:
-                    api_kwargs['reasoning'] = {'effort': self.reasoning_effort}
+                    api_kwargs['reasoning'] = {'effort': self.reasoning_effort, 'summary': 'auto'}
 
                 # Set hard wall-clock timeout via signal.alarm
                 old_handler = signal.signal(signal.SIGALRM, _llm_timeout_handler)

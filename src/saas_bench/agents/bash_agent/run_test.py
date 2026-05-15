@@ -93,6 +93,10 @@ class BashAgentRunner:
         self.continue_from = continue_from
         self.label = label  # Optional human-readable variant tag — surfaced on the dashboard
 
+        # Set in _restore_from_checkpoint when last logged tool was NOT next-week;
+        # consumed once by the outer loop to skip force step_day on the resume iter.
+        self._suppress_force_step_day_once = False
+
         if continue_from:
             self.workspace_dir = Path(continue_from).resolve()
             if not self.workspace_dir.exists():
@@ -755,6 +759,74 @@ __pycache__/
             self.agent.total_cached_tokens = checkpoint.get('total_cached_tokens', 0)
             self.agent.total_reasoning_tokens = checkpoint.get('total_reasoning_tokens', 0)
 
+        # If the crash happened mid-day (last logged tool wasn't a next-week
+        # invocation), suppress the outer loop's force step_day on the resume
+        # iteration so the agent can keep planning instead of being skipped
+        # forward. Cleared after one outer iteration.
+        last_tool = None
+        last_cmd = ""
+        last_result = ""
+        tool_results_file = self.logs_dir / f"tool_results_{self.run_id}.jsonl"
+        if tool_results_file.exists():
+            try:
+                with open(tool_results_file, "rb") as f:
+                    f.seek(0, 2)
+                    size = f.tell()
+                    chunk_size = min(size, 8192)
+                    f.seek(size - chunk_size)
+                    tail = f.read().decode("utf-8", errors="ignore").strip().splitlines()
+                    if tail:
+                        entry = json.loads(tail[-1])
+                        last_tool = entry.get("tool")
+                        last_cmd = (entry.get("arguments", {}) or {}).get("command", "") or ""
+                        last_result = entry.get("result", "") or ""
+            except Exception:
+                pass
+        last_was_next_week = (last_tool == "bash" and "next-week" in last_cmd)
+
+        # If the last logged tool was a ``next-week`` call, decide whether it
+        # actually completed. The server's success response begins with
+        # ``=== Week N Dashboard (Day X) ===`` — a reliable marker. An
+        # interrupted next-week (server timeout, harness crash mid-call) won't
+        # contain that header.
+        last_next_week_finished = (
+            last_was_next_week
+            and isinstance(last_result, str)
+            and "=== Week " in last_result
+        )
+
+        if last_was_next_week and not last_next_week_finished:
+            # next-week was the last action but it didn't complete — recover
+            # by forcing the harness to re-issue /next-week on the resume iter.
+            self._suppress_force_step_day_once = False
+        else:
+            # Either the last next-week finished cleanly (trust the agent to
+            # decide), or the last action wasn't next-week at all (mid-day
+            # crash — the conversation snapshot below will pick up where it
+            # left off).
+            self._suppress_force_step_day_once = True
+
+        print(
+            f"  Last logged tool: {last_tool!r} "
+            f"(next-week={last_was_next_week}, "
+            f"finished={last_next_week_finished if last_was_next_week else 'n/a'}) — "
+            f"force /next-week on resume iter: "
+            f"{'SKIP' if self._suppress_force_step_day_once else 'force'}"
+        )
+
+        # Mid-day resume: if the agent was in the middle of a day (last tool
+        # wasn't next-week), restore its accumulated conversation from the
+        # per-turn snapshot. Day-boundary resume (last_was_next_week=True)
+        # gets a fresh context as usual — _refresh_context() will fire on
+        # the next act() because the conversation is empty.
+        if self.agent and not last_was_next_week:
+            snap = self.agent._snapshot_path
+            if snap and snap.exists():
+                self.agent.load_conversation_snapshot(snap)
+            else:
+                print(f"  [resume] No conversation snapshot at {snap} — "
+                      f"agent will start day {cp_day} with fresh context.")
+
     # =========================================================================
     # Setup
     # =========================================================================
@@ -865,6 +937,13 @@ __pycache__/
             tool_result_callback=self._log_tool_result,
             workspace_path=self.agent_workspace,
             total_days=self.total_days,
+        )
+
+        # Wire the per-session conversation snapshot path. The agent writes
+        # this after every LLM call; on resume, _restore_from_checkpoint can
+        # load it to recover the exact accumulated context (see agent.py).
+        self.agent._snapshot_path = (
+            self.agent_workspace / "sessions" / self._session_id / "conversation.json"
         )
 
         # Save run config
@@ -1101,24 +1180,32 @@ __pycache__/
             if game_ended:
                 break
 
-            # If day didn't end through agent action, force step_day via HTTP
+            # If day didn't end through agent action, force step_day via HTTP.
+            # Exception: on the very first outer iteration after a mid-day
+            # resume (agent's last logged tool was NOT next-week), suppress
+            # the force once so the agent can keep planning. Flag is cleared
+            # after one iteration so subsequent days behave normally.
             _step_elapsed = 0
             if not day_ended:
-                _step_start = _time.monotonic()
-                resp = self._advance_day_http()
-                _step_elapsed = _time.monotonic() - _step_start
+                if self._suppress_force_step_day_once:
+                    print(f"  [resume] Skipping force step_day on resume iter (last tool was not next-week)")
+                    self._suppress_force_step_day_once = False
+                else:
+                    _step_start = _time.monotonic()
+                    resp = self._advance_day_http()
+                    _step_elapsed = _time.monotonic() - _step_start
 
-                if not resp.get('success'):
-                    error = resp.get('error', '')
-                    if error == 'step_day_timeout':
-                        print(f"\n⚠️  step_day timed out on sim day {sim_day} ({_step_elapsed:.1f}s)")
-                        print(f"Auto-quitting. Saving checkpoint...")
-                        self._save_checkpoint(sim_day)
-                        game_ended = True
-                        game_outcome = 'timeout'
-                        break
-                    else:
-                        print(f"\n❌ advance_day failed: {error}")
+                    if not resp.get('success'):
+                        error = resp.get('error', '')
+                        if error == 'step_day_timeout':
+                            print(f"\n⚠️  step_day timed out on sim day {sim_day} ({_step_elapsed:.1f}s)")
+                            print(f"Auto-quitting. Saving checkpoint...")
+                            self._save_checkpoint(sim_day)
+                            game_ended = True
+                            game_outcome = 'timeout'
+                            break
+                        else:
+                            print(f"\n❌ advance_day failed: {error}")
 
             # Log step_day timing
             self._log_timing("step_day", sim_day, elapsed_s=round(_step_elapsed, 2))
