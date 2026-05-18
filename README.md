@@ -119,12 +119,15 @@ chosen model — see `agents/bash_agent/agent.py` for the full provider list
 
 ---
 
-## 🔓 Decrypting the database to analyze agent performance
+## 🔓 Analyzing agent trajectory
 
-Session ledgers are stored as SQLCipher-encrypted `.nmdb` files (page-level
-AES-256). The key is fixed and bundled into the published `novamind-operation`
+Every finished run leaves a single artifact: an encrypted `world.nmdb` ledger
+(SQLCipher, page-level AES-256). It is the complete record of the run — cash,
+subscriptions, customers, competitor events, and every action the agent took.
+
+The decryption key is fixed and bundled into the published `novamind-operation`
 zipapp at build time — see `KEYS.md` in this repo for the value, or import it
-from the compiled `saas_bench._embedded_key` module.
+from the compiled `saas_bench._embedded_key` module. To decrypt and query:
 
 ```bash
 KEY=$(grep _NMDB_KEY KEYS.md | head -1 | cut -d'"' -f2)
@@ -133,36 +136,8 @@ sqlcipher path/to/world.nmdb \
   "SELECT day, category, amount FROM ledger ORDER BY day, id LIMIT 10;"
 ```
 
-For per-day cash / revenue / customer count helpers, see
-**[docs/decrypting-database.md](docs/decrypting-database.md)**.
-
-### ⚠️ Caveat — the public benchmark is honor-system
-
-The published bundle is structured to make cheating *inconvenient*: the
-`world.nmdb` file is SQLCipher-encrypted, the simulator engine is shipped as
-compiled `.pyc` inside a zipapp, and the public README explicitly forbids the
-agent from inspecting either artifact (see `public_sources/README.md` → "⚠️
-Rules"). But this is fundamentally a **client-side** benchmark — the key has
-to live somewhere the running engine can reach it, which means a determined
-agent with shell access on the same machine *can* eventually extract it.
-
-When evaluating an agent, you should:
-
-1. **Inspect the agent's trace.** Look for any tool call that touches
-   `world.nmdb` directly (sqlcipher, sqlite3, xxd, strings, hex editors,
-   custom Python that opens the file) or that disassembles / unpacks
-   `novamind-operation` (`unzip`, `python -m zipfile`, `dis`, `marshal.loads`,
-   importing `saas_bench.*` from outside the zipapp). Any of these is
-   disqualifying.
-
-2. **Consider stronger isolation if your harness allows it.** Running the
-   agent in a sandbox where `world.nmdb` and `novamind-operation` are
-   readable only by a separate UID (or hidden behind a CLI proxy on a
-   different host) closes the loophole entirely. The public bundle does not
-   ship this — it's the harness author's job.
-
-The integrity of the score depends on the agent playing in good faith
-*and* on you verifying that it did.
+For the database schema, analysis recipes, and notes on keeping the agent from
+cheating, see **[docs/analyze_trajectory.md](docs/analyze_trajectory.md)**.
 
 ---
 
@@ -172,7 +147,7 @@ The integrity of the score depends on the agent playing in good faith
 ceobench-src/
 ├── README.md                          ← this file
 ├── docs/
-│   └── decrypting-database.md         ← decrypt + cash-per-day guide
+│   └── analyze_trajectory.md          ← decrypt, schema + analysis guide
 ├── public_sources/                    ← human-written inputs to the public build
 │   ├── README.md, requirements.txt
 │   └── examples/{autoplay_loop,basic_strategy}.py

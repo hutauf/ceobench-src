@@ -39,8 +39,8 @@ for row in conn.execute("SELECT day, category, amount FROM ledger ORDER BY day, 
     print(row)
 ```
 
-For richer per-day cash / revenue / customer-count helpers, see
-[`docs/decrypting-database.md`](docs/decrypting-database.md).
+For the database schema and richer analysis recipes, see
+[`docs/analyze_trajectory.md`](docs/analyze_trajectory.md).
 
 ## Rotation policy
 
