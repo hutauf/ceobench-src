@@ -155,7 +155,6 @@ echo ""
 
 # ─── Start the run (fully detached with nohup+setsid to survive shell exit) ───
 export PYTHONUNBUFFERED=1
-export CEOBENCH_DASHBOARD_URL="https://princeton-tony--ceobench-dashboard-ceobenchdashboard.us-east.modal.direct"
 PID_FILE="/tmp/bossbench_${RUN_ID}.pid"
 
 # Get absolute path for --continue-from since we change to project dir
@@ -165,7 +164,6 @@ ABS_PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 nohup setsid bash -c "
     cd '$ABS_PROJECT_DIR'
     export PYTHONUNBUFFERED=1
-    export CEOBENCH_DASHBOARD_URL='https://princeton-tony--ceobench-dashboard-ceobenchdashboard.us-east.modal.direct'
     if [ -f .env ]; then set -a; source .env; set +a; fi
     stdbuf -oL uv run python -u -m saas_bench.agents.bash_agent.run_test \
         --model '$MODEL' --provider '$PROVIDER' --seed '$SEED' \

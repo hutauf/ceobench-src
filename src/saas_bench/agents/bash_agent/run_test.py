@@ -221,7 +221,7 @@ class BashAgentRunner:
         elif provider == "google":
             self.base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
         elif provider == "modal":
-            self.base_url = "https://princeton-tony--glm5-serving-server.us-east.modal.direct/v1"
+            self.base_url = os.environ.get("MODAL_BASE_URL")
         elif provider == "together":
             self.base_url = "https://api.together.xyz/v1"
         else:

@@ -123,9 +123,9 @@ uv run python -m saas_bench.agents.bash_agent.run_test \
     --workspace bash_agent_runs
 ```
 
-`--provider` accepts `openai | anthropic | bedrock | google | xai | together |
-modal | ai_sandbox`; `--reasoning-effort` accepts `none | low | medium | high |
-xhigh | max`. Pass `--label <tag>` to tag a config variant on the dashboard.
+`--provider` accepts `openai | anthropic | bedrock | google | xai`;
+`--reasoning-effort` accepts `none | low | medium | high | xhigh | max`. Pass
+`--label <tag>` to tag a config variant on the dashboard.
 
 For long unattended runs, the convenience launchers wrap the command with
 `nohup setsid`:
