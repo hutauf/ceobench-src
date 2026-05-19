@@ -175,12 +175,20 @@ class BashAgentRunner:
             if key in env_vars and key not in os.environ:
                 os.environ[key] = env_vars[key]
 
-        if not os.environ.get("NMDB_KEY"):
+        # The .nmdb session database is SQLCipher-encrypted. The engine resolves
+        # the key from saas_bench._embedded_key (committed in the source tree
+        # and compiled into the zipapp) or, failing that, the NMDB_KEY env var.
+        # Fail fast here only if neither source is available.
+        try:
+            from saas_bench.db_protection import _get_key
+            _get_key()
+        except RuntimeError as exc:
             raise RuntimeError(
-                "NMDB_KEY must be set (either in .env or the environment) before "
-                "launching the bash_agent runner. It is the SQLCipher key for the "
-                ".nmdb session database."
-            )
+                "No SQLCipher key available for the .nmdb session database: "
+                "neither saas_bench._embedded_key nor the NMDB_KEY env var is "
+                "set. Restore src/saas_bench/_embedded_key.py, or set NMDB_KEY "
+                "in .env or the environment."
+            ) from exc
 
         self.use_anthropic = provider in ("anthropic", "bedrock")
 
