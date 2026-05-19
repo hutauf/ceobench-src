@@ -123,19 +123,6 @@ uv run python -m saas_bench.agents.bash_agent.run_test \
     --workspace bash_agent_runs
 ```
 
-`--provider` accepts `openai | anthropic | bedrock | google | xai`;
-`--reasoning-effort` accepts `none | low | medium | high | xhigh | max`. Pass
-`--label <tag>` to tag a config variant on the dashboard.
-
-For long unattended runs, the convenience launchers wrap the command with
-`nohup setsid`:
-
-```bash
-bash scripts/start_fresh_sonnet_bash.sh             # Bedrock Sonnet 4.6, max effort
-bash scripts/start_fresh_gpt_bash.sh                # OpenAI GPT-5.5, xhigh effort
-bash scripts/resume_run.sh bash_agent_runs/run_<id> # resume from a checkpoint
-```
-
 **4. Output.** Each run lands at `bash_agent_runs/run_<id>/`: `world.nmdb`
 (encrypted ledger), `config.json`, `checkpoint.json`, `agent_workspace/` (the
 agent's sandbox, a fresh git repo with weekly commits), and `logs/` containing
