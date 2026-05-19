@@ -175,20 +175,12 @@ class BashAgentRunner:
             if key in env_vars and key not in os.environ:
                 os.environ[key] = env_vars[key]
 
-        # The .nmdb session database is SQLCipher-encrypted. The engine resolves
-        # the key from saas_bench._embedded_key (committed in the source tree
-        # and compiled into the zipapp) or, failing that, the NMDB_KEY env var.
-        # Fail fast here only if neither source is available.
-        try:
-            from saas_bench.db_protection import _get_key
-            _get_key()
-        except RuntimeError as exc:
+        if not os.environ.get("NMDB_KEY"):
             raise RuntimeError(
-                "No SQLCipher key available for the .nmdb session database: "
-                "neither saas_bench._embedded_key nor the NMDB_KEY env var is "
-                "set. Restore src/saas_bench/_embedded_key.py, or set NMDB_KEY "
-                "in .env or the environment."
-            ) from exc
+                "NMDB_KEY must be set (either in .env or the environment) before "
+                "launching the bash_agent runner. It is the SQLCipher key for the "
+                ".nmdb session database."
+            )
 
         self.use_anthropic = provider in ("anthropic", "bedrock")
 
@@ -792,7 +784,7 @@ __pycache__/
                 pass
         last_was_next_week = (last_tool == "bash" and "next-week" in last_cmd)
 
-        # If the last logged tool was a ``next-week`` call, decide whether it
+        # If the last logged tool was a `next-week` call, decide whether it
         # actually completed. The server's success response begins with
         # ``=== Week N Dashboard (Day X) ===`` — a reliable marker. An
         # interrupted next-week (server timeout, harness crash mid-call) won't
