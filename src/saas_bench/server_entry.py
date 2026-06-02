@@ -42,6 +42,14 @@ from saas_bench.db_protection import (
 from saas_bench.docs_generator import initialize_workspace
 
 
+_SIMULATOR_LLM_CONFIG_FIELDS = (
+    "social_post_llm_provider",
+    "social_post_llm_model",
+    "enterprise_llm_provider",
+    "enterprise_llm_model",
+)
+
+
 def _sessions_dir(base: Path) -> Path:
     return base / "sessions"
 
@@ -116,7 +124,7 @@ def _resolve_session(base: Path, session_id: Optional[str]) -> str:
 
 
 def _apply_simulator_llm_config(config: BenchmarkConfig) -> dict:
-    """Validate and serialize simulator-side LLM config."""
+    """Validate and serialize simulator-side LLM provider/model config."""
     valid_providers = {"bedrock", "anthropic", "openai"}
     for attr in ("social_post_llm_provider", "enterprise_llm_provider"):
         provider = getattr(config, attr)
@@ -146,21 +154,14 @@ def _apply_simulator_llm_config(config: BenchmarkConfig) -> dict:
         )
         sys.exit(1)
 
-    return {
-        "social_post_llm_provider": config.social_post_llm_provider,
-        "social_post_llm_model": config.social_post_llm_model,
-        "social_post_llm_temperature": config.social_post_llm_temperature,
-        "social_post_llm_max_tokens": config.social_post_llm_max_tokens,
-        "enterprise_llm_provider": config.enterprise_llm_provider,
-        "enterprise_llm_model": config.enterprise_llm_model,
-        "enterprise_llm_temperature": config.enterprise_llm_temperature,
-        "enterprise_llm_max_tokens": config.enterprise_llm_max_tokens,
-    }
+    return {field: getattr(config, field) for field in _SIMULATOR_LLM_CONFIG_FIELDS}
 
 
 def _restore_simulator_llm_config(config: BenchmarkConfig, meta: dict) -> None:
-    for attr, value in (meta.get("simulator_llm") or {}).items():
-        if hasattr(config, attr) and value:
+    simulator_llm = meta.get("simulator_llm") or {}
+    for attr in _SIMULATOR_LLM_CONFIG_FIELDS:
+        value = simulator_llm.get(attr)
+        if value:
             setattr(config, attr, value)
 
 
