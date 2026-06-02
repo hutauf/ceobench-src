@@ -487,8 +487,7 @@ __pycache__/
         (self.agent_workspace / "daily_scripts").mkdir(exist_ok=True)
 
         # Run new-session via the HOST-SIDE zipapp (bytecode stays on host).
-        env = os.environ.copy()
-        env["NOVAMIND_SERVER_MODE"] = "1"
+        env = self._server_environment()
         result = subprocess.run(
             [
                 sys.executable, str(src_op),
@@ -539,6 +538,12 @@ __pycache__/
                 )
         return public_dir
 
+    def _server_environment(self) -> Dict[str, str]:
+        """Environment for host-side simulator processes."""
+        env = os.environ.copy()
+        env["NOVAMIND_SERVER_MODE"] = "1"
+        return env
+
     def _launch_server(self):
         """Launch the host-side novamind-operation zipapp in server mode.
 
@@ -550,8 +555,7 @@ __pycache__/
         Reads the first line of stdout to get the port, then waits for /health.
         """
         zipapp_path = self._public_dir() / "novamind-operation"
-        server_env = os.environ.copy()
-        server_env["NOVAMIND_SERVER_MODE"] = "1"
+        server_env = self._server_environment()
         # Route api_server stderr to a file rather than a pipe back to bash_agent.
         # bash_agent never drains the pipe during a /call, so a single buffered
         # traceback (>64KB pipe capacity) wedges write() under self._lock and

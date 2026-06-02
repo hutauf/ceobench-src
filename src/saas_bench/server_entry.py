@@ -115,6 +115,67 @@ def _resolve_session(base: Path, session_id: Optional[str]) -> str:
     return latest
 
 
+def _apply_simulator_llm_config(config: BenchmarkConfig) -> dict:
+    """Validate and serialize simulator-side LLM config."""
+    valid_providers = {"bedrock", "anthropic", "openai"}
+    for attr in ("social_post_llm_provider", "enterprise_llm_provider"):
+        provider = getattr(config, attr)
+        if provider not in valid_providers:
+            print(f"Error: invalid simulator LLM provider for {attr}: {provider!r}", file=sys.stderr)
+            sys.exit(1)
+
+    if (
+        config.social_post_llm_provider == "anthropic"
+        or config.enterprise_llm_provider == "anthropic"
+    ) and not os.environ.get("ANTHROPIC_API_KEY"):
+        print(
+            "Error: simulator Anthropic provider requires ANTHROPIC_API_KEY. "
+            "It does not use agent-only credentials such as --api-key.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if (
+        config.social_post_llm_provider == "openai"
+        or config.enterprise_llm_provider == "openai"
+    ) and not os.environ.get("OPENAI_API_KEY"):
+        print(
+            "Error: simulator OpenAI provider requires OPENAI_API_KEY. "
+            "It does not use agent-only credentials such as --api-key.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    return {
+        "social_post_llm_provider": config.social_post_llm_provider,
+        "social_post_llm_model": config.social_post_llm_model,
+        "social_post_llm_temperature": config.social_post_llm_temperature,
+        "social_post_llm_max_tokens": config.social_post_llm_max_tokens,
+        "enterprise_llm_provider": config.enterprise_llm_provider,
+        "enterprise_llm_model": config.enterprise_llm_model,
+        "enterprise_llm_temperature": config.enterprise_llm_temperature,
+        "enterprise_llm_max_tokens": config.enterprise_llm_max_tokens,
+    }
+
+
+def _restore_simulator_llm_config(config: BenchmarkConfig, meta: dict) -> None:
+    for attr, value in (meta.get("simulator_llm") or {}).items():
+        if hasattr(config, attr) and value:
+            setattr(config, attr, value)
+
+
+def _create_simulator_openai_client(config: BenchmarkConfig):
+    if (
+        config.social_post_llm_provider != "openai"
+        and config.enterprise_llm_provider != "openai"
+    ):
+        return None
+
+    from openai import OpenAI
+
+    return OpenAI()
+
+
 # =========================================================================
 # Commands
 # =========================================================================
@@ -135,12 +196,17 @@ def cmd_new_session(args, base: Path):
         total_days=total_days,
         initial_cash=args.cash,
     )
+    simulator_llm = _apply_simulator_llm_config(config)
 
     # Initialize database in memory (never writes plain SQLite to disk)
     conn = init_database(":memory:")
 
     # Initialize simulator with customer simulator
-    customer_sim = CustomerSimulator(client=None, conn=conn, config=config)
+    customer_sim = CustomerSimulator(
+        client=_create_simulator_openai_client(config),
+        conn=conn,
+        config=config,
+    )
     simulator = Simulator(conn, config, rng, customer_simulator=customer_sim)
     simulator.initialize()
 
@@ -163,6 +229,7 @@ def cmd_new_session(args, base: Path):
         "current_day": 0,
         "created_at": time.time(),
         "status": "created",
+        "simulator_llm": simulator_llm,
     }
     _session_meta_path(base, session_id).write_text(json.dumps(meta, indent=2))
 
@@ -218,8 +285,14 @@ def cmd_start_server(args, base: Path):
         total_days=total_days,
         initial_cash=meta["initial_cash"],
     )
+    _restore_simulator_llm_config(config, meta)
+    meta["simulator_llm"] = _apply_simulator_llm_config(config)
 
-    customer_sim = CustomerSimulator(client=None, conn=conn, config=config)
+    customer_sim = CustomerSimulator(
+        client=_create_simulator_openai_client(config),
+        conn=conn,
+        config=config,
+    )
     simulator = Simulator(conn, config, rng, customer_simulator=customer_sim)
     simulator.initialize(resume=True)  # resume=True: skip DB writes, just set up _group_rngs
     current_day = meta.get("current_day", 0)
