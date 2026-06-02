@@ -40,29 +40,32 @@ observable, noisy, and evolving market with delayed and coupled consequences.
 ### 🔑 Setup: Environment variables
 
 The simulator uses a small Claude model (**Haiku 4.5** by default) to generate
-customer-facing social-media content during the simulation. Pick **one**
-provider and export the matching credentials:
+customer-facing social-media content during the simulation and a stronger
+model (**Sonnet 4.5** by default) for enterprise conversations. The default
+configuration uses Bedrock for both:
 
 ```bash
-# Option A: Amazon Bedrock (default)
 export AWS_ACCESS_KEY_ID="..."
 export AWS_SECRET_ACCESS_KEY="..."
 export AWS_REGION="us-east-2"
-
-# Option B: Anthropic direct API
-export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-Then in `src/saas_bench/config.py`, set the matching provider/model:
+Agent and simulator LLM defaults live in `src/saas_bench/config.py`:
 
-```python
-social_post_llm_model:    str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-social_post_llm_provider: str = "bedrock"   # "bedrock" | "anthropic" 
-```
+- `agent_llm_provider`, `agent_llm_model`, `agent_llm_reasoning_effort`
+- `social_post_llm_provider`, `social_post_llm_model`,
+  `social_post_llm_temperature`, `social_post_llm_max_tokens`
+- `enterprise_llm_provider`, `enterprise_llm_model`,
+  `enterprise_llm_temperature`, `enterprise_llm_max_tokens`
 
-If you switch to `anthropic`, set `social_post_llm_model` to
-`"claude-haiku-4-5-20251001"` (drop the Bedrock prefix/suffix).
-
+The bash-agent CLI `--provider`, `--model`, and `--reasoning-effort` flags only
+override the benchmarked agent for ad hoc runs. Simulator social/macro and
+enterprise LLMs use the simulator config and do not reuse the agent-only
+`--api-key`. If you change a simulator provider, also set the corresponding
+model to the identifier expected by that provider; model names are not
+translated automatically. Direct simulator providers require credentials in the
+server process environment (`ANTHROPIC_API_KEY` for `anthropic`,
+`OPENAI_API_KEY` for `openai`).
 
 
 ### 🎯 Option A: Evaluate any coding agent easily
@@ -110,7 +113,7 @@ uv sync
 ```
 
 **2. Set provider credentials** in a `.env` file at the repo root. Which keys you
-need depends on the agent model; for the default Bedrock run:
+need depends on the agent model; for a Bedrock run:
 
 ```bash
 AWS_ACCESS_KEY_ID="..."
@@ -121,6 +124,10 @@ AWS_REGION="us-east-2"
 Other providers read `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`,
 `XAI_API_KEY`, `TOGETHER_API_KEY`, or `MODAL_TOKEN_*`. No `NMDB_KEY` is needed:
 the SQLCipher key is embedded in the engine.
+
+If you configure simulator LLMs to use direct `anthropic` or `openai`, export
+`ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the shell before running. The
+simulator does not receive the agent-only `--api-key`.
 
 **3. Run.** `public/` ships prebuilt, so there is no build step:
 
