@@ -918,14 +918,14 @@ class BashAgent(BaseAgent):
         'max': 64000,
     }
 
-    def _is_anthropic_fable_or_mythos_model(self) -> bool:
-        """Return True for Claude Fable/Mythos model ids across providers."""
+    def _uses_native_128k_output(self) -> bool:
+        """Return True for models whose 128K output is not beta-gated."""
         model = self.model.lower()
         return 'fable' in model or 'mythos' in model
 
     def _anthropic_extra_headers(self) -> Dict[str, str]:
         """Return model-specific Anthropic beta headers."""
-        if self._is_anthropic_fable_or_mythos_model():
+        if self._uses_native_128k_output():
             return {}
         return {'anthropic-beta': 'output-128k-2025-02-19'}
 

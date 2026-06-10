@@ -72,13 +72,14 @@ def test_fable_uses_adaptive_effort_without_output_128k_beta_header():
 
     assert api_kwargs["thinking"] == {"type": "adaptive"}
     assert api_kwargs["output_config"] == {"effort": "high"}
+    assert agent._uses_native_128k_output()
     assert agent._anthropic_extra_headers() == {}
 
 
-def test_bedrock_fable_id_is_detected_as_fable():
+def test_bedrock_fable_id_uses_native_128k_output():
     agent = _agent(model="anthropic.claude-fable-5")
 
-    assert agent._is_anthropic_fable_or_mythos_model()
+    assert agent._uses_native_128k_output()
     assert agent._anthropic_extra_headers() == {}
 
 
