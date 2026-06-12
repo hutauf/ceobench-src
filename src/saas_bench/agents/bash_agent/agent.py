@@ -56,6 +56,7 @@ class BashAgent(BaseAgent):
         tool_result_callback: Optional[callable] = None,
         workspace_path: Optional[Path] = None,
         total_days: int = 3650,
+        anthropic_fallback_model: Optional[str] = None,
     ):
         super().__init__(tool_descriptions)
         self.client = client
@@ -66,6 +67,7 @@ class BashAgent(BaseAgent):
         self.tool_result_callback = tool_result_callback
         self.workspace_path = workspace_path or Path('.')
         self.total_days = total_days
+        self.anthropic_fallback_model = anthropic_fallback_model
 
         # Detect client type
         client_type = type(client).__name__
@@ -104,6 +106,10 @@ class BashAgent(BaseAgent):
         self.last_output_tokens: int = 0
         self.last_cached_tokens: int = 0
         self.last_reasoning_tokens: int = 0
+        self.last_serving_model: str = model
+        self.last_anthropic_fallback_used: bool = False
+        self.last_anthropic_fallbacks: List[Dict[str, str]] = []
+        self.total_anthropic_fallbacks: int = 0
 
         # Conversation snapshot — persisted after each LLM call so a mid-day
         # crash can restore the exact accumulated context on resume. Path is
@@ -276,12 +282,12 @@ class BashAgent(BaseAgent):
         if self._pending_tool_calls:
             if self.use_anthropic:
                 partial_results = self._pending_tool_calls[0].get('_partial_results', [])
-                tool_results = list(partial_results)
-                tool_results.append({
+                tool_results = [{
                     'type': 'tool_result',
                     'tool_use_id': self._pending_tool_calls[0]['id'],
                     'content': observation,
-                })
+                }]
+                tool_results.extend(partial_results)
                 self.conversation.append(Message(
                     role='user',
                     content=tool_results,
@@ -323,7 +329,7 @@ class BashAgent(BaseAgent):
         primitives pass through unchanged.
         """
         if hasattr(item, "model_dump"):
-            return item.model_dump(mode="json", exclude_none=False)
+            return item.model_dump(mode="json", exclude_none=False, by_alias=True)
         if isinstance(item, dict):
             return item
         if isinstance(item, (str, int, float, bool)) or item is None:
@@ -918,16 +924,31 @@ class BashAgent(BaseAgent):
         'max': 64000,
     }
 
-    def _uses_native_128k_output(self) -> bool:
+    def _uses_native_128k_output(self, model: Optional[str] = None) -> bool:
         """Return True for models whose 128K output is not beta-gated."""
-        model = self.model.lower()
-        return 'fable' in model or 'mythos' in model
+        model_name = (model or self.model).lower()
+        return 'fable' in model_name or 'mythos' in model_name
 
     def _anthropic_extra_headers(self) -> Dict[str, str]:
         """Return model-specific Anthropic beta headers."""
         if self._uses_native_128k_output():
             return {}
         return {'anthropic-beta': 'output-128k-2025-02-19'}
+
+    def _anthropic_betas(self) -> List[str]:
+        """Return beta flags for Anthropic beta Messages requests."""
+        betas = []
+        if self.anthropic_fallback_model:
+            betas.append('server-side-fallback-2026-06-01')
+        if (
+            not self._uses_native_128k_output()
+            or (
+                self.anthropic_fallback_model
+                and not self._uses_native_128k_output(self.anthropic_fallback_model)
+            )
+        ):
+            betas.append('output-128k-2025-02-19')
+        return betas
 
     def _apply_anthropic_reasoning_params(self, api_kwargs: Dict[str, Any]) -> None:
         """Add Anthropic thinking/effort params for models that support them."""
@@ -962,6 +983,34 @@ class BashAgent(BaseAgent):
             if text:
                 parts.append(str(text))
         return "\n".join(parts)
+
+    def _anthropic_response_dict(self, response: Any) -> Dict[str, Any]:
+        """Convert an Anthropic response object to a JSON-safe dict."""
+        if hasattr(response, "model_dump"):
+            return response.model_dump(mode="json", exclude_none=False, by_alias=True)
+        if isinstance(response, dict):
+            return response
+        return {}
+
+    def _record_anthropic_response_metadata(self, response: Any) -> None:
+        """Track served model and server-side fallback hops for logging."""
+        response_dict = self._anthropic_response_dict(response)
+        self.last_serving_model = str(response_dict.get('model') or self.model)
+        self.last_anthropic_fallbacks = []
+
+        for block in response_dict.get('content') or []:
+            if not isinstance(block, dict) or block.get('type') != 'fallback':
+                continue
+            from_model = ((block.get('from') or {}).get('model') or '')
+            to_model = ((block.get('to') or {}).get('model') or '')
+            self.last_anthropic_fallbacks.append({
+                'from': from_model,
+                'to': to_model,
+            })
+
+        self.last_anthropic_fallback_used = bool(self.last_anthropic_fallbacks)
+        if self.last_anthropic_fallback_used:
+            self.total_anthropic_fallbacks += len(self.last_anthropic_fallbacks)
 
     def _anthropic_no_tool_feedback(self, response: Any, assistant_content: Any) -> str:
         """Feedback used when Anthropic returns text/refusal instead of a tool."""
@@ -1046,8 +1095,12 @@ class BashAgent(BaseAgent):
                 'messages': messages,
                 'tools': tools,
             }
-            extra_headers = self._anthropic_extra_headers()
-            if extra_headers:
+            anthropic_messages = self.client.messages
+            if self.anthropic_fallback_model:
+                anthropic_messages = self.client.beta.messages
+                api_kwargs['fallbacks'] = [{'model': self.anthropic_fallback_model}]
+                api_kwargs['betas'] = self._anthropic_betas()
+            elif (extra_headers := self._anthropic_extra_headers()):
                 # output-128k beta lets Sonnet/Opus 4.x emit up to 128K output
                 # tokens. Fable/Mythos expose 128K output without this beta.
                 api_kwargs['extra_headers'] = extra_headers
@@ -1062,13 +1115,14 @@ class BashAgent(BaseAgent):
 
             try:
                 if use_streaming:
-                    with self.client.messages.stream(**api_kwargs) as stream:
+                    with anthropic_messages.stream(**api_kwargs) as stream:
                         response = stream.get_final_message()
                 else:
-                    response = self.client.messages.create(**api_kwargs)
+                    response = anthropic_messages.create(**api_kwargs)
 
                 self.total_turns += 1
                 self._consecutive_errors = 0
+                self._record_anthropic_response_metadata(response)
 
                 # Capture token usage (Anthropic format)
                 usage = getattr(response, 'usage', None)
@@ -1093,7 +1147,20 @@ class BashAgent(BaseAgent):
                         turn=self.total_turns,
                         day=self.current_day,
                         messages=messages,
-                        raw_response=response.model_dump() if hasattr(response, 'model_dump') else str(response),
+                        raw_response=self._anthropic_response_dict(response) or str(response),
+                    )
+
+                if self.last_anthropic_fallback_used and self.tool_result_callback:
+                    self.tool_result_callback(
+                        self.total_turns,
+                        self.current_day,
+                        '_anthropic_fallback',
+                        {
+                            'requested_model': self.model,
+                            'served_model': self.last_serving_model,
+                            'fallbacks': self.last_anthropic_fallbacks,
+                        },
+                        '',
                     )
 
                 assistant_content = response.content

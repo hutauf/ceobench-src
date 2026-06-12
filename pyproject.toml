@@ -5,7 +5,7 @@ description = "SaaS Bench - AI subscription service benchmark"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "anthropic>=0.77.1",
+    "anthropic>=0.109.1",
     "boto3>=1.42.41",
     "cryptography>=46.0.3",
     "fastapi>=0.133.1",
