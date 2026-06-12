@@ -665,23 +665,25 @@ class BenchmarkConfig:
     agent_llm_model: str = "gpt-5.2"
     agent_llm_reasoning_effort: str = "low"  # "low", "medium", "high"
 
-    # Social Post LLM (for generating social media posts)
-    # Defaults to Claude Haiku 4.5 via Bedrock - fast and cheap for short creative posts.
+    # Social Post LLM (for generating social media posts).
+    # Local Opus benchmark runs use direct Anthropic here so the simulator does
+    # not require Bedrock credentials.
     # Supported providers: "bedrock", "anthropic", or "openai".
     #   - "bedrock":   AnthropicBedrock SDK; requires AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION.
     #                  Use a Bedrock model id (e.g. "us.anthropic.claude-haiku-4-5-20251001-v1:0").
     #   - "anthropic": Direct Anthropic SDK; requires ANTHROPIC_API_KEY.
     #                  Use the public model name (e.g. "claude-haiku-4-5"). No AWS credentials needed.
     #   - "openai":    OpenAI Responses API; requires OPENAI_API_KEY.
-    social_post_llm_model: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-    social_post_llm_provider: str = "bedrock"  # "bedrock" | "anthropic" | "openai"
+    social_post_llm_model: str = "claude-haiku-4-5"
+    social_post_llm_provider: str = "anthropic"  # "bedrock" | "anthropic" | "openai"
     social_post_llm_temperature: float = 0.9  # Higher for creative variety
     social_post_llm_max_tokens: int = 1000
 
     # Enterprise Customer LLM (for negotiation responses, initial outreach).
-    # Uses Claude Sonnet 4.5 via Bedrock by default.
-    enterprise_llm_model: str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-    enterprise_llm_provider: str = "bedrock"  # "bedrock" | "anthropic" | "openai"
+    # Local Opus benchmark runs use direct Anthropic here so the simulator does
+    # not require Bedrock credentials.
+    enterprise_llm_model: str = "claude-sonnet-4-5"
+    enterprise_llm_provider: str = "anthropic"  # "bedrock" | "anthropic" | "openai"
     enterprise_llm_temperature: float = 0.7
     enterprise_llm_max_tokens: int = 300
 
