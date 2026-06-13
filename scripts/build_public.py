@@ -298,6 +298,14 @@ def _normalize_tree_mtime(root: Path):
     os.utime(root, (_FIXED_ZIP_MTIME, _FIXED_ZIP_MTIME))
 
 
+def _ensure_deterministic_hash_seed():
+    """Restart with a fixed hash seed before compiling bytecode."""
+    if os.environ.get("PYTHONHASHSEED") == "0":
+        return
+    os.environ["PYTHONHASHSEED"] = "0"
+    os.execv(sys.executable, [sys.executable, *sys.argv])
+
+
 _ZIPAPP_MAIN_SOURCE = '''\
 """Zipapp entry for novamind-operation.
 
@@ -326,4 +334,5 @@ _run()
 
 
 if __name__ == "__main__":
+    _ensure_deterministic_hash_seed()
     build()
