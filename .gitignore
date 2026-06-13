@@ -120,6 +120,7 @@ sequence-diagram/
 tests/*
 !tests/test_docs_coverage.py
 !tests/test_anthropic_agent_models.py
+!tests/test_ceobench_regression_mechanics.py
 tools/
 variants/
 viz/
