@@ -59,6 +59,9 @@ def load_env_file(env_path: Path) -> Dict[str, str]:
     return env_vars
 
 
+ANTHROPIC_FABLE_FALLBACK_MODEL = "claude-opus-4-8"
+
+
 class BashAgentRunner:
     """Runner for bash_agent with SaaS Bench.
 
@@ -94,6 +97,11 @@ class BashAgentRunner:
         self.reasoning_effort = reasoning_effort or default_config.agent_llm_reasoning_effort
         self.continue_from = continue_from
         self.label = label  # Optional human-readable variant tag — surfaced on the dashboard
+        self.anthropic_fallback_model = (
+            ANTHROPIC_FABLE_FALLBACK_MODEL
+            if self.provider == "anthropic" and "fable" in self.model.lower()
+            else None
+        )
 
         # Set in _restore_from_checkpoint when last logged tool was NOT next-week;
         # consumed once by the outer loop to skip force step_day on the resume iter.
@@ -193,7 +201,6 @@ class BashAgentRunner:
             ) from exc
 
         self.use_anthropic = self.provider in ("anthropic", "bedrock")
-
         if api_key:
             self.api_key = api_key
         elif self.provider == "xai":
@@ -685,6 +692,7 @@ __pycache__/
             'model': self.model,
             'provider': self.provider,
             'reasoning_effort': self.reasoning_effort,
+            'anthropic_fallback_model': self.anthropic_fallback_model,
             'seed': self.seed,
             'scenario': self.scenario,
             'agent_total_turns': self.agent.total_turns if self.agent else 0,
@@ -692,6 +700,7 @@ __pycache__/
             'total_output_tokens': self.agent.total_output_tokens if self.agent else 0,
             'total_cached_tokens': self.agent.total_cached_tokens if self.agent else 0,
             'total_reasoning_tokens': self.agent.total_reasoning_tokens if self.agent else 0,
+            'total_anthropic_fallbacks': self.agent.total_anthropic_fallbacks if self.agent else 0,
             'daily_scripts': daily_scripts,
             'session_id': self._session_id,
         }
@@ -774,6 +783,7 @@ __pycache__/
             self.agent.total_output_tokens = checkpoint.get('total_output_tokens', 0)
             self.agent.total_cached_tokens = checkpoint.get('total_cached_tokens', 0)
             self.agent.total_reasoning_tokens = checkpoint.get('total_reasoning_tokens', 0)
+            self.agent.total_anthropic_fallbacks = checkpoint.get('total_anthropic_fallbacks', 0)
 
         # If the crash happened mid-day (last logged tool wasn't a next-week
         # invocation), suppress the outer loop's force step_day on the resume
@@ -953,6 +963,7 @@ __pycache__/
             tool_result_callback=self._log_tool_result,
             workspace_path=self.agent_workspace,
             total_days=self.total_days,
+            anthropic_fallback_model=self.anthropic_fallback_model,
         )
 
         # Wire the per-session conversation snapshot path. The agent writes
@@ -968,6 +979,7 @@ __pycache__/
             'model': self.model,
             'provider': self.provider,
             'reasoning_effort': self.reasoning_effort,
+            'anthropic_fallback_model': self.anthropic_fallback_model,
             'seed': self.seed,
             'scenario': self.scenario,
             'total_days': self.total_days,
@@ -1122,7 +1134,12 @@ __pycache__/
                                  input_tokens=self.agent.last_input_tokens,
                                  output_tokens=self.agent.last_output_tokens,
                                  cached_tokens=self.agent.last_cached_tokens,
-                                 reasoning_tokens=self.agent.last_reasoning_tokens)
+                                 reasoning_tokens=self.agent.last_reasoning_tokens,
+                                 requested_model=self.model,
+                                 served_model=self.agent.last_serving_model,
+                                 anthropic_fallback_used=self.agent.last_anthropic_fallback_used,
+                                 anthropic_fallbacks=self.agent.last_anthropic_fallbacks,
+                                 total_anthropic_fallbacks=self.agent.total_anthropic_fallbacks)
 
                 # Execute action (timed)
                 if verbose:
@@ -1339,6 +1356,8 @@ __pycache__/
             print(f"Total Tokens: {self.agent.total_input_tokens:,} input / {self.agent.total_output_tokens:,} output")
             print(f"Cached Tokens: {self.agent.total_cached_tokens:,} ({_total_cache_pct:.0f}% of input)")
             print(f"Reasoning Tokens: {self.agent.total_reasoning_tokens:,}")
+            if self.anthropic_fallback_model or self.agent.total_anthropic_fallbacks:
+                print(f"Anthropic Fallbacks: {self.agent.total_anthropic_fallbacks:,}")
             print(f"{'='*60}\n")
 
         return {
@@ -1349,6 +1368,7 @@ __pycache__/
             'days_run': sim_day,
             'outcome': game_outcome,
             'total_turns': self.agent.total_turns,
+            'total_anthropic_fallbacks': self.agent.total_anthropic_fallbacks,
             'workspace_dir': str(self.workspace_dir),
         }
 

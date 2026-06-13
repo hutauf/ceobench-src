@@ -128,6 +128,6 @@ def test_fable_refusal_retries_and_returns_tool_action():
     assert len(client.messages.calls) == 2
     assert "extra_headers" not in client.messages.calls[0]
     assert any(
-        msg.role == "user" and "refusal" in str(msg.content).lower()
+        msg.role == "user" and "must call a tool" in str(msg.content).lower()
         for msg in agent.conversation
     )
