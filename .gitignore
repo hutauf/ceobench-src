@@ -120,7 +120,6 @@ sequence-diagram/
 tests/*
 !tests/conftest.py
 !tests/test_docs_coverage.py
-!tests/test_anthropic_agent_models.py
 !tests/test_ceobench_customer_choice.py
 !tests/test_ceobench_group_research_and_insights.py
 !tests/test_ceobench_initial_conditions.py
