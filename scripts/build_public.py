@@ -36,6 +36,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PUBLIC_DIR = PROJECT_ROOT / "public"
 SRC_DIR = PROJECT_ROOT / "src" / "saas_bench"
+_FIXED_ZIP_MTIME = 315619200  # 1980-01-02 00:00:00 UTC, avoids local TZ underflow.
 
 # All simulator-engine modules (compiled into the zipapp as .pyc)
 _ENGINE_MODULES = [
@@ -219,7 +220,7 @@ def _build_zipapp():
 
         # Compile _public_cli.py → _public_cli.pyc at the archive root
         src_cli = SRC_DIR / "_public_cli.py"
-        py_compile.compile(str(src_cli), str(staging / "_public_cli.pyc"), doraise=True)
+        _compile_pyc(src_cli, staging / "_public_cli.pyc", "_public_cli.py")
 
         # Build saas_bench/ package inside the archive
         engine_dir = staging / "saas_bench"
@@ -238,7 +239,7 @@ def _build_zipapp():
                 print(f"  ⚠️  Missing: {src_file}")
                 continue
             dst_file = engine_dir / f"{mod_name}.pyc"
-            py_compile.compile(str(src_file), str(dst_file), doraise=True)
+            _compile_pyc(src_file, dst_file, f"saas_bench/{mod_name}.py")
             compiled += 1
 
         # saas_bench/novamind_api/*.pyc for engine internal use
@@ -250,7 +251,11 @@ def _build_zipapp():
                 print(f"  ⚠️  Missing: {src_file}")
                 continue
             dst_file = engine_api_dir / f"{mod_name}.pyc"
-            py_compile.compile(str(src_file), str(dst_file), doraise=True)
+            _compile_pyc(
+                src_file,
+                dst_file,
+                f"saas_bench/novamind_api/{mod_name}.py",
+            )
             compiled += 1
 
         print(f"  Compiled {compiled} modules into zipapp")
@@ -261,17 +266,44 @@ def _build_zipapp():
             target.unlink()
         PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
 
+        _normalize_tree_mtime(staging)
         zipapp.create_archive(
             source=str(staging),
             target=str(target),
             interpreter='/usr/bin/env python3',
-            compressed=True,
+            compressed=False,
         )
 
         # chmod +x
         target.chmod(target.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
         size_kb = target.stat().st_size / 1024
         print(f"  Zipapp size: {size_kb:.1f} KB")
+
+
+def _compile_pyc(src_file: Path, dst_file: Path, archive_name: str):
+    """Compile a module reproducibly for inclusion in the public zipapp."""
+    py_compile.compile(
+        str(src_file),
+        str(dst_file),
+        dfile=archive_name,
+        doraise=True,
+        invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+    )
+
+
+def _normalize_tree_mtime(root: Path):
+    """Normalize timestamps so zip metadata is stable across rebuilds."""
+    for path in sorted(root.rglob("*")):
+        os.utime(path, (_FIXED_ZIP_MTIME, _FIXED_ZIP_MTIME))
+    os.utime(root, (_FIXED_ZIP_MTIME, _FIXED_ZIP_MTIME))
+
+
+def _ensure_deterministic_hash_seed():
+    """Restart with a fixed hash seed before compiling bytecode."""
+    if os.environ.get("PYTHONHASHSEED") == "0":
+        return
+    os.environ["PYTHONHASHSEED"] = "0"
+    os.execv(sys.executable, [sys.executable, *sys.argv])
 
 
 _ZIPAPP_MAIN_SOURCE = '''\
@@ -302,4 +334,5 @@ _run()
 
 
 if __name__ == "__main__":
+    _ensure_deterministic_hash_seed()
     build()
