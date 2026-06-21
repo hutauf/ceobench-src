@@ -136,6 +136,40 @@ An important difficulty is competitor strength. Competitor keeps track of a unre
 
 
 
+### Local no-LLM browser GUI
+
+This repo also includes a small single-player browser GUI for manually playing
+the no-LLM variant. It disables social-media content generation and social
+judging, then exposes the current game state and management actions in a local
+web app.
+
+**1. Install dependencies** (one-time):
+
+```bash
+uv sync
+```
+
+**2. Start the server** from the repo root:
+
+```bash
+uv run uvicorn saas_bench.gui_app:app --host 127.0.0.1 --port 8787
+```
+
+Open <http://127.0.0.1:8787> in a browser. The GUI keeps the active game in
+`gui_runs/current/`. Use **Reset Game** in the top bar to start over from day 0.
+
+To expose the GUI to another machine on your network or behind a reverse proxy,
+bind to all interfaces instead:
+
+```bash
+uv run uvicorn saas_bench.gui_app:app --host 0.0.0.0 --port 8787
+```
+
+The GUI has no user management and is intended for one player at a time. Do not
+publish it directly to the public internet without adding your own access
+control.
+
+
 ### 🤖 Option C: Replicate the bash-agent baseline
 
 The paper's baseline gives an LLM a sandboxed bash shell plus the public CLI and

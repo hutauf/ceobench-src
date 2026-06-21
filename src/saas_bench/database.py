@@ -317,9 +317,9 @@ TABLE_DOCS = {
 }
 
 
-def init_database(db_path: Path) -> sqlite3.Connection:
+def init_database(db_path: Path, check_same_thread: bool = True) -> sqlite3.Connection:
     """Initialize the world database with all required tables."""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, check_same_thread=check_same_thread)
     conn.row_factory = sqlite3.Row
 
     # Enable foreign keys

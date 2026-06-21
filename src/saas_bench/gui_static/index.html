@@ -1,0 +1,193 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CEOBench Control Room</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>CEOBench Control Room</h1>
+        <p id="subtitle">No-LLM management simulator</p>
+      </div>
+      <nav>
+        <button data-tab="overview" class="tab active">Overview</button>
+        <button data-tab="controls" class="tab">Controls</button>
+        <button data-tab="market" class="tab">Market & R&D</button>
+        <button data-tab="enterprise" class="tab">Enterprise</button>
+        <button data-tab="data" class="tab">Data</button>
+      </nav>
+      <button id="resetBtn" class="danger">Reset Game</button>
+    </header>
+
+    <main>
+      <section id="status" class="status-grid"></section>
+
+      <section id="overview" class="panel tab-panel active">
+        <div class="section-head">
+          <h2>Overview</h2>
+          <button id="refreshBtn">Refresh</button>
+        </div>
+        <article id="briefing" class="briefing"></article>
+        <div class="grid two">
+          <article>
+            <h3>Service</h3>
+            <div id="serviceMetrics" class="metric-list"></div>
+          </article>
+          <article>
+            <h3>Last 30 Days Ledger</h3>
+            <div id="ledger" class="metric-list"></div>
+          </article>
+        </div>
+        <article>
+          <h3>Delivered Quality</h3>
+          <div class="table-wrap">
+            <table id="qualityTable"></table>
+          </div>
+        </article>
+      </section>
+
+      <section id="controls" class="panel tab-panel">
+        <div class="section-head">
+          <h2>Business Controls</h2>
+          <button id="applyCoreBtn">Apply Core Settings</button>
+        </div>
+        <div class="grid three">
+          <article>
+            <h3>Pricing & Plans</h3>
+            <div class="plans" id="planControls"></div>
+          </article>
+          <article>
+            <h3>Spend</h3>
+            <label><span class="label-text">Operations $/day<span class="info-tip" tabindex="0" role="tooltip" aria-label="Daily budget for reliability, support, and operational execution. It is the boring but useful glue budget." data-tip="Daily budget for reliability, support, and operational execution. It is the boring but useful glue budget.">?</span></span><input id="opsSpend" type="number" min="0" step="50" /></label>
+            <label><span class="label-text">Development $/day<span class="info-tip" tabindex="0" role="tooltip" aria-label="Daily product engineering budget. It improves the product over time rather than buying immediate demand." data-tip="Daily product engineering budget. It improves the product over time rather than buying immediate demand.">?</span></span><input id="devSpend" type="number" min="0" step="50" /></label>
+            <label><span class="label-text">Capacity Tier<span class="info-tip" tabindex="0" role="tooltip" aria-label="Purchased infrastructure tier. Think of this as the size of your serving setup, not the model quality." data-tip="Purchased infrastructure tier. Think of this as the size of your serving setup, not the model quality.">?</span></span><input id="capacityTier" type="number" min="0" max="7" step="1" /></label>
+            <label><span class="label-text">In-app Ads Strength<span class="info-tip" tabindex="0" role="tooltip" aria-label="How aggressively ads are shown inside the product. It can create ad revenue, but users may dislike too much of it." data-tip="How aggressively ads are shown inside the product. It can create ad revenue, but users may dislike too much of it.">?</span></span><input id="adsStrength" type="number" min="0" max="1" step="0.05" /></label>
+          </article>
+          <article>
+            <h3>Promotions</h3>
+            <label><span class="label-text">Existing Subscriber Promo $/mo<span class="info-tip" tabindex="0" role="tooltip" aria-label="Discount for existing subscribers. It can reduce churn pressure but lowers revenue collected." data-tip="Discount for existing subscribers. It can reduce churn pressure but lowers revenue collected.">?</span></span><input id="promoGlobal" type="number" min="0" step="1" /></label>
+            <label><span class="label-text">New Lead Promo $/mo<span class="info-tip" tabindex="0" role="tooltip" aria-label="Discount shown to new leads for their first billing period. It can improve conversion but lowers first-period revenue." data-tip="Discount shown to new leads for their first billing period. It can improve conversion but lowers first-period revenue.">?</span></span><input id="leadPromoGlobal" type="number" min="0" step="1" /></label>
+          </article>
+        </div>
+
+        <div class="grid three equal">
+          <article>
+            <div class="section-head tight">
+              <h3>Ad Spend Matrix ($/day)</h3>
+              <button id="applyAdsBtn">Apply Ads</button>
+            </div>
+            <div id="adMatrix" class="matrix"></div>
+          </article>
+          <article>
+            <div class="section-head tight">
+              <h3>Targeted Development ($/day)</h3>
+              <button id="applyDevBtn">Apply Targeted Dev</button>
+            </div>
+            <div id="targetedDev" class="matrix compact"></div>
+          </article>
+          <article>
+            <div class="section-head tight">
+              <h3>Targeted Operations ($/day)</h3>
+              <button id="applyOpsBtn">Apply Targeted Ops</button>
+            </div>
+            <div id="targetedOps" class="matrix compact"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="market" class="panel tab-panel">
+        <div class="section-head">
+          <h2>Market & R&D</h2>
+          <button id="researchMarketBtn">Research New Segment ($25k)</button>
+        </div>
+        <div class="grid two">
+          <article>
+            <h3>Known Segments</h3>
+            <div class="table-wrap">
+              <table id="segmentsTable"></table>
+            </div>
+          </article>
+          <article>
+            <h3>Research Group</h3>
+            <label><span class="label-text">Group ID<span class="info-tip" tabindex="0" role="tooltip" aria-label="Customer segment identifier, such as S1 for an individual segment or E1 for an enterprise segment." data-tip="Customer segment identifier, such as S1 for an individual segment or E1 for an enterprise segment.">?</span></span><input id="researchGroupId" placeholder="S1" /></label>
+            <label><span class="label-text">Target Info Level<span class="info-tip" tabindex="0" role="tooltip" aria-label="How detailed you want market research to become. Higher levels cost more and take longer." data-tip="How detailed you want market research to become. Higher levels cost more and take longer.">?</span></span>
+              <select id="researchLevel">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+            <button id="researchGroupBtn">Start Group Research</button>
+          </article>
+        </div>
+        <article>
+          <h3>R&D Projects</h3>
+          <div class="nd-row">
+            <label><span class="label-text">Tier<span class="info-tip" tabindex="0" role="tooltip" aria-label="R&D project class to start. Higher tiers are usually larger bets, not a guaranteed better immediate move." data-tip="R&D project class to start. Higher tiers are usually larger bets, not a guaranteed better immediate move.">?</span></span><input id="rndTier" type="number" min="1" max="20" value="1" /></label>
+            <button id="startRndBtn">Start R&D Tier</button>
+          </div>
+          <div class="table-wrap">
+            <table id="rndTable"></table>
+          </div>
+        </article>
+      </section>
+
+      <section id="enterprise" class="panel tab-panel">
+        <div class="section-head">
+          <h2>Enterprise</h2>
+          <button id="sendDealBtn">Send Deal</button>
+        </div>
+        <div class="grid two">
+          <article>
+            <h3>Open Threads</h3>
+            <div class="table-wrap">
+              <table id="enterpriseTable"></table>
+            </div>
+          </article>
+          <article>
+            <h3>Deal Builder</h3>
+            <label><span class="label-text">Customer ID<span class="info-tip" tabindex="0" role="tooltip" aria-label="Internal customer identifier used for enterprise negotiations." data-tip="Internal customer identifier used for enterprise negotiations.">?</span></span><input id="dealCustomerId" type="number" min="1" /></label>
+            <label><span class="label-text">Plan<span class="info-tip" tabindex="0" role="tooltip" aria-label="Plan you are offering to the enterprise customer." data-tip="Plan you are offering to the enterprise customer.">?</span></span>
+              <select id="dealPlan">
+                <option>A</option>
+                <option>B</option>
+                <option>C</option>
+              </select>
+            </label>
+            <label><span class="label-text">Price per Seat<span class="info-tip" tabindex="0" role="tooltip" aria-label="Monthly price per enterprise seat in the offer." data-tip="Monthly price per enterprise seat in the offer.">?</span></span><input id="dealPrice" type="number" min="1" step="1" /></label>
+            <button id="rejectDealBtn" class="secondary">Reject Customer Thread</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="data" class="panel tab-panel">
+        <div class="section-head">
+          <h2>Advance Week</h2>
+          <button id="advanceBtn">Simulate Next Week</button>
+        </div>
+        <div class="grid two">
+          <article>
+            <h3><span class="label-text">Rationale<span class="info-tip" tabindex="0" role="tooltip" aria-label="Short explanation of your weekly decisions. In this GUI it is recorded for traceability." data-tip="Short explanation of your weekly decisions. In this GUI it is recorded for traceability.">?</span></span></h3>
+            <textarea id="rationale" rows="8">Adjusted settings in the GUI and advanced one week.</textarea>
+          </article>
+          <article>
+            <h3><span class="label-text">Cash Forecasts<span class="info-tip" tabindex="0" role="tooltip" aria-label="Your own cash predictions for future horizons. They are useful for calibration, not direct control." data-tip="Your own cash predictions for future horizons. They are useful for calibration, not direct control.">?</span></span></h3>
+            <div id="forecastGrid" class="forecast-grid"></div>
+          </article>
+        </div>
+        <article>
+          <h3><span class="label-text">Dashboard Text<span class="info-tip" tabindex="0" role="tooltip" aria-label="Text version of the weekly report generated by the simulator." data-tip="Text version of the weekly report generated by the simulator.">?</span></span></h3>
+          <pre id="dashboardText"></pre>
+        </article>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <div id="busy" class="busy hidden">Simulating...</div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

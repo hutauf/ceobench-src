@@ -58,6 +58,8 @@ Thumbs.db
 baseline_runs/
 bash_agent_runs/
 opencode_runs/
+rule_based_runs/
+gui_runs/
 workspace/
 workspace_*/
 workspaces/
@@ -141,6 +143,9 @@ benchmark_log_day31_gameover.md
 *_social_media_posts.json
 *_thread_python_exec.json
 *_recent_threads.json
+gui_server.*.log
+gui_server.pid
+gui_server.wsl.pid
 test_social_posts_output.json
 agent_10days_log.txt
 agent_log.txt
